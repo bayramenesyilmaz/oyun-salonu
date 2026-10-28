@@ -13,8 +13,10 @@ export const SPEAKERS = {
 };
 
 export class VoiceSystem {
-  constructor(audio, onSubtitle) {
+  constructor(audio, onSubtitle, speakers = SPEAKERS, voiceIndex = null) {
     this.audio = audio;
+    this.speakers = speakers;
+    this.voiceIndex = voiceIndex;
     this.onSubtitle = onSubtitle;
     this.enabled = true;
     this.voices = [];
@@ -39,9 +41,12 @@ export class VoiceSystem {
   voiceFor(id) {
     if (!this.voices.length) return null;
     const pref = [...this.voices].sort((a, b) => score(b) - score(a));
+    const sp = this.speakers[id];
+    const female = pref.filter((v) => /emel|seda|yelda|filiz|female|kadın/i.test(v.name));
     const male = pref.filter((v) => /ahmet|tolga|male|erkek/i.test(v.name));
-    const pool = male.length ? male : pref;
-    const idx = { selim: 0, karakol: 0, kemal: 1, hasan: 2, arslan: 0, dusman: 1 }[id] || 0;
+    const pool = sp && sp.female && female.length ? female : male.length ? male : pref;
+    const map = this.voiceIndex || { selim: 0, karakol: 0, kemal: 1, hasan: 2, arslan: 0, dusman: 1 };
+    const idx = map[id] || 0;
     return pool[idx % pool.length];
   }
 
@@ -75,7 +80,7 @@ export class VoiceSystem {
     this.busy = true;
     const line = item.lines.shift();
     const tok = ++this.token;
-    const sp = SPEAKERS[line.s] || SPEAKERS.arslan;
+    const sp = this.speakers[line.s] || Object.values(this.speakers)[0];
     this.onSubtitle({ who: sp.name, text: line.t, color: sp.color });
     if (sp.radio) {
       this.audio.squelch(false);
