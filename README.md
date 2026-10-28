@@ -5,8 +5,11 @@ Tarayıcıda oynanan 3B oyunlar için tek site ve ortak motor.
 | Adres | Oyun |
 |---|---|
 | `/` | Oyun Salonu (portal) |
-| `/karakuyu` | Karakuyu — korku |
-| `/karakol` | KARAKOL — Son Tahliye — aksiyon/kurtarma |
+| `/karakuyu` | Karakuyu — Anadolu cin inançları üzerine korku (iki son) |
+| `/karakol` | KARAKOL — Son Tahliye — aksiyon/kurtarma, 5 bölüm |
+| `/keci` | Keçi Kaçtı! — komedi/macera, Rapier fizik motoru |
+
+Bir bölümü doğrudan açmak (geliştirme için): `/karakol?level=3`.
 
 ```bash
 npm install
