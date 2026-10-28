@@ -1,12 +1,14 @@
 import * as THREE from 'three';
 import { makeTextures } from './textures.js';
-import { buildWorld } from './world.js';
+import { buildWorld, STREAM_Z } from './world.js';
 import { Player } from './player.js';
 import { Creature } from './creature.js';
 import { AudioEngine } from './audio.js';
 import { createPost } from './postfx.js';
 import { narrator } from './narrator.js';
-import { PAGES, MOTIFS, SOLUTION, OBJECTIVES, DEATH_LINES, DEATH_LOOKBACK } from './story.js';
+import { PAGES, MOTIFS, SOLUTION, OBJECTIVES, DEATH_LINES, DEATH_LOOKBACK, DEATH_WEDDING, ITEMS, LORE } from './story.js';
+
+const WEDDING = new THREE.Vector3(-37, 0, 1);
 
 const DIAL_LABEL = {
   north: 'köye bakan taş',
@@ -108,6 +110,7 @@ export class Game {
     return {
       page1: false, page2: false, key: false, page3: false, doorOpen: false, sealed: false,
       dials: { north: 4, east: 4, west: 4 }, tried: [],
+      items: {}, iron: 0, offered: false, crossed: false,
     };
   }
 
@@ -298,7 +301,10 @@ export class Game {
     this.phase = 'journal';
     this.player.keys.clear();
     const pages = ['page1', 'page2', 'page3'].filter((k) => this.flags[k]).map((k) => ({ id: k, ...PAGES[k] }));
-    this.emit('journal', { pages, key: this.flags.key, dials: this.dialSummary() });
+    const f = this.flags;
+    const lore = LORE.filter((l) => f[l.need]).map((l) => l.text);
+    const items = Object.keys(ITEMS).filter((k) => f.items && f.items[k]).map((k) => ITEMS[k].name);
+    this.emit('journal', { pages, key: f.key, dials: this.dialSummary(), lore, items, iron: f.iron || 0, offered: !!f.offered });
     this.emit('phase', 'journal');
     if (document.pointerLockElement) document.exitPointerLock(); // sayfaları tıklayabilmek için
   }
@@ -378,6 +384,8 @@ export class Game {
   restoreCheckpoint() {
     const c = this.checkpoint;
     this.flags = JSON.parse(JSON.stringify(c.flags));
+    this.flags.items = this.flags.items || {};
+    this.flags.crossed = false;
     this.objective = c.objective;
     this.creature.difficulty = c.difficulty;
     this.apparition.done = c.apparitionDone;
@@ -443,6 +451,13 @@ export class Game {
       this.world.removeCollider({}); // ızgarayı yeniden kur
     }
     for (const k of Object.keys(R.dials)) this.setDialVisual(k, f.dials[k]);
+    f.items = f.items || {};
+    for (const [id, m] of Object.entries(R.items)) {
+      m.visible = !f.items[id];
+      m.userData.glow.visible = !f.items[id];
+    }
+    R.offering.visible = !!f.offered;
+    R.wedding.visible = !!f.page2;
     this.world.refs.wellWater.position.y = f.sealed ? -0.2 : -0.6;
   }
 
@@ -508,6 +523,12 @@ export class Game {
     }
     if (id.startsWith('hide_')) return id.includes('saman') || id.includes('ahir') ? 'Samanın içine saklan' : 'Yüklüğe saklan';
     if (id === 'car') return f.sealed ? 'Arabaya bin' : 'Arabaya bak';
+    if (ITEMS[id]) return f.items[id] ? null : ITEMS[id].prompt;
+    if (id === 'offer') {
+      if (f.offered) return null;
+      if (f.items.item_tuz && f.items.item_ekmek) return 'Tuz ve ekmeği bırak, "destur" de';
+      return 'Kuyunun ağzındaki düz taş';
+    }
     return null;
   }
 
@@ -570,6 +591,35 @@ export class Game {
       this.emit('hidden', true);
       return;
     }
+    if (ITEMS[id] && !f.items[id]) {
+      const it = ITEMS[id];
+      f.items[id] = true;
+      R.items[id].visible = false;
+      R.items[id].userData.glow.visible = false;
+      if (it.iron) f.iron = (f.iron || 0) + 1;
+      this.audio.chime();
+      this.toast(it.toast + (it.iron ? ` (Demir: ${f.iron})` : ''), 4200, true);
+      this.updateObjectiveFromFlags();
+      this.saveCheckpoint();
+      return;
+    }
+    if (id === 'offer') {
+      if (f.offered) return;
+      if (!(f.items.item_tuz && f.items.item_ekmek)) {
+        this.toast(f.page3 ? 'Tuz ve ekmek lazım. Günlükte yazıyordu.' : 'Düz, aşınmış bir taş. Üstünde eski bir tuz lekesi var.', 3000, true);
+        return;
+      }
+      f.offered = true;
+      R.offering.visible = true;
+      this.audio.chime();
+      this.audio.wellDrip({ x: 0, z: 0 });
+      this.creature.difficulty = Math.max(0, this.creature.difficulty - 1);
+      this.flash = 0.25;
+      this.toast('"Destur." Kuyunun dibinden bir iç çekiş geldi. Sonra bir çocuk sesi, çok uzaktan: teşekkür gibi.', 5200, true);
+      this.updateObjectiveFromFlags();
+      this.saveCheckpoint();
+      return;
+    }
     if (id === 'car') {
       if (f.sealed) this.ending();
       else this.toast(f.page1 ? 'Dedemin istediğini yapmadan gidemem.' : 'Arabayı burada bırakıp köye yürümeliyim.', 2600, true);
@@ -585,8 +635,8 @@ export class Game {
 
   updateObjectiveFromFlags() {
     const f = this.flags;
-    if (f.sealed) this.setObjective('sealed');
-    else if (f.page3) this.setObjective('page3');
+    if (f.sealed) this.setObjective(f.crossed ? 'crossed' : 'sealed');
+    else if (f.page3) this.setObjective(f.offered ? 'page3b' : 'page3');
     else if (f.page2 && f.key) this.setObjective('page2');
     else if (f.page1) this.setObjective(f.key ? 'page2' : 'page1');
     else this.setObjective('enter');
@@ -596,7 +646,7 @@ export class Game {
     const cr = this.creature;
     this.updateObjectiveFromFlags();
     if (id === 'page1') {
-      // Kuyu Anası uyanır
+      // "Bizden iyiler" uyanır
       cr.difficulty = 0;
       cr.wake();
       this.placeCreatureFar();
@@ -648,7 +698,7 @@ export class Game {
     this.player.shake = 1.4;
     this.creature.root.visible = false;
     this.creature.setState('dormant');
-    this.toast('Taşlar yerine oturdu. Kuyu derin bir nefes aldı.', 4000, true);
+    this.toast(f.offered ? 'Taşlar yerine oturdu. Kuyu derin bir nefes aldı.' : 'Taşlar oturdu... ama kuyu hâlâ aç. Bir şey eksik kaldı.', 4000, true);
     this.anims = this.anims || [];
     const water = this.world.refs.wellWater;
     this.anims.push({ t: 0, dur: 3, fn: (k) => (water.position.y = -0.6 + k * 0.4) });
@@ -694,7 +744,7 @@ export class Game {
     this.player.shake = 3;
     this.flash = 1;
     this.audio.jumpscare();
-    const line = reason === 'look' ? DEATH_LOOKBACK : DEATH_LINES[Math.floor(Math.random() * DEATH_LINES.length)];
+    const line = reason === 'look' ? DEATH_LOOKBACK : reason === 'wedding' ? DEATH_WEDDING : DEATH_LINES[Math.floor(Math.random() * DEATH_LINES.length)];
     narrator.stop();
     this.later(1.4, () => {
       this.audio.silenceAll(1);
@@ -706,6 +756,13 @@ export class Game {
 
   ending() {
     this.clearSave();
+    this.emit('endingKind', this.flags.offered ? 'true' : 'half');
+    if (this.flags.offered) this.later(1.2, () => this.audio.rooster());
+    try {
+      const k = JSON.parse(localStorage.getItem('karakuyu-endings') || '{}');
+      k[this.flags.offered ? 'true' : 'half'] = true;
+      localStorage.setItem('karakuyu-endings', JSON.stringify(k));
+    } catch { /* yok say */ }
     this.phase = 'ending';
     this.player.frozen = true;
     this.creature.root.visible = false;
@@ -830,7 +887,13 @@ export class Game {
       camFwd: fwd,
     });
     for (const e of evs) {
-      if (e.type === 'caught') return this.die('caught');
+      if (e.type === 'caught') {
+        if ((this.flags.iron || 0) > 0) {
+          this.repel();
+          break;
+        }
+        return this.die('caught');
+      }
       if (e.type === 'lookedBack') return this.die('look');
       if (e.type === 'chaseStart') {
         this.audio.scream({ x: cr.pos.x, y: 2, z: cr.pos.z }, 0.9);
@@ -838,6 +901,8 @@ export class Game {
       }
       if (e.type === 'step') this.audio.creatureStep({ x: cr.pos.x, y: 0.2, z: cr.pos.z }, e.data.fast);
     }
+
+    this.updateCinRules(dt, t);
 
     // korku seviyesi
     let target = 0;
@@ -890,6 +955,7 @@ export class Game {
         hideKind: P.hidden ? P.hidden.kind : null,
         fear: this.fear,
         chase: cr.state === 'chase',
+        iron: this.flags.iron || 0,
       });
     }
   }
@@ -926,8 +992,171 @@ export class Game {
     }
   }
 
+  // ---------- Cin kuralları: demir, akan su, düğün, kara kedi, ters ayak izleri ----------
+  repel() {
+    const f = this.flags, cr = this.creature;
+    f.iron = Math.max(0, (f.iron || 0) - 1);
+    this.audio.ironRepel();
+    this.flash = 0.8;
+    this.player.shake = 0.9;
+    if (cr.state === 'stalk') {
+      cr.stalkDist = 7;
+      cr.stillTimer = 0;
+    } else {
+      cr.suspicion = 0;
+      cr.setState('patrol');
+      this.placeCreatureFar();
+    }
+    this.toast(f.iron > 0 ? `Cebimdeki demiri gördü. Çığlık atıp geri çekildi. (Kalan demir: ${f.iron})` : 'Demir kızardı, sonra kararıp küflendi. Bir daha korumaz.', 4200, true);
+  }
+
+  updateCinRules(dt, t) {
+    const P = this.player, cr = this.creature, f = this.flags, R = this.world.refs;
+    if (this.audio.ready && !this.audio.streamOn) this.audio.startStream(STREAM_Z);
+    // --- Akan su: cin dereyi geçemez ---
+    if (cr.state === 'stalk' && P.pos.z > STREAM_Z + 1.3 && !f.crossed) {
+      f.crossed = true;
+      cr.setState('dormant');
+      cr.place(Math.max(-1.8, Math.min(1.8, P.pos.x)), STREAM_Z - 2.2, 0);
+      cr.root.visible = true;
+      this.audio.whisper({ x: cr.pos.x, y: 1.6, z: cr.pos.z }, 1);
+      this.toast('Ayak sesleri suyun kıyısında kesildi. Akan suyu geçemiyor.', 4200, true);
+      this.updateObjectiveFromFlags();
+    } else if (f.crossed && f.sealed && P.pos.z < STREAM_Z - 1) {
+      f.crossed = false;
+      cr.startStalk(P.pos, P.yaw);
+      this.toast('Geri döndün. Yine arkanda.', 2600, true);
+      this.updateObjectiveFromFlags();
+    }
+    if (f.crossed && cr.state === 'dormant') cr.turnTo(Math.atan2(P.pos.x - cr.pos.x, P.pos.z - cr.pos.z), dt, 3);
+    if (cr.state !== 'stalk' && cr.state !== 'dormant' && cr.state !== 'apparition' && cr.pos.z > STREAM_Z - 1.8) {
+      cr.pos.z = STREAM_Z - 1.8;
+      cr.path = [];
+      if (cr.state === 'chase' || cr.state === 'investigate') {
+        cr.lastKnown.set(cr.pos.x, 0, cr.pos.z - 4);
+        cr.setState('search');
+      }
+    }
+    // --- Cin düğünü: mezarlıktan gelen davul zurna ---
+    if (f.page2) {
+      if (!R.wedding.visible) R.wedding.visible = true;
+      if (this.audio.ready && !this.audio.wed) this.audio.startWedding(WEDDING);
+      const d = Math.hypot(P.pos.x - WEDDING.x, P.pos.z - WEDDING.z);
+      this.lureT = (this.lureT || 0) - dt;
+      if (d < 13 && this.lureT <= 0) {
+        this.lureT = 7;
+        const lines = ['…Deniz… gel kuzum, düğünümüz var…', '…oğlum, nineni tanımadın mı…', '…bir halay çek bizimle, sonra gidersin…'];
+        this.toast(lines[Math.floor(Math.random() * lines.length)], 3200);
+        this.audio.whisper({ x: WEDDING.x, y: 1.5, z: WEDDING.z }, 0.8);
+      }
+      if (d < 4.5) return this.die('wedding');
+    }
+    this.updateCat(dt, t);
+    this.updatePrints(dt);
+  }
+
+  updateCat(dt) {
+    const C = (this.cat = this.cat || { t: 35, active: false, look: 0, life: 0, seen: false });
+    const cat = this.world.refs.cat, P = this.player, cr = this.creature;
+    if (!this.flags.page1 || this.flags.sealed) {
+      cat.visible = false;
+      C.active = false;
+      return;
+    }
+    if (!C.active) {
+      C.t -= dt;
+      if (C.t > 0 || cr.state === 'chase') return;
+      const fw = P.forward().setY(0).normalize();
+      for (let k = 0; k < 10; k++) {
+        const d = 9 + Math.random() * 7, a = (Math.random() - 0.5) * 1.0;
+        const dx = fw.x * Math.cos(a) - fw.z * Math.sin(a), dz = fw.x * Math.sin(a) + fw.z * Math.cos(a);
+        const x = P.pos.x + dx * d, z = P.pos.z + dz * d;
+        if (!this.world.inBounds(x, z) || P.collidesAt(x, z) || !cr.los(P.pos.x, P.pos.z, x, z)) continue;
+        cat.position.set(x, this.world.heightAt(x, z), z);
+        cat.rotation.y = Math.atan2(P.pos.x - x, P.pos.z - z);
+        cat.visible = true;
+        C.active = true;
+        C.look = 0;
+        C.life = 0;
+        return;
+      }
+      C.t = 5;
+      return;
+    }
+    C.life += dt;
+    const to = new THREE.Vector3().subVectors(cat.position, this.camera.position).setY(0);
+    const d = to.length();
+    to.normalize();
+    if (to.dot(P.forward().setY(0).normalize()) > 0.96) C.look += dt;
+    cat.rotation.y = Math.atan2(P.pos.x - cat.position.x, P.pos.z - cat.position.z);
+    if (C.look > 1.4 || d < 4.5 || C.life > 25) {
+      cat.visible = false;
+      C.active = false;
+      C.t = 45 + Math.random() * 45;
+      this.audio.hiss({ x: cat.position.x, y: 0.4, z: cat.position.z });
+      if (d < 4.5 && (cr.state === 'patrol' || cr.state === 'search')) {
+        cr.lastKnown.set(P.pos.x, 0, P.pos.z);
+        cr.setState('investigate');
+        cr.goTo(P.pos.x, P.pos.z);
+        this.toast('Kedi tıslayıp karanlığa karıştı. Bir şey seni duydu.', 3200, true);
+      } else if (!C.seen) this.toast('Kara bir kedi. Gözleri fazla parlaktı. Göz kırptım; yoktu.', 3600, true);
+      C.seen = true;
+    }
+  }
+
+  // Ters basan ıslak ayak izleri: parmaklar geldiği yöne bakar
+  updatePrints(dt) {
+    if (!this.prints) {
+      const c = document.createElement('canvas');
+      c.width = 32;
+      c.height = 64;
+      const x = c.getContext('2d');
+      x.fillStyle = '#fff';
+      x.beginPath();
+      x.ellipse(16, 40, 9, 20, 0, 0, Math.PI * 2);
+      x.fill();
+      for (let i = 0; i < 4; i++) {
+        x.beginPath();
+        x.arc(8 + i * 5.5, 12 - Math.abs(i - 1.5) * 2, 3, 0, Math.PI * 2);
+        x.fill();
+      }
+      const tex = new THREE.CanvasTexture(c);
+      const geo = new THREE.PlaneGeometry(0.13, 0.27);
+      geo.rotateX(-Math.PI / 2); // parmaklar yerel -z yönünde
+      this.prints = { list: [], i: 0, acc: 0, side: 1 };
+      for (let k = 0; k < 48; k++) {
+        const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex, color: 0x020304, transparent: true, opacity: 0, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
+        m.visible = false;
+        this.scene.add(m);
+        this.prints.list.push({ m, life: 0 });
+      }
+      this.prints.last = this.creature.pos.clone();
+    }
+    const Pr = this.prints, cr = this.creature;
+    const moved = Pr.last.distanceTo(cr.pos);
+    if (moved > 3) Pr.last.copy(cr.pos); // ışınlandı
+    else if (cr.root.visible && moved > 0.7) {
+      const dir = Math.atan2(cr.pos.x - Pr.last.x, cr.pos.z - Pr.last.z);
+      Pr.last.copy(cr.pos);
+      const it = Pr.list[(Pr.i = (Pr.i + 1) % Pr.list.length)];
+      Pr.side *= -1;
+      const ox = Math.cos(dir) * 0.13 * Pr.side, oz = -Math.sin(dir) * 0.13 * Pr.side;
+      it.m.position.set(cr.pos.x + ox, this.world.heightAt(cr.pos.x, cr.pos.z) + 0.03, cr.pos.z + oz);
+      it.m.rotation.y = dir; // yerel -z (parmaklar) = gidişin tersi
+      it.m.visible = true;
+      it.life = 30;
+    }
+    for (const it of Pr.list) {
+      if (it.life <= 0) continue;
+      it.life -= dt;
+      it.m.material.opacity = Math.min(0.6, it.life / 20);
+      if (it.life <= 0) it.m.visible = false;
+    }
+  }
+
   dispose() {
     this.running = false;
+    clearInterval(this.audio.wedTimer);
     window.removeEventListener('keydown', this._keydown);
     window.removeEventListener('keyup', this._keyup);
     document.removeEventListener('mousemove', this._mouse);

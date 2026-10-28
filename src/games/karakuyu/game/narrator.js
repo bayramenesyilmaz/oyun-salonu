@@ -95,7 +95,7 @@ class Narrator {
     }, 10000);
   }
 
-  // Kuyu Anası'nın fısıltısı: çok kalın, yavaş, kısık
+  // Cinin fısıltısı: çok kalın, yavaş, kısık
   whisperName() {
     if (!synth || !this.enabled || !this.voice || this.speaking) return;
     const u = new SpeechSynthesisUtterance(Math.random() < 0.5 ? 'Deniiiz…' : 'Deniz… gel…');

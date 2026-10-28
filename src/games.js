@@ -4,7 +4,7 @@ export const GAMES = [
     id: 'karakuyu',
     title: 'Karakuyu',
     tag: 'Korku',
-    blurb: 'Terk edilmiş bir Anadolu köyü. Kurumuş bir kuyu. Adını fısıldayan bir şey.',
+    blurb: 'Terk edilmiş bir Anadolu köyü, kurumuş bir kuyu ve adları anılmayanlar: bizden iyiler. İki son.',
     color: '#9a2c20',
     icon: '/icons-karakuyu/icon-512.png',
     fonts: 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&family=Caveat:wght@500&display=swap',

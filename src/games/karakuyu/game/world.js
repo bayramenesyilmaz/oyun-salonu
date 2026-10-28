@@ -6,6 +6,7 @@ import { rng } from './textures.js';
 // Koordinatlar: kuyu (0,0), kuzey -Z, doğu +X, güney +Z.
 
 export const VILLAGE_R = 47.5;
+export const STREAM_Z = 55;
 const WALL_T = 0.45;
 
 export function buildWorld(scene, T) {
@@ -86,6 +87,9 @@ export function buildWorld(scene, T) {
     }
     // yol koridoru düz kalsın
     if (Math.abs(x) < 7 && z > 40 && z < 95) h *= Math.min(1, Math.abs(x) / 7) ** 2;
+    // köy yolunu kesen dere (köprü altında yol düz kalır)
+    const dz = Math.abs(z - STREAM_Z);
+    if (dz < 2.4 && Math.abs(x) > 4.4) h -= 0.75 * Math.cos((dz / 2.4) * Math.PI * 0.5) * Math.min(1, (Math.abs(x) - 4.4) / 1.2);
     return h;
   }
 
@@ -526,6 +530,161 @@ export function buildWorld(scene, T) {
     pivot.add(door, handle);
     scene.add(pivot);
     refs.muhtarDoor = { pivot, mesh: door, collider: addCollider(0, -26.5 - WALL_T / 2, 1.1, 0.3, 'muhtarDoor') };
+  }
+
+  // ---------- Cin hikâyesi nesneleri ----------
+  refs.items = {};
+  function pickup(id, obj, x, y, z, glowCol = 0xc8b070) {
+    obj.position.set(x, y, z);
+    obj.traverse((o) => {
+      o.userData.interactId = id;
+      if (o.isMesh) o.castShadow = true;
+    });
+    scene.add(obj);
+    const glow = new THREE.Sprite(
+      new THREE.SpriteMaterial({ map: T.dot, color: glowCol, transparent: true, opacity: 0.16, depthWrite: false, blending: THREE.AdditiveBlending })
+    );
+    glow.scale.set(0.7, 0.7, 1);
+    glow.position.set(x, y + 0.08, z);
+    scene.add(glow);
+    animated.push((dt, tt) => (glow.material.opacity = obj.visible ? 0.1 + Math.sin(tt * 2 + x) * 0.05 : 0));
+    obj.userData.glow = glow;
+    refs.items[id] = obj;
+  }
+  {
+    // dedenin çakısı (demir)
+    const g = new THREE.Group();
+    const handle = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.02, 0.025), new THREE.MeshStandardMaterial({ color: 0x5a3a24, roughness: 0.7 }));
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.006, 0.02), M.metal);
+    blade.position.x = 0.085;
+    g.add(handle, blade);
+    g.rotation.y = 0.6;
+    pickup('item_cak', g, -15.6, 0.51, -14.0);
+    // tuz kesesi
+    const salt = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), new THREE.MeshStandardMaterial({ color: 0xcfc6b0, roughness: 1 }));
+    salt.scale.set(1, 1.2, 1);
+    pickup('item_tuz', salt, -11.75, 0.09, -11.0);
+    // ekmek (kuru yufka)
+    const bread = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.03, 16), new THREE.MeshStandardMaterial({ color: 0xc8a06a, roughness: 0.95 }));
+    pickup('item_ekmek', bread, 3.05, t3 + 0.02, -31.35);
+    // at nalı (mezarlık duvarının üstünde)
+    const nal = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.016, 6, 14, Math.PI * 1.4), new THREE.MeshStandardMaterial({ color: 0x5a3a28, roughness: 0.6, metalness: 0.6 }));
+    nal.rotation.x = -Math.PI / 2;
+    pickup('item_nal', nal, -30.5, 0.82, 9.2);
+  }
+  {
+    // Kuyunun güney ağzında düz adak taşı
+    const slab = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.06, 0.32), M.stone);
+    slab.position.set(0, 0.88, 1.12);
+    slab.receiveShadow = true;
+    slab.userData.interactId = 'offer';
+    scene.add(slab);
+    const offering = new THREE.Group();
+    const b = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.03, 16), new THREE.MeshStandardMaterial({ color: 0xc8a06a, roughness: 0.95 }));
+    b.position.set(-0.1, 0.93, 1.12);
+    const sl = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.06, 10), new THREE.MeshStandardMaterial({ color: 0xe8e2d6, roughness: 1 }));
+    sl.position.set(0.17, 0.94, 1.12);
+    offering.add(b, sl);
+    offering.visible = false;
+    scene.add(offering);
+    refs.offerSlab = slab;
+    refs.offering = offering;
+  }
+  {
+    // Dere: akan su (cinler akan suyu geçemez) ve tahta köprü
+    const c = document.createElement('canvas');
+    c.width = 64;
+    c.height = 256;
+    const x = c.getContext('2d');
+    x.fillStyle = '#0d1a22';
+    x.fillRect(0, 0, 64, 256);
+    for (let i = 0; i < 70; i++) {
+      x.strokeStyle = `rgba(150,180,200,${0.05 + Math.random() * 0.12})`;
+      x.lineWidth = 1 + Math.random() * 2;
+      const px = Math.random() * 64, py = Math.random() * 256;
+      x.beginPath();
+      x.moveTo(px, py);
+      x.lineTo(px + (Math.random() - 0.5) * 6, py + 10 + Math.random() * 30);
+      x.stroke();
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(1, 30);
+    tex.rotation = Math.PI / 2;
+    const water = new THREE.Mesh(
+      new THREE.PlaneGeometry(150, 3.6),
+      new THREE.MeshStandardMaterial({ map: tex, color: 0x8aa0b0, roughness: 0.12, metalness: 0.55, emissive: 0x0a1418, emissiveIntensity: 0.4 })
+    );
+    water.rotation.x = -Math.PI / 2;
+    water.position.set(0, -0.38, STREAM_Z);
+    water.receiveShadow = true;
+    scene.add(water);
+    animated.push((dt) => (tex.offset.y += dt * 0.35));
+    // köprü tahtaları
+    for (let i = 0; i < 9; i++) {
+      const g = boxGeo(9.0, 0.08, 0.36, 1);
+      g.rotateY((r() - 0.5) * 0.04);
+      g.translate((r() - 0.5) * 0.1, 0.05, STREAM_Z - 1.6 + i * 0.4);
+      batch(M.darkWood, g);
+    }
+    for (const sx of [-4.35, 4.35]) {
+      addBox(M.darkWood, 0.1, 0.8, 3.8, sx, 0.45, STREAM_Z, { collide: false, tile: 1 });
+      for (const dz of [-1.7, 0, 1.7]) addBox(M.darkWood, 0.12, 1.0, 0.12, sx, 0.45, STREAM_Z + dz, { collide: false, tile: 1 });
+    }
+    refs.stream = water;
+  }
+  {
+    // Cin düğünü: mezarlığın ortasında süzülen turuncu ışıklar (başta gizli)
+    const wedding = new THREE.Group();
+    wedding.position.set(-37, 0, 1);
+    const lights = [];
+    for (let i = 0; i < 16; i++) {
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: T.dot, color: 0xff8a3a, transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending }));
+      sp.scale.set(0.5, 0.5, 1);
+      sp.userData.a = (i / 16) * Math.PI * 2;
+      sp.userData.r = 2.5 + (i % 3);
+      wedding.add(sp);
+      lights.push(sp);
+    }
+    const pl = new THREE.PointLight(0xff7a2a, 0, 16, 1.6);
+    pl.position.y = 1.6;
+    wedding.add(pl);
+    wedding.visible = false;
+    scene.add(wedding);
+    animated.push((dt, tt) => {
+      if (!wedding.visible) return;
+      pl.intensity = 6 + Math.sin(tt * 9) * 1.5 + Math.sin(tt * 23) * 0.8;
+      for (const sp of lights) {
+        const a = sp.userData.a + tt * 0.6;
+        sp.position.set(Math.cos(a) * sp.userData.r, 1.2 + Math.sin(tt * 2.4 + sp.userData.a * 3) * 0.4, Math.sin(a) * sp.userData.r);
+      }
+    });
+    refs.wedding = wedding;
+  }
+  {
+    // Kara kedi: kılık değiştirmiş "bizden iyiler"
+    const cat = new THREE.Group();
+    const fur = new THREE.MeshStandardMaterial({ color: 0x050506, roughness: 0.6 });
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), fur);
+    body.scale.set(0.9, 1.2, 1.3);
+    body.position.set(0, 0.2, 0);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), fur);
+    head.position.set(0, 0.42, 0.08);
+    cat.add(body, head);
+    for (const sx of [-1, 1]) {
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.08, 4), fur);
+      ear.position.set(sx * 0.055, 0.52, 0.07);
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.018, 6, 4), new THREE.MeshBasicMaterial({ color: 0xffc23a }));
+      eye.position.set(sx * 0.04, 0.44, 0.17);
+      cat.add(ear, eye);
+    }
+    const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.02, 0.35, 5), fur);
+    tail.position.set(0, 0.3, -0.22);
+    tail.rotation.x = -0.7;
+    cat.add(tail);
+    cat.visible = false;
+    scene.add(cat);
+    refs.cat = cat;
   }
 
   // Diğer evler ve yıkıntılar

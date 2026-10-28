@@ -666,10 +666,203 @@ export class AudioEngine {
     this.amb.gain.setTargetAtTime(0, t, fade / 3);
     this.cGain.gain.setTargetAtTime(0, t, fade / 3);
     this.tensionGain.gain.setTargetAtTime(0, t, fade / 3);
+    if (this.wed) this.stopWedding(fade);
   }
 
   restoreAmbience() {
     if (!this.ready) return;
     this.amb.gain.setTargetAtTime(0.9, this.ctx.currentTime, 0.5);
+  }
+
+  // ---------- Cin hikâyesi sesleri ----------
+  // Dere: sürekli akan su (konumsal, köprünün iki yanı)
+  startStream(z) {
+    if (!this.ready || this.streamOn) return;
+    this.streamOn = true;
+    const ctx = this.ctx;
+    for (const x of [-9, 9]) {
+      const p = this.makePanner();
+      p.refDistance = 3;
+      p.rolloffFactor = 1.6;
+      this.setPanner(p, x, 0, z);
+      const s = this.noiseSrc(this.pink);
+      const f = ctx.createBiquadFilter();
+      f.type = 'bandpass';
+      f.frequency.value = 900;
+      f.Q.value = 0.6;
+      const g = ctx.createGain();
+      g.gain.value = 0.22;
+      // çağıltı: yavaş genlik dalgası
+      const l = ctx.createOscillator();
+      l.frequency.value = 0.7 + Math.random() * 0.5;
+      const lg = ctx.createGain();
+      lg.gain.value = 0.06;
+      l.connect(lg).connect(g.gain);
+      s.connect(f).connect(g).connect(p).connect(this.amb);
+      s.start();
+      l.start();
+    }
+  }
+
+  // Cin düğünü: uzaktan, bozuk akortlu davul-zurna. Konumsal, sürekli.
+  startWedding(pos) {
+    if (!this.ready || this.wed) return;
+    const ctx = this.ctx;
+    const p = this.makePanner();
+    p.refDistance = 6;
+    p.rolloffFactor = 1.1;
+    p.maxDistance = 120;
+    this.setPanner(p, pos.x, 1.5, pos.z);
+    const out = ctx.createGain();
+    out.gain.value = 0;
+    out.connect(p).connect(this.sfx);
+    this.wed = { out, beat: 0, next: ctx.currentTime + 0.2 };
+    out.gain.setTargetAtTime(0.5, ctx.currentTime, 2);
+    const bpm = 96;
+    const step = 60 / bpm / 2;
+    const mel = [69, 70, 73, 70, 69, 0, 68, 69, 70, 73, 74, 73, 70, 0, 69, 0];
+    this.wedTimer = setInterval(() => {
+      if (!this.wed || ctx.state !== 'running') return;
+      const W = this.wed;
+      while (W.next < ctx.currentTime + 0.25) {
+        const t = W.next, b = W.beat;
+        // davul: güm (vuruşta) ve tek (arada); hafifçe sallanan, insan dışı bir zaman
+        if (b % 2 === 0) {
+          const o = ctx.createOscillator();
+          o.frequency.setValueAtTime(b % 8 === 0 ? 70 : 90, t);
+          o.frequency.exponentialRampToValueAtTime(38, t + 0.25);
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(0.7, t + 0.005);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+          o.connect(g).connect(W.out);
+          o.start(t);
+          o.stop(t + 0.35);
+        } else {
+          const s = this.noiseSrc(this.white, false);
+          const f = ctx.createBiquadFilter();
+          f.type = 'bandpass';
+          f.frequency.value = 2600;
+          f.Q.value = 2;
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0.25, t);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+          s.connect(f).connect(g).connect(W.out);
+          s.start(t);
+          s.stop(t + 0.06);
+        }
+        const n = mel[b % mel.length];
+        if (n) {
+          // zurna: kare dalga, çeyrek ton bozuk
+          const o = ctx.createOscillator();
+          o.type = 'square';
+          const fr = 440 * Math.pow(2, (n - 69 - 0.35) / 12);
+          o.frequency.setValueAtTime(fr, t);
+          o.frequency.linearRampToValueAtTime(fr * 0.985, t + step);
+          const v = ctx.createOscillator();
+          v.frequency.value = 5.5;
+          const vg = ctx.createGain();
+          vg.gain.value = fr * 0.015;
+          v.connect(vg).connect(o.frequency);
+          const f = ctx.createBiquadFilter();
+          f.type = 'bandpass';
+          f.frequency.value = 1500;
+          f.Q.value = 1;
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(0.07, t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + step * 1.05);
+          o.connect(f).connect(g).connect(W.out);
+          for (const x of [o, v]) {
+            x.start(t);
+            x.stop(t + step * 1.1);
+          }
+        }
+        W.beat++;
+        W.next += step * (1 + Math.sin(W.beat * 0.7) * 0.06);
+      }
+    }, 100);
+  }
+
+  stopWedding(fade = 1.5) {
+    if (!this.wed) return;
+    const W = this.wed;
+    W.out.gain.setTargetAtTime(0, this.ctx.currentTime, fade / 3);
+    setTimeout(() => {
+      clearInterval(this.wedTimer);
+      this.wed = null;
+    }, fade * 1000 + 200);
+  }
+
+  // Demir parladı: metalik çınlama + geri çekilen tıslama
+  ironRepel() {
+    if (!this.ready) return;
+    const ctx = this.ctx, t = ctx.currentTime;
+    for (const f of [1318, 1975, 2793]) {
+      const o = ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = f;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.12, t + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);
+      o.connect(g).connect(this.sfx);
+      o.start(t);
+      o.stop(t + 2.3);
+    }
+    const s = this.noiseSrc(this.white, false);
+    const f = ctx.createBiquadFilter();
+    f.type = 'highpass';
+    f.frequency.setValueAtTime(5000, t);
+    f.frequency.exponentialRampToValueAtTime(800, t + 1.2);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.35, t + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
+    s.connect(f).connect(g).connect(this.sfx);
+    s.start(t);
+    s.stop(t + 1.4);
+  }
+
+  // Horoz: sabahın habercisi, cinler çekilir
+  rooster() {
+    if (!this.ready) return;
+    const ctx = this.ctx, t = ctx.currentTime + 0.3;
+    const segs = [[0, 0.18, 620, 780], [0.22, 0.2, 700, 900], [0.46, 0.7, 900, 600]];
+    for (const [d, len, f0, f1] of segs) {
+      const o = ctx.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(f0, t + d);
+      o.frequency.linearRampToValueAtTime(f1, t + d + len);
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 1400;
+      bp.Q.value = 2;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t + d);
+      g.gain.exponentialRampToValueAtTime(0.12, t + d + 0.03);
+      g.gain.setValueAtTime(0.12, t + d + len * 0.8);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + d + len);
+      o.connect(bp).connect(g).connect(this.master);
+      o.start(t + d);
+      o.stop(t + d + len + 0.05);
+    }
+  }
+
+  // Kedi: kısık bir tıslama
+  hiss(pos) {
+    this.oneShotAt(pos, (out, t) => {
+      const s = this.noiseSrc(this.white, false);
+      const f = this.ctx.createBiquadFilter();
+      f.type = 'highpass';
+      f.frequency.value = 3000;
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.25, t + 0.08);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+      s.connect(f).connect(g).connect(out);
+      s.start(t);
+      s.stop(t + 1);
+    });
   }
 }

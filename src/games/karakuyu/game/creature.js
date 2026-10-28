@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 
-// KUYU ANASI — model, animasyon ve yapay zekâ
+// CİN ("bizden iyiler") — model, animasyon ve yapay zekâ.
+// Dumansız ateşten: saçın arasından kor gibi gözler, ardında kıvılcım ve duman; ayakları ters basar.
 
 export class Creature {
   constructor(scene, world, T) {
@@ -10,6 +11,7 @@ export class Creature {
     this.root.visible = false;
     scene.add(this.root);
     this.buildModel(T);
+    scene.add(this.sparks);
 
     this.pos = this.root.position;
     this.facing = 0; // yaw
@@ -145,6 +147,43 @@ export class Creature {
       }
       shoulder.userData.splay = s * 0.14;
       this.arms.push({ shoulder, elbow, side: s });
+    }
+
+    // Kor gözler: ıslak saçın aralığından iki nokta
+    this.eyes = [];
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff5a1a, transparent: true, opacity: 0.9 });
+    for (const s of [-1, 1]) {
+      const e = new THREE.Mesh(new THREE.SphereGeometry(0.014, 6, 4), eyeMat);
+      e.position.set(s * 0.045, 0.31, 0.22);
+      this.head.add(e);
+      this.eyes.push(e);
+    }
+    this.eyeMat = eyeMat;
+    // Ters ayaklar: kefenin altından topuk öne, parmaklar arkaya bakar
+    for (const s of [-1, 1]) {
+      const foot = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.05, 0.26).translate(0, 0.025, -0.08), skin);
+      foot.position.set(s * 0.12, 0, 0.06);
+      this.root.add(foot);
+      for (let k = 0; k < 4; k++) {
+        const toe = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.005, 0.09, 4).rotateX(Math.PI / 2), skin);
+        toe.position.set(s * 0.12 + (k - 1.5) * 0.02, 0.015, -0.25);
+        this.root.add(toe);
+      }
+    }
+    // Kıvılcım ve duman: dumansız ateşten yaratılmış
+    {
+      const N = 40;
+      const g = new THREE.BufferGeometry();
+      this.sparkPos = new Float32Array(N * 3);
+      this.sparkLife = new Float32Array(N);
+      g.setAttribute('position', new THREE.BufferAttribute(this.sparkPos, 3));
+      this.sparks = new THREE.Points(
+        g,
+        new THREE.PointsMaterial({ map: T.dot, size: 0.07, color: 0xff6a2a, transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending })
+      );
+      this.sparks.frustumCulled = false;
+      this.sparkN = N;
+      this.sparkI = 0;
     }
 
     // Soğuk, hafif ışık: çok yaklaşınca seçilir
@@ -632,6 +671,28 @@ export class Creature {
       a.elbow.rotation.x = fast ? -0.5 + Math.sin(ph * 2) * 0.2 : -0.12;
     }
     for (const h of this.hair) h.rotation.x = Math.sin(t * 1.4) * 0.03 + (fast ? -0.2 : 0);
+
+    // kor gözler titrer, kovalarken parlar
+    this.eyeMat.opacity = this.root.visible ? (fast ? 1 : 0.55 + Math.sin(t * 7) * 0.2) : 0;
+    // kıvılcımlar yükselir
+    if (this.root.visible && Math.random() < dt * (fast ? 40 : 12)) {
+      const i = (this.sparkI = (this.sparkI + 1) % this.sparkN);
+      this.sparkPos[i * 3] = this.pos.x + (Math.random() - 0.5) * 0.5;
+      this.sparkPos[i * 3 + 1] = this.pos.y + 0.2 + Math.random() * 1.6;
+      this.sparkPos[i * 3 + 2] = this.pos.z + (Math.random() - 0.5) * 0.5;
+      this.sparkLife[i] = 1.2;
+    }
+    for (let i = 0; i < this.sparkN; i++) {
+      if (this.sparkLife[i] <= 0) {
+        this.sparkPos[i * 3 + 1] = -100;
+        continue;
+      }
+      this.sparkLife[i] -= dt;
+      this.sparkPos[i * 3 + 1] += dt * 0.9;
+      this.sparkPos[i * 3] += Math.sin(t * 3 + i) * dt * 0.2;
+    }
+    this.sparks.geometry.attributes.position.needsUpdate = true;
+    this.sparks.visible = this.root.visible;
 
     // aura: yakınken titrek
     this.aura.intensity = this.root.visible ? (0.7 + Math.sin(t * 9) * 0.15) * (this.auraBoost || 1) : 0;

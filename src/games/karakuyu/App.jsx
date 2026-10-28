@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import './ui.css';
 import { Game } from './game/Game.js';
-import { INTRO, ENDING } from './game/story.js';
+import { INTRO, ENDING as ENDING_HALF, ENDING_TRUE } from './game/story.js';
 import TouchControls from './TouchControls.jsx';
 import { narrator } from './game/narrator.js';
 
@@ -82,6 +83,8 @@ export default function App() {
   const [death, setDeath] = useState(null);
   const [introStep, setIntroStep] = useState(0);
   const [endStep, setEndStep] = useState(0);
+  const [endKind, setEndKind] = useState('half');
+  const ENDING = endKind === 'true' ? ENDING_TRUE : ENDING_HALF;
   const [settings, setSettings] = useState(loadSettings);
   const [showSettings, setShowSettings] = useState(false);
   const [locked, setLocked] = useState(false);
@@ -132,6 +135,7 @@ export default function App() {
       case 'note': setNote(data); break;
       case 'journal': setJournal(data); break;
       case 'death': setDeath(data); break;
+      case 'endingKind': setEndKind(data); break;
       case 'hidden': break;
       case 'lock': setLocked(data); break;
       case 'lockFailed': setLockFailed(true); break;
@@ -207,6 +211,7 @@ export default function App() {
       alive = false;
       timers.forEach(clearTimeout);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
   // Giriş metni seslendirilir, bitince kendiliğinden sonraki satıra geçer
@@ -374,6 +379,7 @@ export default function App() {
             <span className={'lamp' + (hud.lantern ? ' on' : '')} title="Fener (F)" />
             {hud.crouch && <span className="tagchip">çömelmiş</span>}
             {hud.chase && <span className="tagchip red">kovalanıyorsun</span>}
+            {hud.iron > 0 && <span className="tagchip iron" title="Demir: cin bir kez tutamaz">demir ×{hud.iron}</span>}
           </div>
           {hud.stamina < 0.99 && (
             <div className={'stamina' + (hud.exhausted ? ' tired' : '')}>
@@ -423,8 +429,19 @@ export default function App() {
                 <div className="hand small">{p.text}</div>
               </details>
             ))}
+            {journal.lore && journal.lore.length > 0 && (
+              <>
+                <h4>Bildiklerim</h4>
+                <ul className="lore">
+                  {journal.lore.map((l) => <li key={l}>{l}</li>)}
+                </ul>
+              </>
+            )}
             <h4>Eşyalar</h4>
-            <p className="muted">{journal.key ? 'Muhtarın evinin anahtarı' : '—'} · Gaz lambası</p>
+            <p className="muted">
+              {[journal.key && 'Muhtarın evinin anahtarı', ...(journal.items || []), 'Gaz lambası'].filter(Boolean).join(' · ')}
+            </p>
+            <p className="muted">Demir: {journal.iron || 0}{journal.offered ? ' · Kuyuya hakları bırakıldı' : ''}</p>
             <h4>Kuyu taşları</h4>
             <ul className="dials">
               {journal.dials.map((d) => <li key={d.label}><span>{d.label}</span><b>{d.motif}</b></li>)}
@@ -463,6 +480,8 @@ export default function App() {
           {endStep > ENDING.length && (
             <div className="credits">
               <h1>KARAKUYU</h1>
+              <p className="end-kind">{endKind === 'true' ? 'Gerçek son: Hakkını veren' : 'Yarım son: Bir şey seninle geldi'}</p>
+              {endKind !== 'true' && <p className="muted">İpucu: günlüğün son sayfası, taşlardan önce yapılması gereken bir şeyden bahsediyordu.</p>}
               <p className="muted">Bütün modeller, dokular ve sesler kodla üretildi.</p>
               <button className="ghost" onClick={restartAll}>Tekrar oyna</button>
             </div>
