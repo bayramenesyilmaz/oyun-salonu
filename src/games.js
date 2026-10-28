@@ -14,7 +14,7 @@ export const GAMES = [
     id: 'karakol',
     title: 'KARAKOL — Son Tahliye',
     tag: 'Aksiyon · Kurtarma',
-    blurb: 'Kurgusal bir sınır vadisinde sivilleri bul, koru ve güvenle tahliye et.',
+    blurb: 'Kurgusal bir sınır vadisi, kayıp on dört kişi. Beş bölüm: keşif, köy, karanlık tesis, konvoy ve son savunma.',
     color: '#d0a64a',
     icon: '/icons-karakol/icon-512.png',
     fonts: 'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@400;500&family=Caveat:wght@500&display=swap',

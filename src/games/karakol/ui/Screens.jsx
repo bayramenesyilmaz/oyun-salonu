@@ -106,7 +106,7 @@ export function LevelSelect({ save, onPick, onBack }) {
               {open ? (
                 best ? <span className="best">En iyi: {best.total} puan · Rütbe {best.rank}</span> : <span className="best">Henüz oynanmadı</span>
               ) : (
-                <span className="lock">{L.playable ? 'Kilitli' : 'Geliştiriliyor — bir sonraki sürümde'}</span>
+                <span className="lock">{L.playable ? `Kilitli — önce Bölüm ${L.id - 1}` : 'Geliştiriliyor'}</span>
               )}
             </button>
           );
@@ -138,7 +138,7 @@ export function Briefing({ level, onStart, onBack }) {
   );
 }
 
-export function Results({ r, onRetry, onLevels, onMenu }) {
+export function Results({ r, onRetry, onLevels, onMenu, onNext }) {
   return (
     <div className="screen results">
       <div className="res-card">
@@ -165,11 +165,16 @@ export function Results({ r, onRetry, onLevels, onMenu }) {
           <span>İsabet: {r.extra.accuracy}</span>
           <span>Etkisiz bırakılan: {r.extra.enemiesDown}</span>
         </div>
-        <p className="note">Bölüm 2 — Terk Edilmiş Köy bir sonraki sürümde açılacak.</p>
+        {r.level < 5 ? (
+          <p className="note">Bölüm {r.level + 1} — {LEVELS[r.level].title} açıldı.</p>
+        ) : (
+          <p className="note">KARAKOL — Son Tahliye tamamlandı. Kararların ve kurtardığın her kişi sonu belirledi.</p>
+        )}
         <div className="row">
           <button className="btn ghost" onClick={onMenu}>Ana menü</button>
           <button className="btn" onClick={onLevels}>Bölümler</button>
-          <button className="btn primary" onClick={onRetry}>Tekrar oyna</button>
+          <button className={'btn' + (onNext ? '' : ' primary')} onClick={onRetry}>Tekrar oyna</button>
+          {onNext && <button className="btn primary" onClick={onNext}>Sonraki bölüm →</button>}
         </div>
       </div>
     </div>

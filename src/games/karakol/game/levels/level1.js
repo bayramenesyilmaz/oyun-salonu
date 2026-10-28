@@ -47,7 +47,7 @@ export function heightAt(x, z) {
   return h;
 }
 
-export function buildLevel1(game) {
+export function buildLevel1(game, opts = {}) {
   const { scene, T } = game;
   const r = rng(7);
   const world = new CollisionWorld(heightAt);
@@ -128,8 +128,8 @@ export function buildLevel1(game) {
         vertexShader: `varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);} `,
         fragmentShader: `varying vec3 vP; void main(){
           float h = clamp(vP.y + 0.03, -0.2, 1.0);
-          vec3 horizon = vec3(0.13,0.16,0.22);
-          vec3 top = vec3(0.012,0.02,0.04);
+          vec3 horizon = ${opts.final ? 'vec3(0.74,0.66,0.6)' : 'vec3(0.13,0.16,0.22)'};
+          vec3 top = ${opts.final ? 'vec3(0.28,0.42,0.66)' : 'vec3(0.012,0.02,0.04)'};
           vec3 c = mix(horizon, top, smoothstep(0.0, 0.5, h));
           vec3 moonDir = normalize(vec3(0.5, 0.45, -0.75));
           c += vec3(0.09,0.1,0.13) * pow(max(dot(vP, moonDir),0.0), 10.0);
@@ -148,11 +148,11 @@ export function buildLevel1(game) {
       pos.push(Math.cos(a) * rad * 850, y * 850, Math.sin(a) * rad * 850);
     }
     starG.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-    scene.add(new THREE.Points(starG, new THREE.PointsMaterial({ size: 1.2, sizeAttenuation: false, color: 0xc0cce0, fog: false, transparent: true, opacity: 0.8, depthWrite: false })));
+    if (!opts.final) scene.add(new THREE.Points(starG, new THREE.PointsMaterial({ size: 1.2, sizeAttenuation: false, color: 0xc0cce0, fog: false, transparent: true, opacity: 0.8, depthWrite: false })));
     const moon = new THREE.Sprite(new THREE.SpriteMaterial({ map: T.moon, fog: false, depthWrite: false, transparent: true }));
     moon.scale.set(120, 120, 1);
     moon.position.set(0.62, 0.55, 0.49).normalize().multiplyScalar(820);
-    scene.add(moon);
+    if (!opts.final) scene.add(moon);
   }
 
   // ---------- Arazi ----------
@@ -1241,6 +1241,7 @@ export function buildLevel1(game) {
     ],
     outro: [{ dur: 9, from: [3, 3, 130], to: [-25, 28, 175], look0: [-3, 1, 150], look1: [0, 0, 60] }],
   };
+  level.storyResult = () => ({ hasanSaved: game.civilians[0]?.state === 'safe' });
   level.wireTargetHit = (tag) => {
     if (tag && tag.startsWith('target:')) script.targetHit(+tag.split(':')[1]);
   };

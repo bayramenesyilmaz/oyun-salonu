@@ -37,7 +37,7 @@ export function recordResult(level, result, unlockNext) {
   return updateSave((d) => {
     const prev = d.best[level];
     if (!prev || result.total > prev.total) d.best[level] = { total: result.total, rank: result.rank, civilians: result.civilians, docs: result.docs, date: Date.now() };
-    if (unlockNext) d.unlocked = Math.max(d.unlocked, level + 1);
+    if (unlockNext) d.unlocked = Math.min(5, Math.max(d.unlocked, level + 1));
     if (d.resume && d.resume.level === level) d.resume = null;
   });
 }

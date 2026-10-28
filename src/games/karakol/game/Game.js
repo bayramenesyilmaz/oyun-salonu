@@ -13,12 +13,12 @@ import { Squadmate } from './squad.js';
 import { Civilian } from './civilian.js';
 import { createHumanoid, raySphere } from './characters.js';
 import { Mission } from './mission.js';
-import { buildLevel1 } from './levels/level1.js';
+import { buildLevel } from './levels/registry.js';
 import { L1 } from './story.js';
-import { recordResult, updateSave } from './save.js';
+import { recordResult, updateSave, loadSave } from './save.js';
 
 export class Game {
-  constructor(container, emit, { settings, models = {}, touch = false }) {
+  constructor(container, emit, { settings, models = {}, touch = false, level = 1 }) {
     this.container = container;
     this.emitUI = emit;
     this.settings = settings;
@@ -80,7 +80,7 @@ export class Game {
     this.hudT = 0;
     this.fps = { n: 0, t: 0, v: 60 };
 
-    this.loadLevel(1);
+    this.loadLevel(level);
     this.bindInput();
     this.resize();
     window.addEventListener('resize', (this._onResize = () => this.resize()));
@@ -97,7 +97,13 @@ export class Game {
   loadLevel(n) {
     this.levelN = n;
     this.docsFound = new Set();
-    this.level = buildLevel1(this);
+    // bölüme özel alanları sıfırla
+    this.gateBar = null;
+    this.gearLid = null;
+    this.rangeTargets = [];
+    this.story = loadSave().story || {};
+    this.level = buildLevel(n, this);
+    this.applyEnv(this.level.env);
     this.world = this.level.world;
     this.bounds = this.level.bounds;
     this.player = new Player(this.camera, this.world, this.scene);
@@ -111,14 +117,33 @@ export class Game {
     this.pickups = [];
     // Yüzbaşı (sabit karakter)
     const S = this.level.selim;
-    this.selim = createHumanoid('soldier', this.T, this.models.soldier, { unarmed: true });
-    this.selim.root.position.set(S.x, this.world.groundAt(S.x, S.z, 10), S.z);
-    this.selim.root.rotation.y = S.yaw;
-    this.scene.add(this.selim.root);
+    this.selim = null;
+    if (S) {
+      this.selim = createHumanoid('soldier', this.T, this.models.soldier, { unarmed: true });
+      this.selim.root.position.set(S.x, this.world.groundAt(S.x, S.z, 10), S.z);
+      this.selim.root.rotation.y = S.yaw;
+      this.scene.add(this.selim.root);
+    }
     this.spawnActors(null);
     this.player.spawn(this.level.spawn.x, this.level.spawn.z, this.level.spawn.yaw);
+    if (this.level.startWithGear) this.giveGear();
     this.checkpoints = {};
     this.checkpoint('start', true);
+  }
+
+  // Bölümün ışık/sis/gökyüzü ayarları
+  applyEnv(env = {}) {
+    const E = { bg: 0x151b26, fog: 0x161c27, fogD: 0.0082, hemiSky: 0x7a8cad, hemiGround: 0x3a2e20, hemi: 1.45, moon: 0xb4c6e6, moonI: 2.1, exposure: 1.4, ...env };
+    this.env = E;
+    this.scene.background = new THREE.Color(E.bg);
+    this.scene.fog.color = new THREE.Color(E.fog);
+    this.scene.fog.density = E.fogD;
+    this.hemi.color = new THREE.Color(E.hemiSky);
+    this.hemi.groundColor = new THREE.Color(E.hemiGround);
+    this.hemi.intensity = E.hemi;
+    this.moon.color = new THREE.Color(E.moon);
+    this.moon.intensity = E.moonI;
+    this.renderer.toneMappingExposure = E.exposure;
   }
 
   get allNpcs() {
@@ -183,8 +208,8 @@ export class Game {
       script: this.level.script.snapshot(),
       docs: [...this.docsFound],
       marked: [...this.marked],
-      targets: this.rangeTargets.map((t) => t.down),
-      gateOpen: this.level.script.flags.gateOpen,
+      targets: (this.rangeTargets || []).map((t) => t.down),
+      gateOpen: !!this.level.script.flags.gateOpen,
     };
   }
 
@@ -208,22 +233,23 @@ export class Game {
     this.level.syncDocs();
     this.marked = new Set(snap.marked);
     this.markProgress = {};
-    snap.targets.forEach((d, i) => {
+    (snap.targets || []).forEach((d, i) => {
       const t = this.rangeTargets[i];
+      if (!t) return;
       t.down = d;
       t.fall = d ? 1 : 0;
       t.pivot.rotation.x = d ? -1.45 : 0;
     });
     // kapı
     const bar = this.gateBar;
-    const isOpen = !this.world.boxes.includes(bar.collider);
-    if (snap.gateOpen && !isOpen) {
+    const isOpen = bar ? !this.world.boxes.includes(bar.collider) : false;
+    if (bar && snap.gateOpen && !isOpen) {
       this.world.remove(bar.collider);
       bar.mesh.position.x = -3.5;
       bar.mesh.geometry.translate(3.5, 0, 0);
       bar.mesh.rotation.z = 1.45;
     }
-    if (!snap.gateOpen && isOpen) {
+    if (bar && !snap.gateOpen && isOpen) {
       this.world.boxes.push(bar.collider);
       this.world.rebuild();
       bar.mesh.rotation.z = 0;
@@ -241,6 +267,7 @@ export class Game {
     if (this.gearLid && snap.weapon.owned.rifle) this.gearLid.rotation.x = -1.2;
     this.spawnActors(snap);
     this.combatLevel = 0;
+    if (this.level.onRestore) this.level.onRestore(snap);
     this.emitUI('objectives', this.mission.visible());
   }
 
@@ -259,7 +286,7 @@ export class Game {
     }
     this.restore(this.checkpoints.start);
     this.mission.stats.startTime = this.time.gameTime;
-    this.playCutscene(this.level.cutscenes.intro, L1.intro.slice(0, 2), () => {
+    this.playCutscene(this.level.cutscenes.intro, this.level.introLines || L1.intro.slice(0, 2), () => {
       this.beginPlay();
       this.level.script.start();
     });
@@ -345,6 +372,10 @@ export class Game {
       const res = this.mission.score();
       const s = this.mission.stats;
       recordResult(this.levelN, { total: res.total, rank: res.rank, civilians: s.civiliansSaved, docs: s.docs }, true);
+      if (this.level.storyResult) {
+        const sr = this.level.storyResult();
+        updateSave((d) => (d.story = { ...(d.story || {}), ...sr }));
+      }
       this.phase = 'results';
       this.emitUI('results', { ...res, level: this.levelN });
       this.emitUI('phase', 'results');
@@ -767,7 +798,7 @@ export class Game {
         if (t != null && (!best || t < best.t)) best = { t, npc, part: s.part, kind };
       }
     };
-    for (const e of this.enemies) if (e.alive) consider(e, 'enemy');
+    for (const e of this.enemies) if (e.alive && e.state !== 'dormant') consider(e, 'enemy');
     if (!this.squad.down) consider(this.squad, 'squad');
     for (const c of this.civilians) if (c.alive && c.state !== 'safe') consider(c, 'civilian');
     if (best) {
@@ -876,13 +907,14 @@ export class Game {
 
   onCivilianHurt(c, from) {
     this.mission.stats.civiliansHurt++;
-    if (c.alive && c.health > 0) this.voice.play(L1.hasanHurt);
+    if (c.alive && c.health > 0 && !this.voice.busy) this.voice.play(this.level.lines?.civHurt?.(c) || L1.hasanHurt);
     void from;
   }
 
   onCivilianLost(c) {
     this.mission.stats.civiliansLost++;
-    this.mission.fail('hasanSafe');
+    if (this.level.onCivilianLost) this.level.onCivilianLost(c);
+    else this.mission.fail('hasanSafe');
     this.voice.play(L1.civLost);
     void c;
   }
@@ -944,7 +976,7 @@ export class Game {
       for (const e of this.enemies) e.update(dt);
       this.squad.update(dt);
       for (const c of this.civilians) c.update(dt);
-      this.selim.update(dt, { talk: this.voice.cur && this.voice.cur.sp && this.voice.cur.sp.name.startsWith('Yzb') });
+      if (this.selim) this.selim.update(dt, { talk: this.voice.cur && this.voice.cur.sp && this.voice.cur.sp.name.startsWith('Yzb') });
       this.effects.update(dt);
       this.level.update(dt, T.gameTime);
       for (const tw of this.tweens) {
@@ -1044,9 +1076,10 @@ export class Game {
       this.emitUI('objectives', this.mission.visible());
     }
     // dürbün: ışık yükseltme (gece görüşüne benzer parlaklık)
-    const wantExp = binoZoom ? 2.6 : 1.4;
+    const E = this.env;
+    const wantExp = binoZoom ? E.exposure * 1.85 : E.exposure;
     this.renderer.toneMappingExposure += (wantExp - this.renderer.toneMappingExposure) * Math.min(1, realDt * 8);
-    this.scene.fog.density = binoZoom ? 0.0028 : 0.0082;
+    this.scene.fog.density = binoZoom ? E.fogD * 0.35 : E.fogD;
   }
 
   computeLightLevel() {
@@ -1131,7 +1164,7 @@ export class Game {
       focusActive: this.time.focusActive,
       slow: this.time.scale < 0.95,
       squad: K.active ? { order: K.order, free: K.weaponsFree, down: K.down, hp: K.health / K.maxHealth } : null,
-      civ: H && H.state !== 'hiding' ? { name: H.name, state: H.state, hp: H.health } : null,
+      civ: this.civilians.length > 1 ? this.civSummary() : H && H.state !== 'hiding' ? { name: H.name, state: H.state, hp: H.health } : null,
       detect,
       wp,
       heading: P.yaw,
@@ -1140,6 +1173,20 @@ export class Game {
       spread: vm.equipped === 'rifle' ? (vm.stats.hip + (vm.stats.ads - vm.stats.hip) * vm.ads) * (P.moving ? 1.7 : 1) : 0,
       fps: this.fpsValue,
     });
+  }
+
+  civSummary() {
+    const C = this.civilians;
+    const found = C.filter((c) => c.state !== 'hiding');
+    if (!found.length) return null;
+    const n = (st) => C.filter((c) => c.state === st).length;
+    const follow = n('follow') + n('cover');
+    const parts = [];
+    if (follow) parts.push(`${follow} takipte`);
+    if (n('wait')) parts.push(`${n('wait')} bekliyor`);
+    if (n('safe')) parts.push(`${n('safe')} güvende`);
+    if (n('lost')) parts.push(`${n('lost')} kayıp`);
+    return { name: `Siviller ${found.length}/${C.length}`, state: n('lost') ? 'lost' : follow ? 'follow' : 'safe', label: parts.join(' · '), hp: 100 };
   }
 
   project(pos, optional) {
@@ -1166,6 +1213,15 @@ export class Game {
     document.removeEventListener('pointerlockchange', this._lock);
     window.removeEventListener('resize', this._onResize);
     window.removeEventListener('blur', this._blur);
+    document.removeEventListener('visibilitychange', this._vis);
+    this.renderer.domElement.removeEventListener('mousedown', this._mousedown);
+    try {
+      this.audio.ctx && this.audio.ctx.close();
+    } catch {
+      /* yok say */
+    }
     this.renderer.dispose();
+    this.renderer.domElement.remove();
+    if (window.__karakol === this) window.__karakol = null;
   }
 }

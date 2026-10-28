@@ -19,6 +19,7 @@ const IS_TOUCH = (() => {
 export default function App() {
   const mount = useRef(null);
   const game = useRef(null);
+  const modelsRef = useRef({});
   const [save, setSave] = useState(loadSave);
   const [phase, setPhase] = useState('loading');
   const [menuPage, setMenuPage] = useState('main');
@@ -141,8 +142,10 @@ export default function App() {
           });
           setSave(loadSave());
         }
-        g = new Game(mount.current, onUI, { settings: loadSave().settings, models, touch: IS_TOUCH });
+        const q = location.search.match(/[?&]level=(\d)/);
+        g = new Game(mount.current, onUI, { settings: loadSave().settings, models, touch: IS_TOUCH, level: q ? +q[1] : 1 });
         game.current = g;
+        modelsRef.current = models;
         setPhase('menu');
         setTimeout(() => setVoiceOk(g.voice.hasVoice), 1500);
       } catch (e) {
@@ -153,9 +156,19 @@ export default function App() {
     })();
     return () => {
       alive = false;
-      g && g.dispose();
+      game.current && game.current.dispose();
     };
   }, [onUI]);
+
+  // Farklı bir bölüm seçilince oyunu o bölümle yeniden kur
+  const ensureLevel = (n) => {
+    const cur = game.current;
+    if (cur && cur.levelN === n) return cur;
+    cur && cur.dispose();
+    const g = new Game(mount.current, onUI, { settings: loadSave().settings, models: modelsRef.current, touch: IS_TOUCH, level: n });
+    game.current = g;
+    return g;
+  };
 
   const setSetting = (k, v) => {
     const d = updateSave((s) => (s.settings[k] = v));
@@ -176,14 +189,17 @@ export default function App() {
       /* desteklenmiyor */
     }
   };
-  const startLevel = (resume) => {
+  const startLevel = (resume, levelN) => {
     goFullscreen();
-    const g = game.current;
     setResults(null);
     setDoc(null);
+    const n = resume && save.resume ? save.resume.level || 1 : levelN || (game.current ? game.current.levelN : 1);
+    const g = ensureLevel(n);
     if (resume && save.resume) g.startLevel(save.resume.snap);
     else g.startLevel();
   };
+  const curLevel = game.current ? game.current.levelN : 1;
+  const curInfo = LEVELS.find((x) => x.id === curLevel) || LEVELS[0];
 
   const L = LEVELS;
   const inGame = ['playing', 'cutscene', 'paused', 'document', 'dead'].includes(phase);
@@ -214,7 +230,7 @@ export default function App() {
         <LevelSelect save={save} onBack={() => setMenuPage('main')} onPick={(lv) => { setBrief(lv); setMenuPage('briefing'); }} />
       )}
       {phase === 'menu' && menuPage === 'briefing' && brief && (
-        <Briefing level={brief} onBack={() => setMenuPage('levels')} onStart={() => { updateSave((d) => (d.resume = null)); setSave(loadSave()); setMenuPage('main'); startLevel(false); }} />
+        <Briefing level={brief} onBack={() => setMenuPage('levels')} onStart={() => { updateSave((d) => (d.resume = null)); setSave(loadSave()); setMenuPage('main'); startLevel(false, brief.id); }} />
       )}
       {phase === 'menu' && (menuPage === 'settings' || menuPage === 'controls') && (
         <div className="screen panel">
@@ -244,8 +260,8 @@ export default function App() {
           )}
           {!results && objectives.length <= 1 && (
             <div className="title-card">
-              <span>BÖLÜM 1</span>
-              <b>SESSİZ VADİ</b>
+              <span>BÖLÜM {curLevel}</span>
+              <b>{curInfo.title.toLocaleUpperCase('tr')}</b>
             </div>
           )}
           <div className="skip">{IS_TOUCH ? 'Atlamak için dokun' : 'Atla: Boşluk'}</div>
@@ -290,7 +306,8 @@ export default function App() {
       {phase === 'results' && results && (
         <Results
           r={results}
-          onRetry={() => startLevel(false)}
+          onRetry={() => startLevel(false, results.level)}
+          onNext={results.level < 5 ? () => { const lv = LEVELS[results.level]; setBrief(lv); game.current.toMenu(); setMenuPage('briefing'); } : null}
           onLevels={() => { game.current.toMenu(); setMenuPage('levels'); }}
           onMenu={() => { game.current.toMenu(); setMenuPage('main'); }}
         />

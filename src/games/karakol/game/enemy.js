@@ -12,7 +12,7 @@ export class Enemy extends Npc {
     this.routeIdx = 0;
     this.home = new THREE.Vector3(def.x, 0, def.z);
     this.homeYaw = def.yaw || 0;
-    this.state = this.route.length ? 'patrol' : 'guard';
+    this.state = def.dormant ? 'dormant' : this.route.length ? 'patrol' : 'guard';
     this.suspicion = 0;
     this.lastKnown = new THREE.Vector3();
     this.target = null; // 'player' | npc
@@ -42,14 +42,14 @@ export class Enemy extends Npc {
   }
 
   alert(pos, target = 'player') {
-    if (!this.alive) return;
+    if (!this.alive || this.state === 'dormant') return;
     this.lastKnown.copy(pos);
     this.target = target;
     if (this.state !== 'combat') this.setState('combat');
   }
 
   hear(pos, loudness) {
-    if (!this.alive || this.state === 'combat') return;
+    if (!this.alive || this.state === 'combat' || this.state === 'dormant') return;
     const d = this.dist2D(pos);
     if (d < loudness) {
       if (loudness > 40) this.alert(pos);
@@ -82,6 +82,7 @@ export class Enemy extends Npc {
     if (P.lampOn) range *= 1.7;
     if (P.crouch) range *= 0.55;
     if (P.sprinting) range *= 1.15;
+    if (g.level.visionMul) range *= g.level.visionMul();
     if (this.state === 'combat') range = 90;
     const fov = this.state === 'combat' ? -0.2 : Math.cos(THREE.MathUtils.degToRad(58));
     const seesPlayer = !P.dead && g.playerTargetable && this.canSee(P.chestPos(), range, fov);
@@ -94,7 +95,19 @@ export class Enemy extends Npc {
     return { seesPlayer, seesSquad, range };
   }
 
+  // Dalga düşmanları: tetiklenene kadar görünmez ve pasif
+  wake(pos, target = 'player') {
+    if (this.state !== 'dormant') return;
+    this.root.visible = true;
+    this.state = this.route.length ? 'patrol' : 'guard';
+    if (pos) this.alert(pos, target);
+  }
+
   update(dt) {
+    if (this.state === 'dormant') {
+      this.root.visible = false;
+      return;
+    }
     if (!this.alive) {
       this.animate(dt);
       return;

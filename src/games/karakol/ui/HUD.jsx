@@ -136,7 +136,7 @@ export function HUD({ touch = false, hud, objectives, subtitle, hints, toasts, h
           <div className="unit civ">
             <span className={'pip' + (hud.civ.state === 'lost' ? ' down' : hud.civ.state === 'safe' ? ' safe' : '')} />
             <b>{hud.civ.name}</b>
-            <span>{{ follow: 'Takip ediyor', wait: 'Bekliyor', cover: 'Siperde', safe: 'Güvende', lost: 'Kaybedildi' }[hud.civ.state] || ''}</span>
+            <span>{hud.civ.label || { follow: 'Takip ediyor', wait: 'Bekliyor', cover: 'Siperde', safe: 'Güvende', lost: 'Kaybedildi' }[hud.civ.state] || ''}</span>
           </div>
         )}
       </div>

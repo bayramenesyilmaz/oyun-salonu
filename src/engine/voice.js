@@ -10,6 +10,12 @@ export const SPEAKERS = {
   hasan: { name: 'Hasan Dayı', pitch: 0.6, rate: 0.86, radio: false, color: '#e0b8a0' },
   karakol: { name: 'Karakol (telsiz)', pitch: 0.75, rate: 1.02, radio: true, color: '#e2c98f' },
   dusman: { name: '—', pitch: 0.5, rate: 1.1, radio: false, color: '#c98f8f' },
+  zehra: { name: 'Zehra Teyze', pitch: 1.15, rate: 0.9, radio: false, color: '#e6c8b0', female: true },
+  ayse: { name: 'Ayşe', pitch: 1.6, rate: 1.05, radio: false, color: '#f0d8a0', female: true },
+  yusuf: { name: 'Yusuf Amca', pitch: 0.65, rate: 0.85, radio: false, color: '#d8c0a0' },
+  seher: { name: 'Seher', pitch: 1.2, rate: 1.05, radio: false, color: '#e8c0c8', female: true },
+  murat: { name: 'Murat', pitch: 0.95, rate: 1.0, radio: false, color: '#c8d8e8' },
+  rehine: { name: 'Rehine', pitch: 1.05, rate: 1.05, radio: false, color: '#d0d0c0' },
 };
 
 export class VoiceSystem {

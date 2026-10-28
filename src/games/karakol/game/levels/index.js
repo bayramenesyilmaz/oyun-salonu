@@ -1,4 +1,4 @@
-// Bölüm listesi. v0.1'de yalnızca Bölüm 1 oynanabilir; diğerleri planlanmış (kilitli).
+// Bölüm listesi. Beş bölüm de oynanabilir; her biri bir öncekini bitirince açılır.
 export const LEVELS = [
   {
     id: 1,
@@ -16,8 +16,65 @@ export const LEVELS = [
     time: 'Gece · 02:40',
     weather: 'Açık, hafif rüzgâr',
   },
-  { id: 2, title: 'Terk Edilmiş Köy', tag: 'Sivil koruma', playable: false, summary: 'Köyde saklanan sivilleri bul, koru ve tahliye noktasına ulaştır.' },
-  { id: 3, title: 'Son Çağrı', tag: 'Karanlık tesis', playable: false, summary: 'Rehineler karanlık bir tesiste. Ses ipuçlarını ve çevreyi kullanarak ilerle.' },
-  { id: 4, title: 'Tahliye', tag: 'Konvoy', playable: false, summary: 'Kurtarılanları güvenli bölgeye taşırken yeni bir kriz.' },
-  { id: 5, title: 'Son Karakol', tag: 'Final', playable: false, summary: 'Önceki bölümlerdeki kararların sonuçları.' },
+  {
+    id: 2,
+    title: 'Terk Edilmiş Köy',
+    tag: 'Sivil koruma',
+    playable: true,
+    summary: 'Aşağıköy\'de saklanan dört sivili bul, fark edilmeden tahliye kamyonuna ulaştır.',
+    brief: [
+      'Köye gir. Okul, kahve ve evleri ara.',
+      'Saklanan dört sivili bul: konuş, seni takip etsinler.',
+      'Sivilleri güneydeki tahliye kamyonuna götür.',
+      'İsteğe bağlı: kahvedeki örgüt telsizini sustur. (Sonraki bölümleri etkiler.)',
+    ],
+    time: 'Gece · 03:50',
+    weather: 'Bulutsuz, soğuk',
+  },
+  {
+    id: 3,
+    title: 'Son Çağrı',
+    tag: 'Karanlık tesis',
+    playable: true,
+    summary: 'Eski krom madeni. Rehineler iki ayrı yerde. Vuruş seslerini izle, jeneratörü kapatıp karanlığı kullan.',
+    brief: [
+      'Tesise yaklaş. Doğudaki yırtık tel örgü sessiz bir giriştir.',
+      'İsteğe bağlı: jeneratörü kapat — projektörler söner, görüş kısalır.',
+      'Hangardaki ve maden girişindeki rehineleri bul, kilitleri kes.',
+      'İsteğe bağlı: telsiz odasından sahte çağrı yap. (Bölüm 4\'ü etkiler.)',
+      'Altı rehineyi güneydeki tahliye noktasına götür.',
+    ],
+    time: 'Gece · 04:40',
+    weather: 'Ay yok, çok karanlık',
+  },
+  {
+    id: 4,
+    title: 'Tahliye',
+    tag: 'Konvoy',
+    playable: true,
+    summary: 'Konvoy Kurtboğazı köprüsünde durdu. Pusuyu dağıt, barikatı aç ve taş ocağındaki son dört kişiyi kurtar.',
+    brief: [
+      'Köprüyü dürbünle incele: barikat ve pusu.',
+      'Yamaçlardaki pusuyu temizle.',
+      'Taş ocağındaki kamyondan dört rehineyi kurtar, konvoya getir.',
+      'Barikatı kaldır ve konvoyla devam et.',
+    ],
+    time: 'Şafak · 06:10',
+    weather: 'Puslu, serin',
+  },
+  {
+    id: 5,
+    title: 'Son Karakol',
+    tag: 'Final',
+    playable: true,
+    summary: 'Helikopter gelene kadar karakolu tut. Önceki kararların burada karşılık bulur.',
+    brief: [
+      'Yüzbaşı Selim Er\'den mevzileri öğren.',
+      'Kum torbası mevzisine geç, Kemal\'le birlikte savun.',
+      'Üç saldırı dalgasını püskürt; cephane konteynerin yanında.',
+      'Helikopter inene kadar iniş alanını güvenli tut.',
+    ],
+    time: 'Sabah · 06:40',
+    weather: 'Açık, ilk ışık',
+  },
 ];
