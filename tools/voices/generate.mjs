@@ -56,6 +56,13 @@ const CAST = {
     damat: V('fahrettin', 1.12, 1),
     cocuk: V('fahrettin', 1.12, 8.5),
   },
+  evsahibi: {
+    anlatici: V('fettah', 0.98, 0),
+    cingoz: V('fahrettin', 1.12, 4),
+    necmi: V('fettah', 0.98, -2.5),
+    defne: V('fahrettin', 1.05, 8),
+    usta: V('fahrettin', 1.0, -1),
+  },
   karakuyu: {
     narrator: V('fettah', 0.92, -0.5),
     death: V('fahrettin', 0.78, -5, 'cave'),
@@ -108,6 +115,10 @@ async function linesFor(game) {
     collect(st, out);
     scanSource(path.join(ROOT, 'src/games/keci/game'), out);
     for (const n of ['çiçekli şalvar', 'kırmızı yelek', 'oyalı yemeni', 'yün çorap']) out.push(['fadime', 'Hey! O benim ' + n + '! Bırak onu keçi!']);
+  } else if (game === 'evsahibi') {
+    const st = await imp('src/games/evsahibi/game/story.js');
+    collect(st, out);
+    scanSource(path.join(ROOT, 'src/games/evsahibi/game'), out);
   } else if (game === 'karakuyu') {
     const st = await imp('src/games/karakuyu/game/story.js');
     const { splitSentences } = await imp('src/games/karakuyu/game/sentences.js');

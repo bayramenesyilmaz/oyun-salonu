@@ -30,4 +30,14 @@ export const GAMES = [
     fonts: 'https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap',
     load: () => import('./games/keci/App.jsx'),
   },
+  {
+    id: 'evsahibi',
+    title: 'Ev Sahibi',
+    tag: 'Komedi · Bulmaca',
+    blurb: 'Konağın 300 yıllık cini sensin. Yeni kiracı Necmi Bey\'in rutinine gizlice tuzak kur, yakalanma.',
+    color: '#4ad4ee',
+    icon: '/icons-evsahibi/icon-512.png',
+    fonts: 'https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap',
+    load: () => import('./games/evsahibi/App.jsx'),
+  },
 ];

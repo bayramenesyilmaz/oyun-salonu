@@ -8,6 +8,7 @@ Tarayıcıda oynanan 3B oyunlar için tek site ve ortak motor.
 | `/karakuyu` | Karakuyu — Anadolu cin inançları üzerine korku (iki son) |
 | `/karakol` | KARAKOL — Son Tahliye — aksiyon/kurtarma, 5 bölüm |
 | `/keci` | Keçi Kaçtı! — komedi/macera, Rapier fizik motoru |
+| `/evsahibi` | Ev Sahibi — komedi/bulmaca: cin Cingöz, kiracı Necmi Bey (2 gün) |
 
 Bir bölümü doğrudan açmak (geliştirme için): `/karakol?level=3`.
 
