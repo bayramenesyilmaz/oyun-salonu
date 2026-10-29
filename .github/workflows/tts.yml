@@ -1,0 +1,32 @@
+name: tts
+on:
+  push:
+    branches: [varliklar]
+    paths: ['tools/tts/**', '.github/workflows/tts.yml']
+permissions:
+  contents: write
+concurrency: tts
+jobs:
+  tts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Kur
+        run: |
+          pip install -q torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+          pip install -q chatterbox-tts
+          sudo apt-get install -y -qq ffmpeg > /dev/null
+      - name: Dene
+        run: python tools/tts/test_chatterbox.py 2>&1 | grep -v Warning | tail -60
+      - name: Kaydet
+        run: |
+          for f in tts-test/*.wav; do ffmpeg -y -loglevel error -i "$f" -b:a 64k "${f%.wav}.mp3" && rm "$f"; done
+          git config user.name "varlik-botu"
+          git config user.email "actions@users.noreply.github.com"
+          git add tts-test
+          git commit -m "Ses denemesi [skip ci]" || true
+          git pull --rebase -q origin varliklar && git push
