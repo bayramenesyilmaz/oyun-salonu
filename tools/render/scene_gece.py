@@ -7,7 +7,7 @@ PV = '--preview' in sys.argv
 OUT = sys.argv[-1] if sys.argv[-1].endswith('.png') else '/tmp/gece.png'
 random.seed(7)
 reset(samples=160, w=1920, h=1080, preview=PV)
-world_hdri('rogland_clear_night', strength=0.6, rot=math.radians(120), bg_strength=0.9)
+world_hdri('kloppenheim_02_puresky', strength=0.45, rot=math.radians(150), bg_strength=0.7)
 
 FLOOR_H = 3.0
 ROOF = 5 * FLOOR_H  # bizim bina 5 katlı
@@ -139,8 +139,8 @@ plane('ourroof', (ow, od), (0, 0, ROOF + 0.001), ROOF_FLOOR, uv_scale=1.0)
 for sx, sy, sw, sd in [(0, od / 2, ow, 0.25), (0, -od / 2, ow, 0.25), (ow / 2, 0, 0.25, od), (-ow / 2, 0, 0.25, od)]:
     box('ourpar', (sw, sd, 1.05), (sx, sy, ROOF + 0.525), PLASTERS[0])
     box('cap', (sw + 0.08, sd + 0.08, 0.06), (sx, sy, ROOF + 1.08), CONCRETE)
-solar_heater(4.2, 1.5, ROOF, rz=math.radians(-4))
-solar_heater(-4.8, 2.8, ROOF, rz=math.radians(3))
+solar_heater(5.4, 3.2, ROOF, rz=math.radians(-4))
+solar_heater(-6.0, -1.5, ROOF, rz=math.radians(93))
 antenna(-2.2, 4.4, ROOF, 3.4)
 dish(5.8, 4.3, ROOF + 1.5, rz=math.radians(200))
 model('exterior_aircon_unit', (-5.5, -1.0, ROOF), (0, 0, math.radians(90)), 1.0)
@@ -156,6 +156,28 @@ sphere('bulb', 0.06, (-6.6, -4.9, ROOF + 2.2), emission((1.0, 0.75, 0.45), 40))
 point((-6.6, -4.75, ROOF + 2.15), 60, (1.0, 0.72, 0.42), 0.05)
 box('stairdoor', (2.6, 2.4, 2.6), (-6.0, -4.2, ROOF + 1.3), PLASTERS[0])
 
+# çatıya gerilmiş ampul dizisi (yaz akşamı)
+import bmesh
+WIRE = simple((0.05, 0.05, 0.05), 0.6, name='wire')
+def bulbs(a, b, n, sag=0.5):
+    a, b = Vector(a), Vector(b)
+    pts = []
+    for i in range(n + 1):
+        t = i / n
+        p = a.lerp(b, t)
+        p.z -= math.sin(t * math.pi) * sag
+        pts.append(p)
+    for p, q in zip(pts, pts[1:]):
+        m = (p + q) / 2
+        d = q - p
+        c = cyl('w', 0.006, d.length, m, WIRE, n=6)
+        c.rotation_euler = d.to_track_quat('Z', 'Y').to_euler()
+    for p in pts[1:-1]:
+        sphere('bulb', 0.04, p - Vector((0, 0, 0.06)), emission((1.0, 0.68, 0.38), 10), seg=10)
+        point(p - Vector((0, 0, 0.08)), 5, (1.0, 0.66, 0.36), 0.04)
+bulbs((-6.8, -4.2, ROOF + 2.5), (6.8, 4.9, ROOF + 1.6), 14, 0.6)
+bulbs((-6.8, -4.2, ROOF + 2.5), (-6.8, 5.2, ROOF + 1.4), 8, 0.4)
+
 # ---------------- ekip: parapette göğe bakıyorlar ----------------
 person('kaan', loc=(-1.4, 4.6, ROOF), rot_z=math.radians(180 + 10), pose={**LOOK_UP, **POINT_R}, face={'AK_25_JawOpen': 0.35, 'AK_21_EyeWideLeft': 0.6, 'AK_22_EyeWideRight': 0.6, 'AK_03_BrowInnerUp': 0.6})
 person('elif', loc=(0.4, 4.4, ROOF), rot_z=math.radians(180 - 8), pose={**LOOK_UP, 'L UpperArm': (0, 30, 0), 'R UpperArm': (-20, -30, -20), 'R Forearm': (0, 0, -95)}, face={'AK_25_JawOpen': 0.2, 'AK_03_BrowInnerUp': 0.5})
@@ -163,15 +185,15 @@ person('mert', loc=(2.3, 3.6, ROOF), rot_z=math.radians(180 - 25), pose={'Head':
 
 # ---------------- mahalle: sokaklar ve bloklar ----------------
 plane('ground', (400, 400), (0, 60, 0), pbr('asphalt_02', 0.1), uv_scale=4)
-rows = [(20, 12), (38, 13), (58, 12), (80, 14), (104, 15), (130, 16)]
+rows = [(18, 12), (34, 13), (51, 12), (68, 14), (88, 15), (110, 16), (135, 18), (165, 20)]
 k = 0
 for ri, (yy, dd) in enumerate(rows):
-    x = -70 + random.uniform(-4, 4)
-    while x < 75:
-        w = random.uniform(11, 17)
-        floors = random.choice([4, 5, 5, 6, 6, 7, 8]) + (1 if ri > 3 else 0)
+    x = -70 - ri * 12 + random.uniform(-4, 4)
+    while x < 75 + ri * 12:
+        w = random.uniform(10, 16)
+        floors = random.choice([5, 6, 6, 7, 7, 8, 9]) + (2 if ri > 4 else 0)
         block(x + w / 2, yy + dd / 2, w, dd, floors, random.choice(PLASTERS), lit=random.uniform(0.2, 0.45), balconies=ri < 4, roof_props=ri < 5, seed=k)
-        x += w + random.uniform(1.0, 7.0)
+        x += w + random.uniform(0.6, 3.5)
         k += 1
 # yanlardaki bloklar
 for side in (-1, 1):
@@ -274,6 +296,6 @@ so.rotation_euler = (Vector((0, 0, 0)) - head).to_track_quat('-Z', 'Y').to_euler
 # ---------------- kamera: göz hizası, göğe biraz kalkık ----------------
 cam = camera((0.9, -3.4, ROOF + 1.7), (-4, 60, ROOF + 13), lens=20, dof=6.0, fstop=8)
 cam.data.dof.use_dof = False
-compositor_glare(threshold=1.5, size=0.75, strength=0.45)
+compositor_glare(threshold=2.5, size=0.7, strength=0.4)
 bpy.context.scene.view_settings.exposure = 0.6
 render(OUT)

@@ -1,0 +1,61 @@
+name: render
+on:
+  push:
+    branches: [varliklar]
+    paths: ['tools/render/**', '.github/workflows/render.yml']
+permissions:
+  contents: write
+concurrency: render
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        scene: [gece, depo, kalkis, ekip]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Blender (bpy) kur
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq libxi6 libxxf86vm1 libxfixes3 libxrender1 libgl1 libxkbcommon0 libsm6 libegl1 > /dev/null
+          pip install -q bpy==5.0.1 numpy pillow
+      - name: Çiz
+        run: |
+          mkdir -p out
+          KS_SAMPLES=${{ github.event.head_commit.message && '128' }} KS_WIDTH=1920 python tools/render/scene_${{ matrix.scene }}.py -- out/${{ matrix.scene }}.png 2>&1 | grep -vE "WARNING: User property|^Info|INFO:" | tail -40
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: render-${{ matrix.scene }}
+          path: out/${{ matrix.scene }}.png
+  kaydet:
+    needs: render
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dl
+      - name: Kaydet
+        run: |
+          pip install -q pillow
+          mkdir -p renders
+          python3 - <<'PY'
+          import glob, os
+          from PIL import Image
+          for f in glob.glob('dl/*/*.png'):
+              n = os.path.basename(f)[:-4]
+              im = Image.open(f).convert('RGB')
+              im.save(f'renders/{n}.jpg', quality=90)
+              print(n, im.size)
+          PY
+          git config user.name "varlik-botu"
+          git config user.email "actions@users.noreply.github.com"
+          git add renders
+          git commit -m "Konsept görselleri çizildi [skip ci]" || true
+          git pull --rebase -q origin varliklar && git push

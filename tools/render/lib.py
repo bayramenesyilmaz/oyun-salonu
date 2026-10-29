@@ -9,6 +9,11 @@ RB = ROOT + '/rocketbox'
 
 
 def reset(samples=128, w=1600, h=900, preview=False):
+    # ortam değişkenleriyle ayar (GitHub sunucusunda son kalite çizim için)
+    samples = int(os.environ.get('KS_SAMPLES', samples))
+    if os.environ.get('KS_WIDTH'):
+        k = int(os.environ['KS_WIDTH']) / w
+        w, h = int(w * k), int(h * k)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     sc = bpy.context.scene
     sc.render.engine = 'CYCLES'
@@ -278,12 +283,17 @@ def sphere(name, r, loc, mat=None, seg=24, scale=(1, 1, 1)):
 
 
 _model_cache = {}
+# bazı paketlerde birden çok varyant üst üste gelir; yalnızca birini al
+AUTO_ONLY = {'exterior_aircon_unit': ['exterior_aircon_unit']}
 
 
 def model(mid, loc=(0, 0, 0), rot=(0, 0, 0), scale=1.0, only=None):
     """Poly Haven glTF modelini içe aktarır, bir boş nesneye bağlar. Aynı model ikinci kez istenirse kopyalar."""
-    if mid in _model_cache and only is None:
-        src = _model_cache[mid]
+    if only is None and mid in AUTO_ONLY:
+        only = AUTO_ONLY[mid]
+    ck = mid + ('|' + ','.join(only) if only else '')
+    if ck in _model_cache:
+        src = _model_cache[ck]
         root = bpy.data.objects.new(mid, None)
         bpy.context.scene.collection.objects.link(root)
         for o in src:
@@ -300,7 +310,7 @@ def model(mid, loc=(0, 0, 0), rot=(0, 0, 0), scale=1.0, only=None):
     new = [o for o in bpy.data.objects if o not in before]
     if only is not None:
         for o in list(new):
-            if o.type == 'MESH' and not any(o.name.startswith(k) for k in only):
+            if o.type == 'MESH' and not any(o.name == k or o.name.startswith(k + '.') for k in only):
                 bpy.data.objects.remove(o, do_unlink=True)
         new = [o for o in bpy.data.objects if o not in before]
     root = bpy.data.objects.new(mid, None)
@@ -311,8 +321,7 @@ def model(mid, loc=(0, 0, 0), rot=(0, 0, 0), scale=1.0, only=None):
     root.location = loc
     root.rotation_euler = rot
     root.scale = (scale,) * 3
-    if only is None:
-        _model_cache[mid] = tops
+    _model_cache[ck] = tops
     return root
 
 
