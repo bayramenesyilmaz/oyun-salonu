@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d-compat';
 import { makeTextures } from '@engine/textures.js';
 import { VoiceSystem } from '@engine/voice.js';
+import { VoiceBank } from '@engine/voicebank.js';
 import { buildWorld, heightAt, SPOTS } from './world.js';
 import { makeGoat, makeVillager, makeChicken } from './models.js';
 import { KeciAudio, HALAY_BPM, HALAY_BEATS } from './music.js';
@@ -71,7 +72,7 @@ export class Game {
     this.zones = this.W.zones;
 
     this.audio = new KeciAudio();
-    this.voice = new VoiceSystem(this.audio, (s) => this.emit('subtitle', s), SPEAKERS, VOICE_INDEX);
+    this.voice = new VoiceSystem(this.audio, (s) => this.emit('subtitle', s), SPEAKERS, VOICE_INDEX, (this.testMode && !/[?&]voices\b/.test(location.search) ? null : new VoiceBank('/voices/keci/')));
 
     this.buildGoat();
     this.buildVillagers();

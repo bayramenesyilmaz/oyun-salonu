@@ -172,6 +172,7 @@ export default function App() {
     g.setSensitivity(settings.sens);
     g.setVolume(settings.vol);
     narrator.enabled = settings.narr;
+    narrator.natural = settings.natural !== false;
     if (settings.voice) narrator.setVoiceByName(settings.voice);
     if (!settings.narr) narrator.stop();
     const q = settings.low ? 'low' : 'high';
@@ -202,7 +203,7 @@ export default function App() {
       if (!alive) return;
       setEndStep(i);
       if (i > ENDING.length) return;
-      if (narrator.enabled && narrator.voice) {
+      if (narrator.enabled && narrator.canSpeak) {
         narrator.say(ENDING[i - 1], { pitch: 0.8, rate: 0.9, onEnd: () => timers.push(setTimeout(() => show(i + 1), 900)) });
       } else timers.push(setTimeout(() => show(i + 1), 3200));
     };
@@ -223,7 +224,7 @@ export default function App() {
       pitch: introStep === 2 ? 0.7 : 0.85,
       rate: 0.9,
       onEnd: () => {
-        if (!last && narrator.enabled && narrator.voice) t = setTimeout(() => setIntroStep((s) => (s === introStep ? s + 1 : s)), 1100);
+        if (!last && narrator.enabled && narrator.canSpeak) t = setTimeout(() => setIntroStep((s) => (s === introStep ? s + 1 : s)), 1100);
       },
     });
     return () => clearTimeout(t);
@@ -232,7 +233,7 @@ export default function App() {
   // Ölüm cümlesi
   useEffect(() => {
     if (phase === 'dead' && death) {
-      const t = setTimeout(() => narrator.say(death.line, { pitch: 0.55, rate: 0.82 }), 400);
+      const t = setTimeout(() => narrator.say(death.line, { pitch: 0.55, rate: 0.82, voiceKey: 'death' }), 400);
       return () => clearTimeout(t);
     }
   }, [phase, death]);
@@ -294,10 +295,16 @@ export default function App() {
         <input type="range" min="0" max="1" step="0.05" value={settings.vol} onChange={(e) => set('vol', +e.target.value)} />
       </label>
       <label className="check">
-        <input type="checkbox" checked={settings.narr} onChange={(e) => set('narr', e.target.checked)} disabled={!narrator.hasTurkish} />
+        <input type="checkbox" checked={settings.narr} onChange={(e) => set('narr', e.target.checked)} disabled={!narrator.canSpeak} />
         <span>Sesli anlatım (Türkçe)</span>
       </label>
-      {!narrator.supported || !narrator.hasTurkish ? (
+      {narrator.hasNatural && settings.narr && (
+        <label className="check">
+          <input type="checkbox" checked={settings.natural !== false} onChange={(e) => { set('natural', e.target.checked); narrator.natural = e.target.checked; narrator.say('Karakuyu. Ne duyarsan duy, arkana bakma.'); }} />
+          <span>Doğal ses (yapay zekâ seslendirme, internetsiz)</span>
+        </label>
+      )}
+      {!narrator.canSpeak ? (
         <p className="muted small-note">Bu cihazda Türkçe okuma sesi bulunamadı. Metinler yazılı olarak gösterilir.</p>
       ) : (
         settings.narr &&

@@ -37,3 +37,18 @@ postprocessing (Zlib), vite + vite-plugin-pwa (MIT).
 
 Site tek bir uygulama olarak yüklenebilir (Ana ekrana ekle). Açılan oyunların dosyaları önbelleğe alınır;
 bir kez açılan oyun internetsiz de oynanır.
+
+## Doğal Türkçe seslendirme
+
+Diyaloglar Piper sinir ağı sesleriyle (tr_TR `fahrettin` ve `fettah`, veri kümeleri CC0) önceden seslendirilir
+ve `public/voices/<oyun>/` altına mp3 olarak konur; tarayıcı yalnızca dosyayı çalar (token yok, internet sonrası önbellekte).
+Dosyası olmayan dinamik cümleler tarayıcının kendi Türkçe sesine düşer. Replik değişince yeniden üret:
+
+```bash
+# bir kez: sherpa-onnx-node@1.12 (2.x espeak'i kaldırdı) ve ses modelleri
+npm i --prefix /tmp/tts sherpa-onnx-node@1.12.15
+# modeller: github.com/k2-fsa/sherpa-onnx/releases/tag/tts-models → vits-piper-tr_TR-{fahrettin,fettah}-medium.tar.bz2
+NODE_PATH=/tmp/tts/node_modules VOICES=<açılan klasör> node tools/voices/generate.mjs [karakol|keci|karakuyu]
+```
+
+Kadın ve çocuk rolleri için CC0 Türkçe kadın sesi bulunmadığından erkek sesin perdesi yükseltilir.

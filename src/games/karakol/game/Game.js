@@ -4,6 +4,7 @@ import { TimeManager } from '@engine/time.js';
 import { makeTextures } from '@engine/textures.js';
 import { AudioEngine } from '@engine/audio.js';
 import { VoiceSystem } from '@engine/voice.js';
+import { VoiceBank } from '@engine/voicebank.js';
 import { Effects } from '@engine/effects.js';
 import { createPost } from '@engine/postfx.js';
 import { Player } from './player.js';
@@ -60,7 +61,7 @@ export class Game {
     this.T = makeTextures();
     this.time = new TimeManager();
     this.audio = new AudioEngine();
-    this.voice = new VoiceSystem(this.audio, (s) => this.emitUI('subtitle', s));
+    this.voice = new VoiceSystem(this.audio, (s) => this.emitUI('subtitle', s), undefined, null, (this.testMode && !/[?&]voices\b/.test(location.search) ? null : new VoiceBank('/voices/karakol/')));
     this.voice.enabled = settings.voice;
     this.effects = new Effects(scene, this.T);
     this.time.onScaleChange((s) => this.audio.setTimeScale(s));

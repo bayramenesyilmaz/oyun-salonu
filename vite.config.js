@@ -47,7 +47,7 @@ export default defineConfig({
           {
             urlPattern: ({ url, sameOrigin }) => sameOrigin && /\.(png|svg|jpg|webp|glb|gltf|mp3|ogg|wav|json|bin)$/.test(url.pathname),
             handler: 'StaleWhileRevalidate',
-            options: { cacheName: 'oyun-varlik', expiration: { maxEntries: 600 } },
+            options: { cacheName: 'oyun-varlik', expiration: { maxEntries: 1500 } },
           },
           {
             urlPattern: ({ url }) => /fonts\.(googleapis|gstatic)\.com$/.test(url.hostname),

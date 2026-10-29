@@ -330,13 +330,13 @@ export class Game {
   // speak: Deniz'in iç sesi olarak seslendir
   toast(text, ms = 2600, speak = false) {
     this.emit('toast', { text, ms, id: Math.random() });
-    if (speak) narrator.say(text, { pitch: 0.95, rate: 1.05 });
+    if (speak) narrator.say(typeof speak === 'string' ? speak : text, { pitch: 0.95, rate: 1.05 });
   }
 
   // Varlık adını fısıldar: konumsal fısıltı + (varsa) Türkçe ses + altyazı
   creatureCall(pos, vol) {
     this.audio.whisper(pos, vol);
-    if (narrator.enabled && narrator.voice && this.phase === 'playing' && !narrator.speaking && Math.random() < 0.6) {
+    if (narrator.enabled && narrator.canSpeak && this.phase === 'playing' && !narrator.speaking && Math.random() < 0.6) {
       narrator.whisperName();
       this.toast('…Deniz…', 2200);
     }
@@ -598,7 +598,7 @@ export class Game {
       R.items[id].userData.glow.visible = false;
       if (it.iron) f.iron = (f.iron || 0) + 1;
       this.audio.chime();
-      this.toast(it.toast + (it.iron ? ` (Demir: ${f.iron})` : ''), 4200, true);
+      this.toast(it.toast + (it.iron ? ` (Demir: ${f.iron})` : ''), 4200, it.toast);
       this.updateObjectiveFromFlags();
       this.saveCheckpoint();
       return;
@@ -1007,7 +1007,7 @@ export class Game {
       cr.setState('patrol');
       this.placeCreatureFar();
     }
-    this.toast(f.iron > 0 ? `Cebimdeki demiri gördü. Çığlık atıp geri çekildi. (Kalan demir: ${f.iron})` : 'Demir kızardı, sonra kararıp küflendi. Bir daha korumaz.', 4200, true);
+    this.toast(f.iron > 0 ? `Cebimdeki demiri gördü. Çığlık atıp geri çekildi. (Kalan demir: ${f.iron})` : 'Demir kızardı, sonra kararıp küflendi. Bir daha korumaz.', 4200, f.iron > 0 ? 'Cebimdeki demiri gördü. Çığlık atıp geri çekildi.' : true);
   }
 
   updateCinRules(dt, t) {
@@ -1046,7 +1046,9 @@ export class Game {
       if (d < 13 && this.lureT <= 0) {
         this.lureT = 7;
         const lines = ['…Deniz… gel kuzum, düğünümüz var…', '…oğlum, nineni tanımadın mı…', '…bir halay çek bizimle, sonra gidersin…'];
-        this.toast(lines[Math.floor(Math.random() * lines.length)], 3200);
+        const ln = lines[Math.floor(Math.random() * lines.length)];
+        this.toast(ln, 3200);
+        if (!narrator.speaking) narrator.say(ln, { voiceKey: 'nine', interrupt: false });
         this.audio.whisper({ x: WEDDING.x, y: 1.5, z: WEDDING.z }, 0.8);
       }
       if (d < 4.5) return this.die('wedding');

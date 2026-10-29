@@ -19,8 +19,10 @@ export const SPEAKERS = {
 };
 
 export class VoiceSystem {
-  constructor(audio, onSubtitle, speakers = SPEAKERS, voiceIndex = null) {
+  constructor(audio, onSubtitle, speakers = SPEAKERS, voiceIndex = null, bank = null) {
     this.audio = audio;
+    this.bank = bank; // önceden üretilmiş doğal ses dosyaları (VoiceBank)
+    this.el = null;
     this.speakers = speakers;
     this.voiceIndex = voiceIndex;
     this.onSubtitle = onSubtitle;
@@ -40,7 +42,7 @@ export class VoiceSystem {
   }
 
   get hasVoice() {
-    return !!synth && this.voices.length > 0;
+    return (!!synth && this.voices.length > 0) || !!(this.bank && this.bank.set);
   }
 
   // Konuşmacıya göre farklı ses (birden fazla Türkçe ses varsa) seç
@@ -61,6 +63,11 @@ export class VoiceSystem {
     this.cur = null;
     this.queue = [];
     this.busy = false;
+    if (this.el) {
+      this.el.onended = this.el.onerror = null;
+      this.el.pause();
+      this.el = null;
+    }
     if (synth) synth.cancel();
     this.audio.radioHiss(false);
     this.onSubtitle(null);
@@ -68,6 +75,7 @@ export class VoiceSystem {
 
   // Satır dizisini sırayla oynat. lines: [{s:'kemal', t:'...'}]
   play(lines, onDone) {
+    if (this.bank && this.enabled) for (const l of lines) this.bank.preload(l.s + '|' + l.t);
     this.queue.push({ lines: lines.slice(), onDone });
     if (!this.busy) this.next();
   }
@@ -95,6 +103,20 @@ export class VoiceSystem {
     // Zamanlama oyun döngüsünden (update) ilerler: duraklatınca altyazı da bekler
     const readTime = 0.9 + line.t.length * 0.055;
     this.cur = { tok, sp, t: 0, min: readTime, max: readTime * 2.2 + 1.5, spoken: false, ended: false, gap: -1 };
+    // önce doğal ses dosyası (varsa)
+    if (this.enabled && this.bank && this.bank.has(line.s + '|' + line.t)) {
+      const done = () => {
+        if (this.cur && this.cur.tok === tok) this.cur.ended = true;
+      };
+      this.cur.spoken = true;
+      this.cur.max = readTime * 3 + 4;
+      setTimeout(() => {
+        if (tok !== this.token) return;
+        this.el = this.bank.play(line.s + '|' + line.t, Math.min(1, this.audio.volume * 1.15), done);
+        if (!this.el) done();
+      }, sp.radio ? 200 : 0);
+      return;
+    }
     const v = this.enabled ? this.voiceFor(line.s) : null;
     if (!v) return;
     this.cur.spoken = true;
@@ -137,6 +159,10 @@ export class VoiceSystem {
   }
 
   pause(on) {
+    if (this.el) {
+      if (on) this.el.pause();
+      else this.el.play().catch(() => {});
+    }
     if (!synth) return;
     if (on) synth.pause();
     else synth.resume();

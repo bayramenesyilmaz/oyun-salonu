@@ -2,6 +2,11 @@
 // Ücretsizdir, internet gerektirmez (çoğu cihazda), sunucu ya da token kullanmaz.
 // Türkçe ses cihazda yoksa sessizce devre dışı kalır.
 
+import { VoiceBank } from '@engine/voicebank.js';
+import { splitSentences } from './sentences.js';
+
+export { splitSentences };
+
 const synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
 
 class Narrator {
@@ -14,6 +19,10 @@ class Narrator {
     this.ready = false;
     this.listeners = new Set();
     this.queueId = 0;
+    this.natural = true; // önceden üretilmiş doğal ses dosyalarını kullan
+    this.bank = typeof window !== 'undefined' ? new VoiceBank('/voices/karakuyu/') : null;
+    this.el = null;
+    if (this.bank) this.bank.ready.then(() => this.listeners.forEach((f) => f()));
     if (!synth) return;
     const load = () => {
       const all = synth.getVoices();
@@ -58,24 +67,59 @@ class Narrator {
     return () => this.listeners.delete(f);
   }
 
+  get canSpeak() {
+    return this.hasNatural || (!!synth && !!this.voice);
+  }
+
+  get hasNatural() {
+    return !!(this.bank && this.bank.set);
+  }
+
   stop() {
     this.queueId++;
+    if (this.el) {
+      this.el.onended = this.el.onerror = null;
+      this.el.pause();
+      this.el = null;
+    }
     if (synth) synth.cancel();
   }
 
   get speaking() {
-    return !!synth && (synth.speaking || synth.pending);
+    return !!(this.el && !this.el.paused) || (!!synth && (synth.speaking || synth.pending));
+  }
+
+  // Doğal ses dosyalarıyla sırayla oynat; hepsi varsa true döner
+  playBank(parts, key, opts, id) {
+    if (!this.natural || !this.bank || !parts.every((p) => this.bank.has(key + '|' + p))) return false;
+    parts.forEach((p) => this.bank.preload(key + '|' + p));
+    const next = (i) => {
+      if (id !== this.queueId) return;
+      if (i >= parts.length) {
+        this.el = null;
+        opts.onEnd && opts.onEnd();
+        return;
+      }
+      this.el = this.bank.play(key + '|' + parts[i], (opts.volume ?? 1) * this.volume, () => next(i + 1));
+    };
+    next(0);
+    return true;
   }
 
   // Bir veya birden fazla metni sırayla okur. opts: { pitch, rate, interrupt, onEnd }
   say(text, opts = {}) {
-    if (!synth || !this.enabled || !this.voice || !text) {
+    if (!this.enabled || !text) {
       opts.onEnd && setTimeout(opts.onEnd, 0);
       return;
     }
     if (opts.interrupt !== false) this.stop();
     const id = this.queueId;
     const parts = splitSentences(Array.isArray(text) ? text.join('\n') : text);
+    if (this.playBank(parts, opts.voiceKey || 'narrator', opts, id)) return;
+    if (!synth || !this.voice) {
+      opts.onEnd && setTimeout(opts.onEnd, 0);
+      return;
+    }
     parts.forEach((p, i) => {
       const u = new SpeechSynthesisUtterance(p);
       u.voice = this.voice;
@@ -97,8 +141,14 @@ class Narrator {
 
   // Cinin fısıltısı: çok kalın, yavaş, kısık
   whisperName() {
-    if (!synth || !this.enabled || !this.voice || this.speaking) return;
-    const u = new SpeechSynthesisUtterance(Math.random() < 0.5 ? 'Deniiiz…' : 'Deniz… gel…');
+    if (!this.enabled || this.speaking) return;
+    const w = Math.random() < 0.5 ? 'Deniiiz…' : 'Deniz… gel…';
+    if (this.natural && this.bank && this.bank.has('whisper|' + w)) {
+      this.el = this.bank.play('whisper|' + w, 0.75 * this.volume, () => (this.el = null));
+      return;
+    }
+    if (!synth || !this.voice) return;
+    const u = new SpeechSynthesisUtterance(w);
     u.voice = this.voice;
     u.lang = this.voice.lang;
     u.rate = 0.55;
@@ -106,26 +156,6 @@ class Narrator {
     u.volume = 0.55 * this.volume;
     synth.speak(u);
   }
-}
-
-// Uzun metinleri cümlelere böl (Chrome ~200 karakterden uzun metinlerde susabiliyor)
-function splitSentences(t) {
-  const out = [];
-  for (const para of t.split(/\n+/)) {
-    const s = para.trim();
-    if (!s) continue;
-    const sentences = s.match(/[^.!?…]+[.!?…]*["”]?/g) || [s];
-    let buf = '';
-    for (const x of sentences) {
-      if ((buf + x).length > 180 && buf) {
-        out.push(buf.trim());
-        buf = '';
-      }
-      buf += x;
-    }
-    if (buf.trim()) out.push(buf.trim());
-  }
-  return out;
 }
 
 export const narrator = new Narrator();
