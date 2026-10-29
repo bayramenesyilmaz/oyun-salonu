@@ -1,0 +1,1 @@
+# Varlık indirici

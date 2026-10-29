@@ -1,0 +1,27 @@
+name: varliklar
+on:
+  push:
+    branches: [varliklar]
+    paths: ['tools/assets/**', '.github/workflows/varliklar.yml']
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Erişim testi
+        run: |
+          mkdir -p tools/assets/out
+          for u in https://api.polyhaven.com/assets?t=hdris https://svs.gsfc.nasa.gov/4720 https://huggingface.co/api/models/ResembleAI/chatterbox https://download.blender.org/release/ https://static.makehumancommunity.org/ https://www.mixamo.com/ https://freesound.org/ https://quaternius.com/ https://kenney.nl/; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -L --max-time 30 "$u" || echo ERR)
+            echo "$code $u" >> tools/assets/out/probe.txt
+          done
+          cat tools/assets/out/probe.txt
+      - name: Sonucu kaydet
+        run: |
+          git config user.name "varlik-botu"
+          git config user.email "actions@users.noreply.github.com"
+          git add tools/assets/out
+          git commit -m "Varlık erişim testi sonucu [skip ci]" || true
+          git push
