@@ -35,6 +35,12 @@
 | Poly Haven | doku | metal_grate_rusty | CC0 |
 | Poly Haven | doku | rusty_metal_sheet | CC0 |
 | Poly Haven | doku | hangar_concrete_floor | CC0 |
+| Poly Haven | doku | dry_ground_01 | CC0 |
+| Poly Haven | doku | burned_ground_01 | CC0 |
+| Poly Haven | doku | dirt | CC0 |
+| Poly Haven | doku | dry_ground_rocks | CC0 |
+| Poly Haven | doku | excavated_soil_wall | CC0 |
+| Poly Haven | doku | gravel_ground_01 | CC0 |
 | Poly Haven | model | modular_urban_apartments_facade | CC0 |
 | Poly Haven | model | street_lamp_01 | CC0 |
 | Poly Haven | model | street_lamp_02 | CC0 |
@@ -80,6 +86,15 @@
 | Poly Haven | model | potted_plant_01 | CC0 |
 | Poly Haven | model | overhead_crane | CC0 |
 | Poly Haven | model | modular_airduct_circular_01 | CC0 |
+| Poly Haven | model | grass_medium_01 | CC0 |
+| Poly Haven | model | dry_branches_medium_01 | CC0 |
+| Poly Haven | model | weed_plant_02 | CC0 |
+| Poly Haven | model | nettle_plant | CC0 |
+| Poly Haven | model | concrete_road_barrier | CC0 |
+| Poly Haven | model | boulder_01 | CC0 |
+| Poly Haven | model | rock_07 | CC0 |
+| Poly Haven | model | stone_01 | CC0 |
+| Poly Haven | model | namaqualand_stones_01 | CC0 |
 | Microsoft Rocketbox | insan modeli | arda (Adults/Male_Adult_08) | MIT |
 | Microsoft Rocketbox | insan modeli | mert (Adults/Male_Adult_14) | MIT |
 | Microsoft Rocketbox | insan modeli | kaan (Adults/Male_Adult_17) | MIT |
