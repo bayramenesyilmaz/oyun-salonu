@@ -1,0 +1,9 @@
+200 https://api.polyhaven.com/assets?t=hdris
+200 https://svs.gsfc.nasa.gov/4720
+200 https://huggingface.co/api/models/ResembleAI/chatterbox
+200 https://download.blender.org/release/
+200 https://static.makehumancommunity.org/
+200 https://www.mixamo.com/
+200 https://freesound.org/
+200 https://quaternius.com/
+403 https://kenney.nl/
