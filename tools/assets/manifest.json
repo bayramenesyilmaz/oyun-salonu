@@ -40,7 +40,13 @@
         "dirty_concrete",
         "metal_grate_rusty",
         "rusty_metal_sheet",
-        "hangar_concrete_floor"
+        "hangar_concrete_floor",
+        "dry_ground_01",
+        "burned_ground_01",
+        "dirt",
+        "dry_ground_rocks",
+        "excavated_soil_wall",
+        "gravel_ground_01"
       ]
     },
     "models": {
@@ -90,7 +96,23 @@
         "moon_rock_03",
         "potted_plant_01",
         "overhead_crane",
-        "modular_airduct_circular_01"
+        "modular_airduct_circular_01",
+        "grass_medium_01",
+        "dry_branches_medium_01",
+        "weed_plant_02",
+        "nettle_plant",
+        "concrete_road_barrier",
+        "boulder_01",
+        "rock_07",
+        "stone_01",
+        "namaqualand_stones_01"
+      ]
+    },
+    "hdris_web": {
+      "res": "1k",
+      "ids": [
+        "kloppenheim_02_puresky",
+        "qwantani_night_puresky"
       ]
     }
   },

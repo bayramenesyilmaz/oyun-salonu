@@ -24,6 +24,10 @@ for hid in ph['hdris']['ids']:
     u = f['hdri'][ph['hdris']['res']]['hdr']['url']
     dl(u, f'{ROOT}/polyhaven/hdri/{hid}.hdr')
     credits.append(('Poly Haven', 'HDRI', hid, 'CC0'))
+for hid in ph.get('hdris_web', {}).get('ids', []):
+    f = get_json(f'https://api.polyhaven.com/files/{hid}')
+    r = ph['hdris_web']['res']
+    dl(f['hdri'][r]['hdr']['url'], f'{ROOT}/polyhaven/hdri/{hid}_{r}.hdr')
 for tid in ph['textures']['ids']:
     f = get_json(f'https://api.polyhaven.com/files/{tid}')
     res = ph['textures']['res']
