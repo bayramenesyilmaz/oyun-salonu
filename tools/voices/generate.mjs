@@ -63,6 +63,12 @@ const CAST = {
     defne: V('fahrettin', 1.05, 8),
     usta: V('fahrettin', 1.0, -1),
   },
+  radyo: {
+    ali: V('fettah', 1.04, 1, 'oldradio'),
+    ali77: V('fettah', 1.02, 0, 'oldradio'),
+    baba: V('fahrettin', 0.9, -3.5, 'oldradio'),
+    spiker: V('fahrettin', 0.98, -1, 'oldradio'),
+  },
   karakuyu: {
     narrator: V('fettah', 0.92, -0.5),
     death: V('fahrettin', 0.78, -5, 'cave'),
@@ -77,6 +83,7 @@ CAST.karakol.selim.fx = null;
 const FX = {
   radio: 'highpass=f=350,lowpass=f=3200,acompressor=threshold=0.1:ratio=6,volume=1.4',
   cave: 'lowpass=f=2600,aecho=0.8:0.7:90|180:0.35|0.2',
+  oldradio: 'highpass=f=300,lowpass=f=3400,acompressor=threshold=0.12:ratio=5,aecho=0.6:0.3:18:0.2,volume=1.3',
   whisper: 'highpass=f=500,lowpass=f=5000,aecho=0.7:0.6:120:0.3,volume=0.9',
 };
 
@@ -119,6 +126,8 @@ async function linesFor(game) {
     const st = await imp('src/games/evsahibi/game/story.js');
     collect(st, out);
     scanSource(path.join(ROOT, 'src/games/evsahibi/game'), out);
+  } else if (game === 'radyo') {
+    collect(await imp('src/games/radyo/game/story.js'), out);
   } else if (game === 'karakuyu') {
     const st = await imp('src/games/karakuyu/game/story.js');
     const { splitSentences } = await imp('src/games/karakuyu/game/sentences.js');

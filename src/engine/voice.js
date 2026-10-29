@@ -117,7 +117,7 @@ export class VoiceSystem {
       }, sp.radio ? 200 : 0);
       return;
     }
-    const v = this.enabled ? this.voiceFor(line.s) : null;
+    const v = this.enabled && !sp.silent ? this.voiceFor(line.s) : null;
     if (!v) return;
     this.cur.spoken = true;
     const u = new SpeechSynthesisUtterance(line.t);

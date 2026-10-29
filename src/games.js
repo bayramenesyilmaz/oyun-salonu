@@ -40,4 +40,14 @@ export const GAMES = [
     fonts: 'https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap',
     load: () => import('./games/evsahibi/App.jsx'),
   },
+  {
+    id: 'radyo',
+    title: 'Dedemin Radyosu',
+    tag: 'Gizem · Seçim',
+    blurb: 'Tavan arasındaki eski radyo geçmişe bağlanıyor. Genç dedene ne söylersen, oda da değişiyor. İki gece, üç son.',
+    color: '#ffb24a',
+    icon: '/icons-radyo/icon-512.png',
+    fonts: 'https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,600;1,400&display=swap',
+    load: () => import('./games/radyo/App.jsx'),
+  },
 ];

@@ -1,0 +1,708 @@
+.ry-root {
+  --paper: #efe2c4;
+  --ink: #2a1e14;
+  --amber: #ffb24a;
+  --glow: #ffcf7a;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #0c0a10;
+  color: #f4e8d0;
+  font-family: 'Lora', Georgia, serif;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.ry-stage,
+.ry-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+.ry-root button {
+  font-family: inherit;
+  cursor: pointer;
+}
+.ry-err {
+  position: absolute;
+  inset: 30% 10% auto;
+  padding: 20px;
+  background: #3a1a14;
+  border-radius: 10px;
+  z-index: 50;
+}
+
+/* işaretler */
+.ry-markers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.ry-mk {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 220, 160, 0.85);
+  background: radial-gradient(circle, rgba(255, 200, 120, 0.35), rgba(255, 200, 120, 0) 70%);
+  animation: ry-pulse 1.8s ease-in-out infinite;
+  padding: 0;
+}
+.ry-mk.seen {
+  border-color: rgba(255, 255, 255, 0.35);
+  width: 22px;
+  height: 22px;
+  animation: none;
+  background: rgba(255, 255, 255, 0.06);
+}
+.ry-mk.action {
+  border-color: var(--amber);
+  background: radial-gradient(circle, rgba(255, 178, 74, 0.5), rgba(255, 178, 74, 0) 70%);
+}
+.ry-mk.zone {
+  width: auto;
+  height: auto;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 220, 160, 0.5);
+  background: rgba(20, 14, 10, 0.55);
+  backdrop-filter: blur(3px);
+  animation: none;
+  padding: 6px 12px;
+}
+.ry-mk .lbl {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 6px);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 13px;
+  color: #ffe2b0;
+  text-shadow: 0 1px 4px #000;
+}
+.ry-mk.zone .lbl {
+  position: static;
+  transform: none;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.ry-mk.zone b {
+  background: var(--amber);
+  color: #2a1a08;
+  border-radius: 999px;
+  min-width: 18px;
+  height: 18px;
+  font-size: 12px;
+  display: grid;
+  place-items: center;
+  font-family: system-ui, sans-serif;
+}
+@keyframes ry-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 210, 140, 0.5);
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(255, 210, 140, 0);
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
+
+/* üst */
+.ry-top {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+  z-index: 5;
+}
+.ry-night {
+  font-size: 15px;
+  text-shadow: 0 1px 6px #000;
+  color: #e8d8b8;
+}
+.ry-night b {
+  font-family: 'Special Elite', monospace;
+  font-weight: 400;
+  color: var(--glow);
+  font-size: 17px;
+}
+.ry-night i {
+  opacity: 0.7;
+}
+.ry-top-r {
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+.ry-ib {
+  border: 1px solid rgba(255, 220, 160, 0.35);
+  background: rgba(20, 14, 10, 0.6);
+  color: #ffe2b0;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 10px;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.ry-ib span {
+  font-size: 13px;
+  font-family: system-ui, sans-serif;
+}
+.ry-back {
+  position: absolute;
+  left: 12px;
+  top: calc(max(10px, env(safe-area-inset-top)) + 48px);
+  border: 1px solid rgba(255, 220, 160, 0.35);
+  background: rgba(20, 14, 10, 0.65);
+  color: #ffe2b0;
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-size: 15px;
+  z-index: 5;
+}
+.ry-zones {
+  position: absolute;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 5;
+}
+.ry-zones button {
+  border: 1px solid rgba(255, 220, 160, 0.3);
+  background: rgba(20, 14, 10, 0.6);
+  color: #f0dcb8;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+}
+.ry-zones button.on {
+  background: var(--amber);
+  color: #2a1a08;
+}
+
+/* radyo */
+.ry-radio {
+  position: absolute;
+  left: 50%;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(560px, calc(100% - 24px));
+  background: linear-gradient(#4a2a16, #2e1a0c);
+  border: 2px solid #7a5030;
+  border-radius: 18px;
+  padding: 14px 16px 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 220, 160, 0.2);
+  z-index: 6;
+}
+.ry-readout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.ry-readout .eye {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #102010 calc(40% - var(--s) * 30%), rgba(90, 255, 120, calc(0.25 + var(--s) * 0.75)) calc(42% - var(--s) * 30%));
+  box-shadow: 0 0 calc(var(--l) * 18px) rgba(90, 255, 120, 0.8);
+  border: 2px solid #1a1a1a;
+}
+.ry-readout .num {
+  font-family: 'Special Elite', monospace;
+  font-size: 30px;
+  color: var(--glow);
+  text-shadow: 0 0 12px rgba(255, 178, 74, 0.6);
+  min-width: 84px;
+}
+.ry-sig {
+  flex: 1;
+  height: 8px;
+  background: #1a0e06;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.ry-sig i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #6a8a3a, #b8ff7a);
+  transition: width 0.1s;
+}
+.ry-dial {
+  position: relative;
+  height: 62px;
+  background: linear-gradient(#f0d8a0, #d8b878);
+  border-radius: 8px;
+  box-shadow: inset 0 0 18px rgba(120, 60, 0, 0.5), 0 0 24px rgba(255, 178, 74, 0.25);
+  touch-action: none;
+  cursor: ew-resize;
+  margin: 0 4px;
+}
+.ry-dial .tick {
+  position: absolute;
+  bottom: 0;
+  width: 1px;
+  height: 10px;
+  background: #5a3a1a;
+}
+.ry-dial .tick.mid {
+  height: 16px;
+}
+.ry-dial .tick.big {
+  height: 24px;
+  width: 2px;
+}
+.ry-dial .tick em {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-style: normal;
+  font-family: 'Special Elite', monospace;
+  color: #4a2a10;
+  font-size: 15px;
+}
+.ry-dial .needle {
+  position: absolute;
+  top: 4px;
+  bottom: 0;
+  width: 3px;
+  margin-left: -1.5px;
+  background: #c01a0a;
+  box-shadow: 0 0 4px rgba(192, 26, 10, 0.6);
+}
+.ry-fine {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+.ry-fine button {
+  width: 48px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: radial-gradient(circle at 35% 30%, #e8c070, #8a6020);
+  color: #2a1a08;
+  font-size: 16px;
+  flex: none;
+}
+.ry-fine span {
+  flex: 1;
+  font-size: 13px;
+  text-align: center;
+  color: #e8d0a8;
+  opacity: 0.85;
+}
+
+/* altyazı */
+.ry-sub {
+  position: absolute;
+  left: 50%;
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + 8px);
+  transform: translateX(-50%);
+  width: min(680px, calc(100% - 24px));
+  background: rgba(12, 8, 6, 0.82);
+  border: 1px solid rgba(255, 220, 160, 0.18);
+  border-radius: 14px;
+  padding: 12px 44px 12px 16px;
+  z-index: 8;
+  animation: ry-in 0.25s ease-out;
+}
+.ry-sub b {
+  display: block;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  margin-bottom: 3px;
+  font-family: 'Special Elite', monospace;
+  font-weight: 400;
+}
+.ry-sub span {
+  font-size: 17px;
+  line-height: 1.45;
+}
+.ry-skip {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 220, 160, 0.3);
+  background: transparent;
+  color: #ffe2b0;
+  font-size: 20px;
+}
+@keyframes ry-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+
+/* seçim */
+.ry-choice {
+  position: absolute;
+  left: 50%;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(620px, calc(100% - 24px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 9;
+  background: rgba(12, 8, 6, 0.86);
+  border: 1px solid rgba(255, 220, 160, 0.2);
+  border-radius: 16px;
+  padding: 14px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.ry-choice h3 {
+  margin: 0 0 4px;
+  font-family: 'Special Elite', monospace;
+  font-weight: 400;
+  color: var(--glow);
+  font-size: 17px;
+}
+.ry-choice button {
+  text-align: left;
+  border: 1px solid rgba(184, 232, 216, 0.4);
+  background: rgba(184, 232, 216, 0.08);
+  color: #e8fff4;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+.ry-choice button:not(:disabled):hover {
+  background: rgba(184, 232, 216, 0.18);
+}
+.ry-choice button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.ry-choice button em {
+  display: block;
+  font-style: normal;
+  font-size: 13px;
+  color: #ffb08a;
+  margin-top: 4px;
+}
+.ry-choice small {
+  opacity: 0.6;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* kartlar */
+.ry-modal {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 20;
+  padding: 16px;
+  animation: ry-fadein 0.25s;
+}
+.ry-modal.dark {
+  background: rgba(6, 4, 8, 0.88);
+}
+@keyframes ry-fadein {
+  from {
+    opacity: 0;
+  }
+}
+.ry-paper {
+  position: relative;
+  background: var(--paper);
+  color: var(--ink);
+  width: min(440px, 100%);
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 22px 22px 18px;
+  border-radius: 4px;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.6);
+  transform: rotate(-0.6deg);
+  background-image: repeating-linear-gradient(transparent 0 27px, rgba(90, 120, 170, 0.18) 27px 28px);
+}
+.ry-paper h3 {
+  margin: 0 0 10px;
+  font-family: 'Special Elite', monospace;
+  font-weight: 400;
+  font-size: 20px;
+}
+.ry-paper p {
+  font-size: 17px;
+  line-height: 1.55;
+  margin: 0 0 14px;
+}
+.ry-paper .dim {
+  opacity: 0.6;
+}
+.ry-paper .stamp {
+  position: absolute;
+  right: 14px;
+  top: 12px;
+  transform: rotate(8deg);
+  border: 2px solid #a82a1e;
+  color: #a82a1e;
+  font-family: 'Special Elite', monospace;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.ry-paper .note {
+  border-bottom: 1px dashed rgba(42, 30, 20, 0.25);
+  padding: 6px 0 2px;
+}
+.ry-paper .note b {
+  font-family: 'Special Elite', monospace;
+  font-weight: 400;
+}
+.ry-paper .note p {
+  font-size: 15px;
+  margin: 4px 0 8px;
+}
+.ry-paper.change {
+  text-align: center;
+}
+.ry-paper .tag,
+.ry-intro .tag {
+  font-family: 'Special Elite', monospace;
+  color: #a82a1e;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.ry-btn {
+  border: none;
+  background: #3a2414;
+  color: #ffe8c0;
+  padding: 11px 20px;
+  border-radius: 999px;
+  font-size: 15px;
+}
+.ry-btn.big {
+  background: linear-gradient(#ffc060, #e0902a);
+  color: #2a1606;
+  font-weight: 600;
+  font-size: 17px;
+  padding: 13px 26px;
+  box-shadow: 0 0 24px rgba(255, 178, 74, 0.35);
+}
+.ry-intro {
+  width: min(560px, 100%);
+  text-align: center;
+}
+.ry-intro h2 {
+  font-family: 'Special Elite', monospace;
+  font-weight: 400;
+  color: var(--glow);
+  font-size: 28px;
+  margin: 0 0 18px;
+}
+.ry-intro p {
+  font-size: 18px;
+  line-height: 1.6;
+  margin: 0 0 14px;
+  color: #e8dcc8;
+  font-style: italic;
+  animation: ry-line 0.8s both;
+}
+.ry-intro p.hint {
+  font-style: normal;
+  color: #b8e8d8;
+  font-size: 15px;
+}
+@keyframes ry-line {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.ry-intro .row,
+.ry-menu .row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+.ry-ends {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.ry-ends span {
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  opacity: 0.6;
+}
+.ry-ends span.got {
+  border-style: solid;
+  border-color: var(--amber);
+  color: var(--glow);
+  opacity: 1;
+}
+.end-paradox h2 {
+  color: #b8c8ff;
+}
+
+/* menü */
+.ry-menu {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: radial-gradient(ellipse at 30% 70%, rgba(255, 160, 60, 0.18), transparent 60%), linear-gradient(rgba(6, 4, 8, 0.35), rgba(6, 4, 8, 0.85));
+  z-index: 30;
+}
+.ry-menu-card {
+  width: min(520px, 100%);
+  text-align: center;
+}
+.ry-menu .kicker {
+  font-family: 'Special Elite', monospace;
+  letter-spacing: 0.12em;
+  font-size: 13px;
+  color: #c8b090;
+  text-transform: uppercase;
+}
+.ry-menu h1 {
+  font-family: 'Special Elite', monospace;
+  font-weight: 400;
+  font-size: clamp(40px, 11vw, 66px);
+  line-height: 1;
+  margin: 12px 0 14px;
+  color: #fff0d8;
+  text-shadow: 0 0 30px rgba(255, 178, 74, 0.45);
+}
+.ry-menu h1 span {
+  color: var(--amber);
+  display: block;
+}
+.ry-menu p {
+  font-size: 17px;
+  line-height: 1.55;
+  color: #e0d0b8;
+}
+.ry-vol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 18px;
+  font-size: 14px;
+  color: #c8b090;
+}
+.ry-small {
+  font-size: 13px;
+  opacity: 0.6;
+  margin-top: 10px;
+}
+.ry-home {
+  display: inline-block;
+  margin-top: 16px;
+  color: #c8b090;
+  font-size: 14px;
+}
+
+.ry-toasts {
+  position: absolute;
+  top: calc(max(10px, env(safe-area-inset-top)) + 54px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 25;
+  width: min(420px, calc(100% - 24px));
+  pointer-events: none;
+}
+.ry-toasts div {
+  background: rgba(12, 8, 6, 0.85);
+  border: 1px solid rgba(255, 220, 160, 0.25);
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-size: 15px;
+  text-align: center;
+  animation: ry-fadein 0.3s;
+}
+.ry-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, #fff8e8, #ffd890 60%, rgba(255, 200, 120, 0));
+  opacity: 0;
+  pointer-events: none;
+  z-index: 40;
+}
+.ry-flash[data-on='1'] {
+  animation: ry-flash 1.4s ease-out;
+}
+@keyframes ry-flash {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.ry-fade {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  pointer-events: none;
+  transition: opacity 0.8s;
+  z-index: 39;
+}
+@media (max-width: 520px) {
+  .ry-zones button {
+    padding: 9px 11px;
+    font-size: 13px;
+  }
+  .ry-sub span {
+    font-size: 16px;
+  }
+  .ry-night {
+    font-size: 13px;
+  }
+}
+.ry-vol input {
+  accent-color: var(--amber);
+}
+.ry-choice button.ry-wait {
+  border-style: dashed;
+  border-color: rgba(255, 220, 160, 0.35);
+  background: transparent;
+  color: #ffe2b0;
+  font-size: 14px;
+  text-align: center;
+  padding: 9px;
+}
