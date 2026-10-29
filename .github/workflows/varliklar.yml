@@ -11,18 +11,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Listeler
-        run: python3 tools/assets/list.py
-      - name: Rocketbox listesi
+      - name: İndir
         run: |
-          git clone --depth 1 --filter=blob:none --no-checkout https://github.com/microsoft/Microsoft-Rocketbox.git /tmp/rb
-          cd /tmp/rb && git ls-tree -r --name-only HEAD | head -3000 > $GITHUB_WORKSPACE/tools/assets/out/rocketbox_files.txt
-          git lfs ls-files 2>/dev/null | head -5 > $GITHUB_WORKSPACE/tools/assets/out/rocketbox_lfs.txt || true
-          cat .gitattributes > $GITHUB_WORKSPACE/tools/assets/out/rocketbox_gitattributes.txt 2>/dev/null || true
+          pip install -q pillow
+          python3 tools/assets/fetch.py
+          du -sh assets-src/* | tee tools/assets/out/sizes.txt
       - name: Kaydet
         run: |
           git config user.name "varlik-botu"
           git config user.email "actions@users.noreply.github.com"
-          git add tools/assets/out
-          git commit -m "Varlık listeleri [skip ci]" || true
+          git add tools/assets/out assets-src
+          git commit -m "Varlıklar indirildi [skip ci]" || true
           git pull --rebase -q origin varliklar && git push

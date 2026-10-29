@@ -1,0 +1,14 @@
+{
+  "polyhaven": {
+    "hdris": { "res": "2k", "ids": ["rogland_clear_night", "rooftop_night", "satara_night", "kloppenheim_02"] },
+    "textures": { "res": "2k", "ids": ["painted_plaster_wall", "yellow_plaster_02", "red_plaster_weathered", "white_plaster_rough_02", "worn_plaster_wall", "clay_roof_tiles_02", "asphalt_02", "road_damaged", "concrete_pavers", "garage_floor", "concrete_floor_worn_001", "rusty_corrugated_iron", "corrugated_iron_02", "rusty_metal_02", "rusty_painted_metal", "metal_plate", "blue_metal_plate", "painted_metal_shutter", "rusted_shutter", "brick_wall_02", "worn_corrugated_iron", "dirty_concrete"] },
+    "models": { "res": "1k", "ids": ["modular_urban_apartments_facade", "street_lamp_01", "street_lamp_02", "modular_electricity_poles", "modular_electric_cables", "exterior_aircon_unit", "covered_car", "plastic_monobloc_chair_01", "metal_trash_can", "water_manhole_cover", "utility_box_01", "rollershutter_door", "modular_chainlink_fence", "old_tyre", "Barrel_01", "metal_jerrycan", "portable_welding_cart", "mounted_fluorescent_lights", "hanging_industrial_lamp", "caged_hanging_light", "drill_press_01", "tool_cart", "steel_frame_shelves_01", "metal_tool_chest", "metal_toolbox", "WoodenTable_03", "bench_vice_01", "ladder_sectioned_01", "cardboard_box_01", "plastic_crate_01", "vintage_spacecraft_instrument", "vintage_radio_transceiver", "retro_multimeter", "circuit_board", "classic_laptop", "portable_generator", "portable_searchlight", "desk_lamp_arm_01", "tea_set_01", "moon_rock_01", "moon_rock_02", "moon_rock_03", "potted_plant_01", "overhead_crane", "modular_airduct_circular_01"] }
+  },
+  "rocketbox": {
+    "arda": "Adults/Male_Adult_08",
+    "mert": "Adults/Male_Adult_14",
+    "kaan": "Adults/Male_Adult_17",
+    "elif": "Adults/Female_Adult_04",
+    "zeynep": "Adults/Female_Adult_07"
+  }
+}
