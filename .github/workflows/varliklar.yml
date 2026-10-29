@@ -2,26 +2,27 @@ name: varliklar
 on:
   push:
     branches: [varliklar]
-    paths: ['tools/assets/**', '.github/workflows/varliklar.yml']
+    paths: ['tools/assets/*.py', 'tools/assets/*.json', 'tools/assets/*.sh', '.github/workflows/varliklar.yml']
 permissions:
   contents: write
+concurrency: varliklar
 jobs:
-  probe:
+  fetch:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Erişim testi
+      - name: Listeler
+        run: python3 tools/assets/list.py
+      - name: Rocketbox listesi
         run: |
-          mkdir -p tools/assets/out
-          for u in https://api.polyhaven.com/assets?t=hdris https://svs.gsfc.nasa.gov/4720 https://huggingface.co/api/models/ResembleAI/chatterbox https://download.blender.org/release/ https://static.makehumancommunity.org/ https://www.mixamo.com/ https://freesound.org/ https://quaternius.com/ https://kenney.nl/; do
-            code=$(curl -s -o /dev/null -w '%{http_code}' -L --max-time 30 "$u" || echo ERR)
-            echo "$code $u" >> tools/assets/out/probe.txt
-          done
-          cat tools/assets/out/probe.txt
-      - name: Sonucu kaydet
+          git clone --depth 1 --filter=blob:none --no-checkout https://github.com/microsoft/Microsoft-Rocketbox.git /tmp/rb
+          cd /tmp/rb && git ls-tree -r --name-only HEAD | head -3000 > $GITHUB_WORKSPACE/tools/assets/out/rocketbox_files.txt
+          git lfs ls-files 2>/dev/null | head -5 > $GITHUB_WORKSPACE/tools/assets/out/rocketbox_lfs.txt || true
+          cat .gitattributes > $GITHUB_WORKSPACE/tools/assets/out/rocketbox_gitattributes.txt 2>/dev/null || true
+      - name: Kaydet
         run: |
           git config user.name "varlik-botu"
           git config user.email "actions@users.noreply.github.com"
           git add tools/assets/out
-          git commit -m "Varlık erişim testi sonucu [skip ci]" || true
-          git push
+          git commit -m "Varlık listeleri [skip ci]" || true
+          git pull --rebase -q origin varliklar && git push
