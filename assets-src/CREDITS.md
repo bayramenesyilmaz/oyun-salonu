@@ -6,6 +6,10 @@
 | Poly Haven | HDRI | rooftop_night | CC0 |
 | Poly Haven | HDRI | satara_night | CC0 |
 | Poly Haven | HDRI | kloppenheim_02 | CC0 |
+| Poly Haven | HDRI | qwantani_night_puresky | CC0 |
+| Poly Haven | HDRI | kloppenheim_02_puresky | CC0 |
+| Poly Haven | HDRI | kloppenheim_07_puresky | CC0 |
+| Poly Haven | HDRI | qwantani_moonrise_puresky | CC0 |
 | Poly Haven | doku | painted_plaster_wall | CC0 |
 | Poly Haven | doku | yellow_plaster_02 | CC0 |
 | Poly Haven | doku | red_plaster_weathered | CC0 |
@@ -28,6 +32,9 @@
 | Poly Haven | doku | brick_wall_02 | CC0 |
 | Poly Haven | doku | worn_corrugated_iron | CC0 |
 | Poly Haven | doku | dirty_concrete | CC0 |
+| Poly Haven | doku | metal_grate_rusty | CC0 |
+| Poly Haven | doku | rusty_metal_sheet | CC0 |
+| Poly Haven | doku | hangar_concrete_floor | CC0 |
 | Poly Haven | model | modular_urban_apartments_facade | CC0 |
 | Poly Haven | model | street_lamp_01 | CC0 |
 | Poly Haven | model | street_lamp_02 | CC0 |
