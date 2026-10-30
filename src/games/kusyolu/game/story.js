@@ -57,7 +57,7 @@ export const CHAPTER1 = {
   ],
   afterFlash: [{ s: 'mert', t: 'Herkes yere! Ses gelecek!' }],
   afterBoom: [
-    { s: 'zeynep', t: 'Herkes iyi mi? Kimse yaralanmadı, değil mi?' },
+    { s: 'zeynep', t: 'Siz iyi misiniz? Kimsenin bir şeyi yok, değil mi?' },
     { s: 'kaan', t: 'Arkadaki boş araziye düştü. Gördüm, oraya düştü!' },
     { s: 'zeynep', t: 'Kaydettim. Hepsi telefonda.' },
     { s: 'arda', t: 'Hadi. Kimse gelmeden önce biz bakalım.' },
