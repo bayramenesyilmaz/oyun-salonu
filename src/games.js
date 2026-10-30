@@ -50,4 +50,14 @@ export const GAMES = [
     fonts: 'https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,600;1,400&display=swap',
     load: () => import('./games/radyo/App.jsx'),
   },
+  {
+    id: 'kusyolu',
+    title: 'Kuşyolu',
+    tag: 'Macera · Bilimkurgu',
+    blurb: 'Beş arkadaş, bir göktaşı ve hurdadan yapılmış bir uzay aracı. Birinci şahıs. Bölüm 1: Göktaşı.',
+    color: '#ff9b4e',
+    icon: '/icons-kusyolu/icon-512.png',
+    fonts: 'https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Onest:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap',
+    load: () => import('./games/kusyolu/App.jsx'),
+  },
 ];

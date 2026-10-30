@@ -1,0 +1,15 @@
+KUŞYOLU — kullanılan hazır varlıklar ve lisansları
+
+İnsan modelleri: Microsoft Rocketbox Avatar Library (MIT lisansı, Copyright (c) 2020 Microsoft)
+  https://github.com/microsoft/Microsoft-Rocketbox
+  Arda: Male_Adult_08 · Elif: Female_Adult_04 · Mert: Male_Adult_14 · Zeynep: Female_Adult_12 · Kaan: Male_Adult_17
+
+Dokular, eşya modelleri ve gökyüzü ışığı (HDRI): Poly Haven (CC0, kamu malı) — https://polyhaven.com
+  Örnekler: plastic_monobloc_chair_01, tea_set_01, plastic_crate_01, exterior_aircon_unit, concrete_road_barrier,
+  grass_medium_01, stone_01, kloppenheim_02_puresky; sıva, beton, asfalt, tuğla, kuru toprak dokuları.
+
+Seslendirme: Chatterbox Multilingual (Resemble AI, MIT lisansı) ile üretildi.
+  Erkek seslerin referansları: Piper tr_TR fahrettin / fettah ses modelleri (CC0 veri kümesi).
+
+Binalar, Leylek, göktaşı, gökyüzü, ses efektleri ve müzik: bu proje için kodla üretildi.
+Kişiler, yerler ve olaylar kurgudur.
