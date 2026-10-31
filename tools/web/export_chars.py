@@ -25,6 +25,12 @@ CLIPS = {
     'kneel': [(1, {'L Thigh': (0, 0, 95), 'L Calf': (0, 0, -100), 'R Thigh': (0, 0, 10), 'R Calf': (0, 0, -120), 'Spine1': (0, 0, 20), 'Head': (0, 0, 20), 'L Forearm': (0, 0, -60), 'R Forearm': (0, 0, -60)}),
               (60, {'L Thigh': (0, 0, 95), 'L Calf': (0, 0, -100), 'R Thigh': (0, 0, 10), 'R Calf': (0, 0, -120), 'Spine1': (0, 0, 22), 'Head': (0, 0, 22), 'L Forearm': (0, 0, -62), 'R Forearm': (0, 0, -62)})],
 }
+FL = {'R UpperArm': (-90, -30, -30), 'R Forearm': (-90, 60, 60)}
+CLIPS['flashlight'] = [(1, FL), (40, {**FL, 'Head': (8, 0, 4), 'Spine1': (0, 0, 2)}), (80, {**FL, 'Head': (-8, 0, 2)})]
+CLIPS['flashwalk'] = None  # yürürken kol sabit: aşağıda yürüme kareleriyle birleştirilir
+WK = {'L UpperArm': (-90, 30, -30), 'L Forearm': (90, 60, -30), 'R UpperArm': (-90, -30, -30), 'R Forearm': (-90, 60, 60)}
+CLIPS['work'] = [(1, {**WK, 'Head': (0, 0, 18), 'Spine1': (0, 0, 10)}), (30, {**WK, 'Head': (0, 0, 22), 'Spine1': (0, 0, 12), 'R Forearm': (-90, 60, 50)}), (60, {**WK, 'Head': (0, 0, 18), 'Spine1': (0, 0, 10)})]
+CLIPS['wave'] = [(1, {'R UpperArm': (-45, 60, 150), 'R Forearm': (0, 0, -30)}), (10, {'R UpperArm': (-45, 60, 150), 'R Forearm': (0, 0, -60)}), (20, {'R UpperArm': (-45, 60, 150), 'R Forearm': (0, 0, -30)})]
 # yürüme döngüsü (30 kare)
 W = []
 for i, ph in enumerate((0, 0.25, 0.5, 0.75, 1.0)):
@@ -37,6 +43,7 @@ for i, ph in enumerate((0, 0.25, 0.5, 0.75, 1.0)):
         'L Forearm': (0, 0, -25), 'R Forearm': (0, 0, -25), 'Spine1': (0, 0, 3), 'Pelvis': (0, 4 * a, 0),
     }))
 CLIPS['walk'] = W
+CLIPS['flashwalk'] = [(f, {**p, **FL}) for f, p in W]
 R = []
 for i, ph in enumerate((0, 0.25, 0.5, 0.75, 1.0)):
     a = math.sin(ph * 2 * math.pi)
@@ -64,7 +71,7 @@ def key_pose(arm, frame, pose):
         b.keyframe_insert('rotation_euler', frame=frame)
 
 
-for who in sys.argv[sys.argv.index('--') + 1:-1] or ['arda', 'elif', 'mert', 'zeynep', 'kaan']:
+for who in sys.argv[sys.argv.index('--') + 1:-1] or ['arda', 'elif', 'mert', 'zeynep', 'kaan', 'polis', 'bekci']:
     reset(preview=True)
     arm = person(who, loc=(0, 0, 0))
     meshes = [o for o in bpy.data.objects if o.type == 'MESH']

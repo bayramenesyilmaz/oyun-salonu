@@ -154,3 +154,65 @@ def export_glb(path, size_limit=1024):
 def write_meta(path, meta):
     meta['colliders'] = COLLIDERS
     json.dump(meta, open(path, 'w'), ensure_ascii=False, separators=(',', ':'))
+
+
+def web_simplify(M):
+    """Web sürümü: binalardaki klimalar basit kutu, silindirler az kenarlı."""
+    from lib import box, simple, model
+    AC = simple((0.82, 0.82, 0.8), 0.5, 0.2, name='acbox')
+    GR = simple((0.15, 0.15, 0.16), 0.6, 0.3, name='acgrill')
+
+    def model_web(mid, loc=(0, 0, 0), rot=(0, 0, 0), scale=1.0, only=None):
+        if mid == 'exterior_aircon_unit':
+            c = math.cos(rot[2])
+            b = box('ac', (0.8 * scale, 0.3 * scale, 0.55 * scale), (loc[0], loc[1], loc[2] + 0.28 * scale), AC, rot=rot)
+            box('acg', (0.42 * scale, 0.02, 0.42 * scale), (loc[0], loc[1] - c * 0.16, loc[2] + 0.28 * scale), GR, rot=rot)
+            return b
+        return model(mid, loc, rot, scale, only)
+    M.model = model_web
+    _cyl = M.cyl
+    M.cyl = lambda name, r, depth, loc, mat=None, rot=(0, 0, 0), n=20, r2=None: _cyl(name, r, depth, loc, mat, rot, min(n, 12), r2)
+
+
+def fonts_to_mesh():
+    for o in list(bpy.context.scene.objects):
+        if o.type == 'FONT':
+            bpy.ops.object.select_all(action='DESELECT')
+            o.select_set(True)
+            bpy.context.view_layer.objects.active = o
+            bpy.ops.object.convert(target='MESH')
+
+
+def merge_groups(group_of):
+    """Ağları (grup, malzeme) çiftine göre birleştir; grup adı nesne adının önüne yazılır."""
+    fonts_to_mesh()
+    bpy.ops.object.select_all(action='DESELECT')
+    meshes = [o for o in bpy.context.scene.objects if o.type == 'MESH' and not o.hide_render]
+    groups = {o.name: group_of(o) for o in meshes}
+    for o in meshes:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = meshes[0]
+    bpy.ops.object.make_single_user(object=True, obdata=True)
+    bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    for o in list(bpy.context.scene.objects):
+        if o.type == 'EMPTY':
+            bpy.data.objects.remove(o, do_unlink=True)
+    buckets = {}
+    for o in meshes:
+        g = groups[o.name]
+        mat = tuple(s.material.name if s.material else '' for s in o.material_slots)
+        buckets.setdefault((g, mat), []).append(o)
+    out = []
+    for (g, mat), objs in buckets.items():
+        bpy.ops.object.select_all(action='DESELECT')
+        for o in objs:
+            o.select_set(True)
+        bpy.context.view_layer.objects.active = objs[0]
+        if len(objs) > 1 and not g.startswith('!'):
+            bpy.ops.object.join()
+            objs = objs[:1]
+        for i, o in enumerate(objs):
+            o.name = (g.lstrip('!') + '__' + (mat[0] if mat else 'none')) + (f'_{i}' if i else '')
+            out.append(o)
+    return out
