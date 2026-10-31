@@ -100,5 +100,7 @@
 | Microsoft Rocketbox | insan modeli | kaan (Adults/Male_Adult_17) | MIT |
 | Microsoft Rocketbox | insan modeli | elif (Adults/Female_Adult_04) | MIT |
 | Microsoft Rocketbox | insan modeli | zeynep (Adults/Female_Adult_12) | MIT |
+| Microsoft Rocketbox | insan modeli | polis (Professions/Police_Male_03) | MIT |
+| Microsoft Rocketbox | insan modeli | bekci (Professions/Security_Male_01) | MIT |
 
 Microsoft Rocketbox: Copyright (c) 2020 Microsoft, MIT lisansı. Poly Haven: CC0 (kamu malı).
