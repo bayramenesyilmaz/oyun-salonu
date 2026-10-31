@@ -29,9 +29,9 @@ jobs:
           SHARD: ${{ matrix.shard }}
           NSHARD: 6
         run: |
-          ls tts-out/kusyolu > /tmp/before.txt 2>/dev/null || true
+          touch /tmp/stamp && sleep 1
           python tools/tts/gen_lines.py kusyolu 2>&1 | grep -v Warning | tail -60
-          mkdir -p new && for f in tts-out/kusyolu/*.mp3; do b=$(basename $f); grep -qx "$b" /tmp/before.txt || cp $f new/; done
+          mkdir -p new && find tts-out/kusyolu -name '*.mp3' -newer /tmp/stamp -exec cp {} new/ \;
           ls new | wc -l
       - uses: actions/upload-artifact@v4
         with:

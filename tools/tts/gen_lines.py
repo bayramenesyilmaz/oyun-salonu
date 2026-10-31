@@ -51,7 +51,7 @@ for i, (s, t) in enumerate(LINES):
     try:
         t0 = time.time()
         if h in retry:
-            torch.manual_seed(int(h[:6], 16))
+            torch.manual_seed(int(h[:6], 16) + int(os.environ.get('SALT', '7')))
         wav = model.generate(t, language_id='tr', audio_prompt_path=REFS.get(s), exaggeration=0.75 if excited else 0.5, cfg_weight=0.35 if excited else 0.5)
         ta.save('/tmp/line.wav', wav, model.sr)
         subprocess.check_call(['ffmpeg', '-y', '-loglevel', 'error', '-i', '/tmp/line.wav', '-af', FX.get(s, '') + 'silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,loudnorm=I=-17:TP=-1.5,apad=pad_dur=0.1', '-ac', '1', '-ar', '24000', '-b:a', '48k', out])
