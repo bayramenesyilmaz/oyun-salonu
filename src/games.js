@@ -54,7 +54,7 @@ export const GAMES = [
     id: 'kusyolu',
     title: 'Kuşyolu',
     tag: 'Macera · Bilimkurgu',
-    blurb: 'Beş arkadaş, bir göktaşı ve hurdadan yapılmış bir uzay aracı. Birinci şahıs. Bölüm 1: Göktaşı.',
+    blurb: 'Beş arkadaş, bir göktaşı ve hurdadan yapılmış bir uzay aracı. Birinci şahıs, beş bölüm: göktaşından yörüngeye.',
     color: '#ff9b4e',
     icon: '/icons-kusyolu/icon-512.png',
     fonts: 'https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Onest:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap',

@@ -3,13 +3,22 @@ KUŞYOLU — kullanılan hazır varlıklar ve lisansları
 İnsan modelleri: Microsoft Rocketbox Avatar Library (MIT lisansı, Copyright (c) 2020 Microsoft)
   https://github.com/microsoft/Microsoft-Rocketbox
   Arda: Male_Adult_08 · Elif: Female_Adult_04 · Mert: Male_Adult_14 · Zeynep: Female_Adult_12 · Kaan: Male_Adult_17
+  Polis memuru: Professions/Police_Male_03 · Bekçi Hüsnü: Professions/Security_Male_01
 
 Dokular, eşya modelleri ve gökyüzü ışığı (HDRI): Poly Haven (CC0, kamu malı) — https://polyhaven.com
   Örnekler: plastic_monobloc_chair_01, tea_set_01, plastic_crate_01, exterior_aircon_unit, concrete_road_barrier,
   grass_medium_01, stone_01, kloppenheim_02_puresky; sıva, beton, asfalt, tuğla, kuru toprak dokuları.
 
+Dünya ve Ay dokuları: NASA (kamu malı)
+  Gündüz: Blue Marble Next Generation (Visible Earth, NASA Earth Observatory)
+  Gece ışıkları: Black Marble 2016 (NASA Earth Observatory)
+  Bulutlar: Blue Marble bulut katmanı (NASA Visible Earth)
+  Ay: CGI Moon Kit, LRO renk haritası (NASA Scientific Visualization Studio)
+  NASA görüntüleri telif hakkına tabi değildir; NASA logosu ya da onayı kullanılmamıştır.
+
 Seslendirme: Chatterbox Multilingual (Resemble AI, MIT lisansı) ile üretildi.
   Erkek seslerin referansları: Piper tr_TR fahrettin / fettah ses modelleri (CC0 veri kümesi).
+  Kadın seslerin referansı modelin kendi varsayılan sesinden türetildi.
 
-Binalar, Leylek, göktaşı, gökyüzü, ses efektleri ve müzik: bu proje için kodla üretildi.
+Binalar, sokak, vinç deposu, Leylek ve kokpiti, göktaşı, şehir ışıkları, gökyüzü, ses efektleri ve müzik: bu proje için kodla üretildi.
 Kişiler, yerler ve olaylar kurgudur.

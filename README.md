@@ -10,7 +10,7 @@ Tarayıcıda oynanan 3B oyunlar için tek site ve ortak motor.
 | `/keci` | Keçi Kaçtı! — komedi/macera, Rapier fizik motoru |
 | `/evsahibi` | Ev Sahibi — komedi/bulmaca: cin Cingöz, kiracı Necmi Bey (2 gün) |
 | `/radyo` | Dedemin Radyosu — gizem/seçim: geçmişe bağlanan radyo, 2 gece, 3 son |
-| `/kusyolu` | Kuşyolu — birinci şahıs macera; Bölüm 1 "Göktaşı" (gerçekçi modeller, açık modelle seslendirme) |
+| `/kusyolu` | Kuşyolu — birinci şahıs macera; 5 bölüm: Göktaşı, Kor, Depo, Hazırlık, Kalkış (gerçekçi modeller, açık modelle seslendirme) |
 
 Bir bölümü doğrudan açmak (geliştirme için): `/karakol?level=3`.
 

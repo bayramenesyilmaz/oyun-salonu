@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Game } from './game/Game.js';
+import { Game, loadSave } from './game/Game.js';
+import { CHAPTERS } from './game/story.js';
 import './kusyolu.css';
 
 const IS_TOUCH = (() => {
@@ -31,6 +32,15 @@ export default function App() {
   const [locked, setLocked] = useState(false);
   const [err, setErr] = useState(null);
   const [settings, setSettings] = useState(loadSettings);
+  const [save, setSave] = useState(() => loadSave());
+  const [choice, setChoice] = useState(null);
+  const [msg, setMsg] = useState(null);
+  const [hint, setHint] = useState(null);
+  const [stealth, setStealth] = useState(null);
+  const [hidden, setHidden] = useState(false);
+  const [hideable, setHideable] = useState(false);
+  const [carry, setCarry] = useState(null);
+  const [white, setWhite] = useState(0);
 
   useEffect(() => {
     let g;
@@ -45,8 +55,23 @@ export default function App() {
       else if (type === 'error') setErr(d);
       else if (type === 'card') {
         setCard(d);
-        if (!d.end) setTimeout(() => setCard((c) => (c === d ? null : c)), 3800);
-      }
+        if (d && d.end) document.exitPointerLock?.();
+        if (d && !d.end) setTimeout(() => setCard((c) => (c === d ? null : c)), 3800);
+      } else if (type === 'choice') {
+        setChoice(d);
+        if (d) document.exitPointerLock?.();
+      } else if (type === 'message') {
+        setMsg(d);
+        if (d) setTimeout(() => setMsg((m) => (m === d ? null : m)), 7000);
+      } else if (type === 'hint') {
+        setHint(d);
+        if (d) setTimeout(() => setHint((h) => (h === d ? null : h)), 5000);
+      } else if (type === 'stealth') setStealth(d);
+      else if (type === 'hidden') setHidden(d);
+      else if (type === 'hideable') setHideable(d);
+      else if (type === 'carry') setCarry(d);
+      else if (type === 'whiteflash') setWhite(d);
+      else if (type === 'saved') setSave(d);
     };
     try {
       g = game.current = new Game(mount.current, emit, { touch: IS_TOUCH, test: TEST, low: IS_TOUCH || /[?&]low\b/.test(location.search) });
@@ -69,11 +94,35 @@ export default function App() {
     game.current && game.current.audio.setVolume(settings.vol);
   }, [settings]);
 
-  const start = () => {
+  const lock = () => {
+    if (!IS_TOUCH) game.current?.renderer.domElement.requestPointerLock?.()?.catch?.(() => {});
+  };
+  const pick = (id) => {
+    game.current.choose(id);
+    lock();
+  };
+  useEffect(() => {
+    if (!choice) return;
+    const k = (e) => {
+      const i = +e.key - 1;
+      if (choice.options[i]) pick(choice.options[i].id);
+    };
+    addEventListener('keydown', k);
+    return () => removeEventListener('keydown', k);
+  }, [choice]);
+  const goNext = (n) => {
+    setCard(null);
+    game.current.nextChapter(n).catch((e) => {
+      console.error(e);
+      setErr('Sahne yüklenemedi. Bağlantını kontrol edip sayfayı yenile.');
+    });
+    lock();
+  };
+  const start = (n = 1) => {
     const g = game.current;
     if (!g) return;
     g.audio.init();
-    g.start().catch((e) => {
+    g.start(n).catch((e) => {
       console.error(e);
       setErr('Sahne yüklenemedi. Bağlantını kontrol edip sayfayı yenile.');
     });
@@ -144,6 +193,39 @@ export default function App() {
         </div>
       )}
       {playing && obj && <div className="ky-obj">{obj}</div>}
+      {playing && carry && <div className="ky-carry">Elinde: {carry}</div>}
+      {playing && stealth && (
+        <div className={'ky-stealth' + (stealth.sus > 0.66 ? ' hot' : stealth.sus > 0.05 ? ' warm' : '')}>
+          <span>{stealth.hidden ? 'Taş saklı' : 'Taş görünüyor'}{stealth.lit ? ' · ışıktasın' : ''}</span>
+          <div className="bar">
+            <i style={{ width: `${Math.round(Math.min(1, stealth.sus) * 100)}%` }} />
+          </div>
+        </div>
+      )}
+      {playing && hideable && (IS_TOUCH ? (
+        <button className={'ky-hide' + (hidden ? ' on' : '')} onClick={() => game.current.toggleHide()}>
+          {hidden ? 'Taşı çıkar' : 'Taşı sakla'}
+        </button>
+      ) : (
+        <div className="ky-hidekey"><kbd>Q</kbd> {hidden ? 'taşı çıkar' : 'taşı sakla'}</div>
+      ))}
+      {msg && (
+        <div className="ky-msg" key={msg.t}>
+          <b>{msg.from}</b>
+          <span>{msg.t}</span>
+        </div>
+      )}
+      {hint && <div className="ky-hint" key={hint}>{hint}</div>}
+      {choice && (
+        <div className="ky-choice">
+          <p>{choice.prompt}</p>
+          {choice.options.map((o, i) => (
+            <button key={o.id} className="ky-btn" onClick={() => pick(o.id)}>
+              {!IS_TOUCH && <kbd>{i + 1}</kbd>} {o.text}
+            </button>
+          ))}
+        </div>
+      )}
       {sub && (
         <div className="ky-sub" key={sub.text}>
           {sub.who && <b style={{ color: sub.color }}>{sub.who}</b>}
@@ -156,9 +238,15 @@ export default function App() {
           {card.sub && <p>{card.sub}</p>}
           {card.end && (
             <div className="row">
-              <button className="ky-btn" onClick={() => location.reload()}>
-                Baştan oyna
-              </button>
+              {card.next ? (
+                <button className="ky-btn" onClick={() => goNext(card.next)}>
+                  Sonraki bölüm
+                </button>
+              ) : (
+                <button className="ky-btn" onClick={() => location.reload()}>
+                  Menüye dön
+                </button>
+              )}
               <a className="ky-btn ghost" href="/">
                 Oyun salonu
               </a>
@@ -188,18 +276,26 @@ export default function App() {
       {phase === 'menu' && (
         <div className="ky-menu">
           <div className="inner">
-            <div className="kicker">Bölüm 1 · Göktaşı</div>
+            <div className="kicker">Beş bölüm · Dünya’dan kalkış</div>
             <h1>KUŞYOLU</h1>
             <p>Kızılkaya Mahallesi'nde bir yaz gecesi. Beş arkadaş çatıda çay içerken gökyüzü yarılıyor.</p>
-            <button className="ky-btn big" onClick={start}>
-              Başla
+            <button className="ky-btn big" onClick={() => start(Math.min(save.max, CHAPTERS.length))}>
+              {save.max > 1 ? 'Devam et' : 'Başla'}
             </button>
+            <div className="ky-chapters">
+              {CHAPTERS.map((c) => (
+                <button key={c.n} className="ch" disabled={c.n > save.max} onClick={() => start(c.n)} title={c.sub}>
+                  <i>{c.n}</i>
+                  <span>{c.n > save.max ? 'Kilitli' : c.title}</span>
+                </button>
+              ))}
+            </div>
             <div className="help">
               {IS_TOUCH ? (
                 <span>Sol başparmak: yürü · sağ: bak · düğmeye dokun: etkileşim</span>
               ) : (
                 <span>
-                  <kbd>W A S D</kbd> yürü · <kbd>Shift</kbd> koş · fare: bak · <kbd>E</kbd> etkileşim · <kbd>Boşluk</kbd> konuşmayı geç
+                  <kbd>W A S D</kbd> yürü · <kbd>Shift</kbd> koş · fare: bak · <kbd>E</kbd> etkileşim · <kbd>Q</kbd> taşı sakla · <kbd>Boşluk</kbd> konuşmayı geç
                 </span>
               )}
             </div>
@@ -219,7 +315,7 @@ export default function App() {
           </div>
         </div>
       )}
-      {playing && !IS_TOUCH && !locked && !card?.end && (
+      {playing && !IS_TOUCH && !locked && !card?.end && !choice && (
         <div className="ky-pause" onClick={() => game.current.renderer.domElement.requestPointerLock?.()?.catch?.(() => {})}>
           <div>
             <b>Duraklatıldı</b>
@@ -228,6 +324,7 @@ export default function App() {
         </div>
       )}
       <div className="ky-fade" style={{ opacity: fade }} />
+      <div className="ky-white" style={{ opacity: white }} />
       {err && <div className="ky-err">{err}</div>}
     </div>
   );

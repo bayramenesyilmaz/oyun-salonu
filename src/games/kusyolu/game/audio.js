@@ -283,6 +283,97 @@ export class KusAudio {
       if (Math.random() < 0.3) this.burst(t + x + 0.05, 0.04, 0.05, 1400, 1.2, 'bandpass', this.verb);
     }
   }
+  knock() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    for (let i = 0; i < 3; i++) {
+      this.burst(t + i * 0.22, 0.12, 0.35, 180, 1.2, 'lowpass', this.verb);
+      this.burst(t + i * 0.22, 0.06, 0.15, 900, 2, 'bandpass', this.sfx);
+    }
+  }
+  whistle() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(2700, t);
+    const lfo = this.ctx.createOscillator();
+    lfo.frequency.value = 38;
+    const lg = this.ctx.createGain();
+    lg.gain.value = 120;
+    lfo.connect(lg).connect(o.frequency);
+    const g = this.ctx.createGain();
+    this.env(g, t, 0.02, 0.06, 0.9);
+    o.connect(g).connect(this.sfx);
+    g.connect(this.verb);
+    o.start(t);
+    lfo.start(t);
+    o.stop(t + 1);
+    lfo.stop(t + 1);
+  }
+  shutter() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    for (let x = 0; x < 1.6; x += 0.05) this.burst(t + x, 0.05, 0.05 + Math.random() * 0.03, 700 + Math.random() * 500, 3, 'bandpass', this.verb);
+    this.burst(t + 1.6, 0.3, 0.2, 200, 1, 'lowpass', this.verb);
+  }
+  weld(dur = 1.2) {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    for (let x = 0; x < dur; x += 0.03) this.burst(t + x, 0.03, 0.03 + Math.random() * 0.04, 5000 + Math.random() * 3000, 1.5, 'bandpass');
+    this.burst(t, dur, 0.04, 120, 1, 'lowpass', this.sfx, 0.05);
+  }
+  clunk() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    this.burst(t, 0.18, 0.3, 260, 1.4, 'lowpass', this.verb);
+    this.tone('square', 140, t, 0.12, 0.04, 90);
+  }
+  switchClick() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    this.burst(t, 0.02, 0.2, 3000, 3);
+    this.tone('square', 1800, t + 0.01, 0.03, 0.03);
+    this.tone('sine', 660, t + 0.08, 0.15, 0.03);
+  }
+  beep(ok = true) {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    if (ok) {
+      this.tone('sine', 880, t, 0.1, 0.04);
+      this.tone('sine', 1320, t + 0.1, 0.15, 0.04);
+    } else this.tone('square', 220, t, 0.3, 0.04);
+  }
+  // motor gürlemesi: süreklidir, seviye 0..1 ile ayarlanır
+  engine(level) {
+    if (!this.ctx) return;
+    const c = this.ctx;
+    if (!this.engG) {
+      const s = this.loop(this.nb, 0.6);
+      const f = c.createBiquadFilter();
+      f.type = 'lowpass';
+      f.frequency.value = 160;
+      this.engF = f;
+      this.engG = c.createGain();
+      this.engG.gain.value = 0;
+      s.connect(f).connect(this.engG).connect(this.master);
+      const o = c.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.value = 38;
+      this.engO = o;
+      const og = c.createGain();
+      og.gain.value = 0.25;
+      const of = c.createBiquadFilter();
+      of.type = 'lowpass';
+      of.frequency.value = 120;
+      o.connect(of).connect(og).connect(this.engG);
+      o.start();
+    }
+    const t = c.currentTime;
+    this.engG.gain.setTargetAtTime(level * 0.9, t, 0.3);
+    this.engF.frequency.setTargetAtTime(140 + level * 900, t, 0.4);
+    this.engO.frequency.setTargetAtTime(32 + level * 30, t, 0.4);
+  }
   update(dt) {
     if (!this.ctx) return;
     this.voiceLevel = this.readVoice();

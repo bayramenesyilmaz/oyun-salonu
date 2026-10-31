@@ -116,6 +116,7 @@ kbd {
 }
 .ky-card.end {
   animation: ky-in 1.2s ease both;
+  z-index: 13;
   background: rgba(2, 3, 8, 0.78);
   pointer-events: auto;
 }
@@ -342,4 +343,187 @@ kbd {
   gap: 18px;
   flex-wrap: wrap;
   justify-content: center;
+}
+.ky-white {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  pointer-events: none;
+  transition: opacity 0.7s;
+  z-index: 11;
+}
+.ky-carry {
+  position: absolute;
+  top: calc(max(16px, env(safe-area-inset-top)) + 26px);
+  left: max(16px, env(safe-area-inset-left));
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px;
+  color: #cdd4e4;
+  text-shadow: 0 1px 6px #000;
+  padding-left: 14px;
+}
+.ky-stealth {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  width: 190px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  color: #cdd4e4;
+  text-shadow: 0 1px 6px #000;
+  text-align: right;
+}
+.ky-stealth .bar {
+  margin-top: 5px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.ky-stealth .bar i {
+  display: block;
+  height: 100%;
+  background: #ffcf9a;
+  transition: width 0.15s;
+}
+.ky-stealth.warm .bar i {
+  background: #ff9b4e;
+}
+.ky-stealth.hot .bar i {
+  background: #ff4a3a;
+}
+.ky-stealth.hot span {
+  color: #ff8a7a;
+}
+.ky-hidekey {
+  position: absolute;
+  right: max(16px, env(safe-area-inset-right));
+  top: calc(max(16px, env(safe-area-inset-top)) + 34px);
+  font-size: 12px;
+  color: #cdd4e4;
+  text-shadow: 0 1px 6px #000;
+}
+.ky-hide {
+  position: absolute;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(150px, calc(env(safe-area-inset-bottom) + 140px));
+  z-index: 7;
+  border: 1px solid rgba(255, 207, 154, 0.5);
+  background: rgba(10, 12, 20, 0.6);
+  color: #ffd9b0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-size: 15px;
+}
+.ky-hide.on {
+  background: rgba(255, 155, 78, 0.85);
+  color: #1d0c00;
+}
+.ky-msg {
+  position: absolute;
+  top: calc(max(16px, env(safe-area-inset-top)) + 56px);
+  right: max(16px, env(safe-area-inset-right));
+  width: min(300px, calc(100% - 32px));
+  background: rgba(16, 18, 28, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1.4;
+  animation: ky-slide 0.35s ease-out;
+  z-index: 7;
+  pointer-events: none;
+}
+.ky-msg b {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7fd0ff;
+  margin-bottom: 2px;
+}
+@keyframes ky-slide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+.ky-hint {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  transform: translateX(-50%);
+  width: min(520px, calc(100% - 32px));
+  text-align: center;
+  font-size: 15px;
+  color: #ffd9b0;
+  text-shadow: 0 2px 10px #000;
+  animation: ky-in 0.3s ease-out;
+  pointer-events: none;
+  z-index: 6;
+}
+.ky-choice {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(2, 3, 8, 0.55);
+  z-index: 9;
+  text-align: center;
+}
+.ky-choice p {
+  margin: 0 0 8px;
+  font-size: 18px;
+  max-width: 560px;
+}
+.ky-choice .ky-btn {
+  max-width: 560px;
+  width: 100%;
+  text-align: left;
+  line-height: 1.35;
+}
+.ky-choice kbd {
+  opacity: 0.6;
+  margin-right: 6px;
+}
+.ky-chapters {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 18px 0 4px;
+}
+.ky-chapters .ch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #eef2f8;
+  border-radius: 999px;
+  padding: 7px 14px 7px 7px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.ky-chapters .ch i {
+  font-style: normal;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-content: center;
+  background: #ff9b4e;
+  color: #1d0c00;
+  font-weight: 700;
+  font-size: 12px;
+}
+.ky-chapters .ch:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.ky-chapters .ch:disabled i {
+  background: #555;
+  color: #ccc;
 }

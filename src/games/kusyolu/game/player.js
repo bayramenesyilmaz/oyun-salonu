@@ -20,6 +20,8 @@ export class Player {
     this.shake = 0;
     this.onStep = null;
     this.lookOverride = null; // {target: Vector3, w}
+    this.slow = false; // Kor'u saklarken yavaş yürü
+    this.seat = null; // {rig: Object3D, eye: Vector3, yawLim, pitchLim}
   }
   place(p, yawDeg = 0) {
     this.pos.set(p[0], p[1], p[2]);
@@ -54,8 +56,25 @@ export class Player {
       }
     }
   }
+  updateSeat(dt, t) {
+    const s = this.seat;
+    const lim = s.yawLim || 1.9;
+    this.yaw = THREE.MathUtils.clamp(this.yaw, -lim, lim);
+    this.pitch = THREE.MathUtils.clamp(this.pitch, -0.9, 0.8);
+    this.shake = Math.max(0, this.shake - dt * 0.5);
+    const sh = this.shake * this.shake;
+    const c = this.camera;
+    s.rig.updateMatrixWorld();
+    c.position.copy(s.eye).add(new THREE.Vector3((Math.random() - 0.5) * sh * 0.05, (Math.random() - 0.5) * sh * 0.05 + Math.sin(t * 1.3) * 0.004, 0));
+    s.rig.localToWorld(c.position);
+    const rq = new THREE.Quaternion();
+    s.rig.getWorldQuaternion(rq);
+    const lq = new THREE.Quaternion().setFromEuler(new THREE.Euler(this.pitch + (Math.random() - 0.5) * sh * 0.015, this.yaw, (Math.random() - 0.5) * sh * 0.01, 'YXZ'));
+    c.quaternion.copy(rq.multiply(lq));
+  }
   update(dt, t) {
-    const sp = this.input.run ? 4.6 : 2.3;
+    if (this.seat) return this.updateSeat(dt, t);
+    const sp = this.slow ? 1.4 : this.input.run ? 4.6 : 2.3;
     const fwd = new THREE.Vector3(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
     const right = new THREE.Vector3(-fwd.z, 0, fwd.x);
     const want = new THREE.Vector3();
@@ -70,7 +89,7 @@ export class Player {
     const speed = Math.hypot(this.vel.x, this.vel.z);
     this.bob += speed * dt * (this.input.run ? 1.55 : 1.9);
     this.stepAcc += speed * dt;
-    const stride = this.input.run ? 1.35 : 0.8;
+    const stride = this.input.run && !this.slow ? 1.35 : 0.8;
     if (this.stepAcc > stride) {
       this.stepAcc = 0;
       this.onStep && this.onStep(this.input.run);
@@ -103,6 +122,7 @@ export class Player {
     c.rotation.set(pitch + (Math.random() - 0.5) * sh * 0.02, yaw, Math.sin(this.bob) * 0.004 * bobA, 'YXZ');
   }
   forward() {
+    if (this.seat) return new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion);
     const v = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion);
     return v;
   }

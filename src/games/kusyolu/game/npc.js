@@ -52,12 +52,68 @@ export class NPC {
     const a = this.mixer.clipAction(c);
     if (this.action === a) return;
     a.reset().setLoop(THREE.LoopPingPong, Infinity).play();
-    a.timeScale = name === 'walk' || name === 'run' ? 1 : 0.8 + Math.random() * 0.4;
-    if (name === 'walk' || name === 'run') a.setLoop(THREE.LoopRepeat, Infinity);
+    const cyc = /walk|run/.test(name);
+    a.timeScale = cyc ? 1 : 0.8 + Math.random() * 0.4;
+    if (cyc) a.setLoop(THREE.LoopRepeat, Infinity);
     if (this.action && fade > 0) this.action.crossFadeTo(a, fade, false);
     else if (this.action) this.action.stop();
     this.action = a;
     this.clipName = name;
+  }
+  // yol boyunca yürü (three koordinatları); bitince done()
+  walkTo(points, speed = 1.3, done = null, clip = null) {
+    this.path = points.map((p) => (p.isVector3 ? p.clone() : new THREE.Vector3(p[0], p[1], p[2])));
+    this.speed = speed;
+    this.onArrive = done;
+    this.play(clip || (this.flash ? 'flashwalk' : speed > 2.5 ? 'run' : 'walk'), 0.3);
+  }
+  stopWalk(clip) {
+    this.path = null;
+    this.play(clip || (this.flash ? 'flashlight' : 'idle'), 0.4);
+  }
+  faceTo(p, instant = false) {
+    const d = new THREE.Vector3(p.x - this.root.position.x, 0, p.z - this.root.position.z);
+    if (d.lengthSq() < 1e-6) return;
+    this.wantYaw = Math.atan2(d.x, d.z);
+    if (instant) this.root.rotation.y = this.wantYaw;
+  }
+  attachFlashlight(fl) {
+    this.flash = fl;
+    fl.position.set(0.28, 1.22, 0.32);
+    fl.rotation.set(-0.12, Math.PI, 0);
+    this.root.add(fl);
+  }
+  updateWalk(dt) {
+    if (this.wantYaw !== undefined) {
+      let d = this.wantYaw - this.root.rotation.y;
+      while (d > Math.PI) d -= Math.PI * 2;
+      while (d < -Math.PI) d += Math.PI * 2;
+      this.root.rotation.y += d * Math.min(1, dt * 6);
+    }
+    if (!this.path || !this.path.length) return;
+    const tgt = this.path[0];
+    const p = this.root.position;
+    const d = new THREE.Vector3(tgt.x - p.x, 0, tgt.z - p.z);
+    const L = d.length();
+    const step = this.speed * dt;
+    if (L <= step) {
+      p.x = tgt.x;
+      p.z = tgt.z;
+      this.path.shift();
+      if (!this.path.length) {
+        this.path = null;
+        this.play(this.flash ? 'flashlight' : 'idle', 0.4);
+        const cb = this.onArrive;
+        this.onArrive = null;
+        cb && cb();
+      }
+      return;
+    }
+    d.multiplyScalar(1 / L);
+    p.x += d.x * step;
+    p.z += d.z * step;
+    p.y += (tgt.y - p.y) * Math.min(1, dt * 5);
+    this.wantYaw = Math.atan2(d.x, d.z);
   }
   morph(name, v) {
     for (const m of this.meshes) {
@@ -69,6 +125,7 @@ export class NPC {
     this.expr = e || {};
   }
   update(dt, t, camera, voiceLevel) {
+    this.updateWalk(dt);
     this.mixer.update(dt);
     // başı oyuncuya çevir (yumuşak, sınırlı)
     if (this.head && this.lookTarget) {
