@@ -9,7 +9,11 @@ concurrency: tts
 jobs:
   tts:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -21,9 +25,33 @@ jobs:
           pip install -q chatterbox-tts
           sudo apt-get install -y -qq ffmpeg > /dev/null
       - name: Üret
-        run: python tools/tts/gen_lines.py kusyolu 2>&1 | grep -v Warning | tail -80
+        env:
+          SHARD: ${{ matrix.shard }}
+          NSHARD: 6
+        run: |
+          ls tts-out/kusyolu > /tmp/before.txt 2>/dev/null || true
+          python tools/tts/gen_lines.py kusyolu 2>&1 | grep -v Warning | tail -60
+          mkdir -p new && for f in tts-out/kusyolu/*.mp3; do b=$(basename $f); grep -qx "$b" /tmp/before.txt || cp $f new/; done
+          ls new | wc -l
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tts-${{ matrix.shard }}
+          path: new/
+          if-no-files-found: ignore
+  kaydet:
+    needs: tts
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dl
       - name: Kaydet
         run: |
+          mkdir -p tts-out/kusyolu
+          find dl -name '*.mp3' -exec cp {} tts-out/kusyolu/ \;
+          python3 -c "import os,json; d='tts-out/kusyolu'; json.dump({'voices':'Chatterbox Multilingual (MIT); erkek referansları Piper tr_TR (CC0)','files':sorted(f[:-4] for f in os.listdir(d) if f.endswith('.mp3'))}, open(d+'/manifest.json','w'))"
           git config user.name "varlik-botu"
           git config user.email "actions@users.noreply.github.com"
           git add tts-out

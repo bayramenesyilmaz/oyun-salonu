@@ -132,6 +132,306 @@
   "Kimseye bir şey söylemiyoruz. Taşı depoya götürüyoruz. Hemen."
  ],
  [
+  "mert",
+  "Kızlar evlerine dağıldı. Zeynep kayıtları saklayacak."
+ ],
+ [
+  "kaan",
+  "Polis arabası tam köşede. Ben onları oyalarım, siz depoya gidin."
+ ],
+ [
+  "mert",
+  "Ben önden gidip kepengi açayım. Arka sokaktaki eski vinç deposu, biliyorsun."
+ ],
+ [
+  "arda",
+  "Tamam. Taşı ceketimin altına saklarım, ışığı görünmesin."
+ ],
+ [
+  "kaan",
+  "Memur bey, iyi akşamlar! O gürültü neydi, bir şey mi düştü?"
+ ],
+ [
+  "polis",
+  "Evine git delikanlı, burası şu an tehlikeli olabilir."
+ ],
+ [
+  "kaan",
+  "Valla çok korktum. Şu tarafta da duman var, bir bakar mısınız?"
+ ],
+ [
+  "arda",
+  "Taş yine atıyor. Saklamazsam herkes görecek."
+ ],
+ [
+  "arda",
+  "Işığı sokağa vuruyor. Ceketin altına, çabuk."
+ ],
+ [
+  "polis",
+  "Hey sen! Dur bakalım, elindeki o ışık ne?"
+ ],
+ [
+  "bekci",
+  "Yakaladım seni! Gel bakalım buraya, ne saklıyorsun?"
+ ],
+ [
+  "arda",
+  "Olmaz. Bir daha, daha dikkatli."
+ ],
+ [
+  "mert",
+  "Arda! Buraya, çabuk, içeri gir!"
+ ],
+ [
+  "arda",
+  "Kimse görmedi. Sanırım kimse görmedi."
+ ],
+ [
+  "mert",
+  "Kaan da kurtulmuş, mesaj attı. Taşı masaya koy, gerisini yarın düşünürüz."
+ ],
+ [
+  "zeynep",
+  "Taşı mengeneye koymayın! Masaya, yavaşça bırakın."
+ ],
+ [
+  "elif",
+  "Atışları çok düzenli. Her dört saniyede bir, bir saat gibi."
+ ],
+ [
+  "zeynep",
+  "Bilgisayarı bağladım. Taş bir sinyal yolluyor, ama bu radyo dalgası değil."
+ ],
+ [
+  "zeynep",
+  "Bakın, bakın! Havaya bir şey çiziyor!"
+ ],
+ [
+  "elif",
+  "Bu bir yıldız haritası. Şu parlak nokta Ay. Ve bu çizgi Ay’dan dışarı, çok uzağa gidiyor."
+ ],
+ [
+  "kaan",
+  "Yani bu taş bize yol mu gösteriyor şimdi?"
+ ],
+ [
+  "mert",
+  "Gösteriyorsa, oraya gidecek bir araç lazım."
+ ],
+ [
+  "arda",
+  "O zaman yaparız. Elimizde bir depo, bir taş ve beş kişi var."
+ ],
+ [
+  "mert",
+  "İskelet hazır. Kor’un enerjisi yeter de artar bile. Ama eksiklerimiz var."
+ ],
+ [
+  "mert",
+  "Bana dört şey lazım: jeneratör, oluklu saclar, Zeynep’in telsizi, bir de çanak anten."
+ ],
+ [
+  "mert",
+  "Güzel. Bunu Kor’a bağlarsak motorlar ilk kez çalışır."
+ ],
+ [
+  "mert",
+  "Gövdeyi bunlarla kaplarız. Biraz yamalı olacak ama sağlam."
+ ],
+ [
+  "zeynep",
+  "Kumru’nun kulakları bu. Yolda bizi duyacak tek şey."
+ ],
+ [
+  "kaan",
+  "Bizim apartmanın çanağı bu. Annem dizisini kaçıracak, haberin olsun."
+ ],
+ [
+  "bekci",
+  "Hey! Kim var içeride? Gece yarısı bu ne gürültü böyle?"
+ ],
+ [
+  "zeynep",
+  "Arda, kapıya sen git. Bir şey uydur, çabuk."
+ ],
+ [
+  "arda",
+  "Motor tamir ediyoruz Hüsnü Amca, yarın teslim edeceğiz."
+ ],
+ [
+  "bekci",
+  "Motor mu? Peki, ama sesi biraz kısın. Bütün mahalle uyuyor."
+ ],
+ [
+  "arda",
+  "Film çekiyoruz, bilimkurgu. Sen de oynamak ister misin?"
+ ],
+ [
+  "bekci",
+  "Film mi? Hah! Beni de yazın o zaman, bekçi rolüne. İyi geceler."
+ ],
+ [
+  "mert",
+  "Bitti. Leylek hazır, uçmaya hazır."
+ ],
+ [
+  "elif",
+  "Leylek mi? Adını sen mi koydun?"
+ ],
+ [
+  "mert",
+  "Göçmen kuş. Her yıl gider, her yıl döner. Biz de döneceğiz."
+ ],
+ [
+  "zeynep",
+  "Kumru’yu yükledim. Kumru, merhaba de bakalım."
+ ],
+ [
+  "kumru",
+  "Merhaba. Ben Kumru. Bu aracın yapısal güvenliği yüzde altmış iki. Bunu bilmenizi isterim."
+ ],
+ [
+  "kaan",
+  "Yüzde altmış iki iyi mi, kötü mü?"
+ ],
+ [
+  "kumru",
+  "Kötü. Ama düzeltilebilir."
+ ],
+ [
+  "elif",
+  "Kalkış saat üçte. Mahalle uyurken, kimse bakmazken."
+ ],
+ [
+  "mert",
+  "Herkes kendi işini bitirsin, sonra kim kime vedalaşacaksa vedalaşsın."
+ ],
+ [
+  "arda",
+  "Su bidonları tamam. Üç günlük suyumuz var."
+ ],
+ [
+  "elif",
+  "Haritanın kopyası. Kor bir gün susarsa bu bize yol gösterir."
+ ],
+ [
+  "arda",
+  "Dedemin uçuş defteri. Son sayfaya şunu yazmıştı: Gökyüzü bir kapıdır."
+ ],
+ [
+  "kumru",
+  "Kor yerleşti. Enerji akışı kararlı. Kalbim atıyor gibi. Bu benzetme doğru mu?"
+ ],
+ [
+  "kaan",
+  "Anneme bir mektup bıraktım. Dizisini kaçırdığı için özür diledim. Asıl şeyi yazamadım."
+ ],
+ [
+  "zeynep",
+  "Bütün kayıtları buluta koydum. Döneceğiz ama, değil mi? Döneceğiz."
+ ],
+ [
+  "mert",
+  "Babamın tamirhanesinden son bir somun aldım. Cebimde duracak, uğur getirir."
+ ],
+ [
+  "elif",
+  "Küçükken çatıdan yıldızlara bakardım. Şimdi onlara gidiyoruz. Korkmuyor musun?"
+ ],
+ [
+  "arda",
+  "Korkuyorum. Ama gitmezsem ömür boyu merak edeceğim."
+ ],
+ [
+  "arda",
+  "Ben de seni seviyorum anne. Döneceğim, söz."
+ ],
+ [
+  "kumru",
+  "Herkes yerine geçsin. Kemerler takılsın. Kaan, kemer."
+ ],
+ [
+  "kaan",
+  "Takıyorum, takıyorum! Bir dakika ya."
+ ],
+ [
+  "kumru",
+  "Sistem kontrolü başlıyor. Pilot, sırayla: önce ana güç, sonra depo çatısı, sonra Kor bağlantısı, en son ateşleme."
+ ],
+ [
+  "kumru",
+  "Ana güç açık. Bütün göstergeler çalışıyor."
+ ],
+ [
+  "mert",
+  "Çatıyı açıyorum! Raylar biraz paslı, sabırlı olun."
+ ],
+ [
+  "kumru",
+  "Kor bağlandı. Titreşim normal. Kalbim yine atıyor."
+ ],
+ [
+  "kumru",
+  "Ateşleme. Üç, iki, bir."
+ ],
+ [
+  "kumru",
+  "O düğme şimdi değil, pilot. Sırayı hatırlatayım mı?"
+ ],
+ [
+  "kaan",
+  "Kalkıyoruz! Gerçekten kalkıyoruz!"
+ ],
+ [
+  "elif",
+  "Mahalle… bak, bizim çatı. Ampuller hâlâ yanıyor."
+ ],
+ [
+  "mert",
+  "Gövde dayanıyor. Dayan Leylek, dayan."
+ ],
+ [
+  "zeynep",
+  "Bulutların içindeyiz. Camdan hiçbir şey görünmüyor."
+ ],
+ [
+  "kumru",
+  "Yükseklik on iki kilometre. Dış sıcaklık eksi elli altı derece."
+ ],
+ [
+  "elif",
+  "Gökyüzü kararıyor. Ne gündüz ne gece, başka bir şey bu."
+ ],
+ [
+  "kumru",
+  "Atmosferden çıktık. Yörüngeye girmek için son ateşleme."
+ ],
+ [
+  "kaan",
+  "Arkadaşlar… Dünya. Şu gördüğümüz Dünya."
+ ],
+ [
+  "zeynep",
+  "Kayıt alıyorum. Kimse bize inanmayacak."
+ ],
+ [
+  "mert",
+  "Hava bu kadar ince miymiş? Ufukta mavi bir çizgi kadar."
+ ],
+ [
+  "elif",
+  "Şurada, sağda. Ay. Kor’un haritasındaki ilk durak."
+ ],
+ [
+  "arda",
+  "Kumru, rotayı Ay’a çevir."
+ ],
+ [
+  "kumru",
+  "Rota Ay. Tahmini varış üç gün. Uyumanızı öneririm."
+ ],
+ [
   "kaan",
   "Abi bak, bir tane daha kaydı!"
  ],
@@ -150,6 +450,34 @@
  [
   "zeynep",
   "Kayıt devam ediyor."
+ ],
+ [
+  "polis",
+  "Kimse yok mu orada? Biri mi var?"
+ ],
+ [
+  "polis",
+  "Şu köşede bir ışık gördüm sanki."
+ ],
+ [
+  "bekci",
+  "Hey, kim var orada? Bu saatte sokakta ne işin var?"
+ ],
+ [
+  "bekci",
+  "Bekçi Hüsnü her şeyi görür, haberin olsun."
+ ],
+ [
+  "polis",
+  "Telsize bildirdim, ekip yolda. Kimse yaklaşmasın."
+ ],
+ [
+  "polis",
+  "Bir şey düştü diyorlar, ama ne düştüğünü bilen yok."
+ ],
+ [
+  "bekci",
+  "Gece gece hem meteor hem polis. Bu mahalleye ne oldu böyle?"
  ],
  [
   "mert",

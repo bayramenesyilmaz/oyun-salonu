@@ -30,10 +30,19 @@ ta.save('/tmp/ref/female.wav', base, model.sr)
 shift('/tmp/ref/female.wav', '/tmp/ref/zeynep.wav', 2.0)
 shift('tools/tts/ref/fahrettin.wav', '/tmp/ref/kaan.wav', 1.8)
 shift('tools/tts/ref/fettah.wav', '/tmp/ref/mert.wav', -1.5)
-REFS = {'elif': '/tmp/ref/female.wav', 'zeynep': '/tmp/ref/zeynep.wav', 'arda': 'tools/tts/ref/fahrettin.wav', 'kaan': '/tmp/ref/kaan.wav', 'mert': '/tmp/ref/mert.wav'}
+shift('tools/tts/ref/fettah.wav', '/tmp/ref/polis.wav', -3.0)
+shift('tools/tts/ref/fahrettin.wav', '/tmp/ref/bekci.wav', -4.5)
+shift('/tmp/ref/female.wav', '/tmp/ref/kumru.wav', -1.0)
+REFS = {'elif': '/tmp/ref/female.wav', 'zeynep': '/tmp/ref/zeynep.wav', 'arda': 'tools/tts/ref/fahrettin.wav', 'kaan': '/tmp/ref/kaan.wav', 'mert': '/tmp/ref/mert.wav',
+        'polis': '/tmp/ref/polis.wav', 'bekci': '/tmp/ref/bekci.wav', 'kumru': '/tmp/ref/kumru.wav'}
+FX = {'kumru': 'highpass=f=180,aecho=0.8:0.5:12|24:0.25|0.15,chorus=0.6:0.8:30:0.3:0.2:1.5,', 'polis': '', 'bekci': ''}
+SHARD = int(os.environ.get('SHARD', '0'))
+NSHARD = int(os.environ.get('NSHARD', '1'))
 retry = set(json.load(open(f'tools/tts/{GAME}_retry.json'))) if os.path.exists(f'tools/tts/{GAME}_retry.json') else set()
 done = 0
-for s, t in LINES:
+for i, (s, t) in enumerate(LINES):
+    if i % NSHARD != SHARD:
+        continue
     h = hash_line(s + '|' + t)
     out = f'{OUT}/{h}.mp3'
     if os.path.exists(out) and h not in retry:
@@ -45,7 +54,7 @@ for s, t in LINES:
             torch.manual_seed(int(h[:6], 16))
         wav = model.generate(t, language_id='tr', audio_prompt_path=REFS.get(s), exaggeration=0.75 if excited else 0.5, cfg_weight=0.35 if excited else 0.5)
         ta.save('/tmp/line.wav', wav, model.sr)
-        subprocess.check_call(['ffmpeg', '-y', '-loglevel', 'error', '-i', '/tmp/line.wav', '-af', 'silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,loudnorm=I=-17:TP=-1.5,apad=pad_dur=0.1', '-ac', '1', '-ar', '24000', '-b:a', '48k', out])
+        subprocess.check_call(['ffmpeg', '-y', '-loglevel', 'error', '-i', '/tmp/line.wav', '-af', FX.get(s, '') + 'silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,loudnorm=I=-17:TP=-1.5,apad=pad_dur=0.1', '-ac', '1', '-ar', '24000', '-b:a', '48k', out])
         done += 1
         print(s, h, round(time.time() - t0, 1), 's', flush=True)
     except Exception:
