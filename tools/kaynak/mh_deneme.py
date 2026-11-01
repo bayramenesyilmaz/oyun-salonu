@@ -23,8 +23,11 @@ LS = dyn('mpfb.services.locationservice', 'LocationService')
 ud = LS.get_user_data()
 inv = json.load(open(OUT + '/mh_envanter.json'))
 def pick(sub, *words, avoid=()):
+    ext = '.mhmat' if sub == 'skins' else '.mhclo'
     for p in inv.get(sub, []):
         n = p.lower()
+        if not n.endswith(ext):
+            continue
         if all(w in n for w in words) and not any(a in n for a in avoid):
             return os.path.join(ud, p)
     return None
@@ -48,7 +51,7 @@ def A(sub, *w, atype='Clothes', avoid=()):
     p = pick(sub, *w, avoid=avoid)
     chosen.setdefault('_', []).append((sub, w, p and os.path.relpath(p, ud)))
     return (sub, p, atype)
-eyes = A('eyes', 'brown', atype='Eyes') if pick('eyes', 'brown') else A('eyes', '.mhclo', atype='Eyes')
+eyes = A('eyes', 'high', atype='Eyes') if pick('eyes', 'high') else A('eyes', '.mhclo', atype='Eyes')
 brows = A('eyebrows', 'eyebrow001', atype='Eyebrows')
 lash = A('eyelashes', '.mhclo', atype='Eyelashes')
 women_skin = pick('skins', 'old', 'female') or pick('skins', 'female')
@@ -56,11 +59,11 @@ men_skin = pick('skins', 'old', 'male', avoid=('female',)) or pick('skins', 'mal
 young_skin = pick('skins', 'young', 'male', avoid=('female',)) or men_skin
 chosen['skins'] = [women_skin, men_skin, young_skin]
 human(-0.75, {'gender': 0.0, 'age': 0.95, 'weight': 0.65, 'muscle': 0.3, 'caucasian': 0.8, 'asian': 0.1, 'african': 0.1}, women_skin,
-      [eyes, brows, lash, A('hair', 'bun') if pick('hair', 'bun') else A('hair', 'short', avoid=('male',), atype='Hair'), A('clothes', 'dress'), A('clothes', 'shoes', avoid=('heel',))])
+      [eyes, brows, lash, A('hair', 'bun') if pick('hair', 'bun') else A('hair', 'short', avoid=('male',), atype='Hair'), A('clothes', 'dress', avoid=('flapper',)), A('clothes', 'shoe', avoid=('heel', 'overknee', 'boot'))])
 human(0.0, {'gender': 1.0, 'age': 0.95, 'weight': 0.55, 'muscle': 0.4, 'caucasian': 0.8, 'asian': 0.1, 'african': 0.1}, men_skin,
-      [eyes, brows, lash, A('hair', 'short', atype='Hair'), A('clothes', 'suit', avoid=('female',)), A('clothes', 'shoes', avoid=('heel', 'female'))])
+      [eyes, brows, lash, A('hair', 'short', atype='Hair'), A('clothes', 'suit', avoid=('female',)), A('clothes', 'shoe', avoid=('heel', 'female', 'overknee', 'boot'))])
 human(0.75, {'gender': 1.0, 'age': 0.5, 'weight': 0.5, 'muscle': 0.5, 'caucasian': 0.75, 'asian': 0.15, 'african': 0.1}, young_skin,
-      [eyes, brows, lash, A('hair', 'short', atype='Hair'), A('clothes', 'shirt', avoid=('female',)), A('clothes', 'pants', avoid=('female',)), A('clothes', 'shoes', avoid=('heel', 'female'))])
+      [eyes, brows, lash, A('hair', 'short', atype='Hair'), A('clothes', 'shirt', avoid=('female',)), A('clothes', 'pants', avoid=('female',)), A('clothes', 'shoe', avoid=('heel', 'female', 'overknee', 'boot'))])
 json.dump(chosen, open(OUT + '/mh_secilen.json', 'w'), indent=1, default=str)
 world_hdri('qwantani_night_puresky', 0.05)
 plane('floor', (8, 8), (0, 0, 0), pbr('old_wooden_floor_02', 2))
