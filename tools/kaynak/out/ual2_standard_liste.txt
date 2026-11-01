@@ -1,0 +1,18 @@
+        0  2026-01-23 14:26   Universal Animation Library 2 [Standard]/
+        0  2026-01-23 14:26   Universal Animation Library 2 [Standard]/Female Mannequin/
+  4012576  2026-01-18 15:12   Universal Animation Library 2 [Standard]/Female Mannequin/Mannequin_F.blend
+      275  2026-01-23 01:28   Universal Animation Library 2 [Standard]/Female Mannequin/README.txt
+        0  2026-01-23 14:26   Universal Animation Library 2 [Standard]/Female Mannequin/Unity/
+   575100  2026-01-23 01:29   Universal Animation Library 2 [Standard]/Female Mannequin/Unity/Mannequin_F.fbx
+        0  2026-01-23 14:26   Universal Animation Library 2 [Standard]/Female Mannequin/Unreal-Godot/
+  1442824  2026-01-23 01:29   Universal Animation Library 2 [Standard]/Female Mannequin/Unreal-Godot/Mannequin_F.glb
+   499312  2026-01-23 00:08   Universal Animation Library 2 [Standard]/Godot_Setup.png
+      541  2026-01-23 14:22   Universal Animation Library 2 [Standard]/License.txt
+        0  2026-01-23 00:35   Universal Animation Library 2 [Standard]/Unity/
+ 24371692  2026-01-23 00:35   Universal Animation Library 2 [Standard]/Unity/UAL2_Standard.fbx
+   237945  2026-01-23 00:08   Universal Animation Library 2 [Standard]/Unity_Setup.png
+        0  2026-01-23 00:34   Universal Animation Library 2 [Standard]/Unreal-Godot/
+  8061600  2026-01-23 00:34   Universal Animation Library 2 [Standard]/Unreal-Godot/UAL2_Standard.glb
+   148412  2026-01-23 00:08   Universal Animation Library 2 [Standard]/Unreal_Setup.png
+---------                     -------
+ 39350277                     16 files
