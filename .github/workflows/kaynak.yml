@@ -8,19 +8,75 @@ permissions:
   contents: write
 concurrency: kaynak
 jobs:
-  getir:
+  paket:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        p: [makehuman_system_assets, skins01, hair01, dress01, suits01, shirts01, pants01, shoes01, hats01]
+    steps:
+      - id: c
+        uses: actions/cache@v4
+        with:
+          path: /tmp/mhpacks/${{ matrix.p }}.zip
+          key: mh-${{ matrix.p }}-v1
+      - name: İndir (MakeHuman, CC0)
+        if: steps.c.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p /tmp/mhpacks; p=${{ matrix.p }}
+          for u in https://files.makehumancommunity.org/asset_packs/$p/${p}_cc0.zip https://files2.makehumancommunity.org/asset_packs/$p/${p}_cc0.zip; do
+            date +%T; curl -fSL --retry 2 --connect-timeout 30 --max-time 6600 --speed-limit 8000 --speed-time 180 -o /tmp/mhpacks/$p.zip "$u" && break
+            rm -f /tmp/mhpacks/$p.zip
+          done
+          ls -la /tmp/mhpacks; test -s /tmp/mhpacks/$p.zip
+  kur:
+    needs: paket
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
         with:
-          path: /tmp/mhpacks
-          key: mhpacks-v1
-      - name: İndir
+          path: /tmp/mhpacks/makehuman_system_assets.zip
+          key: mh-makehuman_system_assets-v1
+      - uses: actions/cache/restore@v4
+        with:
+          path: /tmp/mhpacks/skins01.zip
+          key: mh-skins01-v1
+      - uses: actions/cache/restore@v4
+        with:
+          path: /tmp/mhpacks/hair01.zip
+          key: mh-hair01-v1
+      - uses: actions/cache/restore@v4
+        with:
+          path: /tmp/mhpacks/dress01.zip
+          key: mh-dress01-v1
+      - uses: actions/cache/restore@v4
+        with:
+          path: /tmp/mhpacks/suits01.zip
+          key: mh-suits01-v1
+      - uses: actions/cache/restore@v4
+        with:
+          path: /tmp/mhpacks/shirts01.zip
+          key: mh-shirts01-v1
+      - uses: actions/cache/restore@v4
+        with:
+          path: /tmp/mhpacks/pants01.zip
+          key: mh-pants01-v1
+      - uses: actions/cache/restore@v4
+        with:
+          path: /tmp/mhpacks/shoes01.zip
+          key: mh-shoes01-v1
+      - uses: actions/cache/restore@v4
+        with:
+          path: /tmp/mhpacks/hats01.zip
+          key: mh-hats01-v1
+      - name: Quaternius animasyonları (CC0)
         run: bash tools/kaynak/fetch.sh
       - name: MPFB2 (GitHub) ve Blender kur
         run: |
@@ -29,9 +85,9 @@ jobs:
           git clone -q --depth 1 https://github.com/makehumancommunity/mpfb2 /tmp/mpfb2
           (cd /tmp/mpfb2/src/mpfb && zip -qr /tmp/mpfb.zip . -x "*.pyc")
           git -C /tmp/mpfb2 log -1 --format='MPFB2 %h %ci' | tee -a tools/kaynak/out/indirme.txt
+          ls -la /tmp/mhpacks | tee -a tools/kaynak/out/indirme.txt
       - name: Paketleri aç, envanter, deneme karakterleri
         run: |
-          mkdir -p tools/kaynak/out
           python tools/kaynak/mh_kur.py -- /tmp/mpfb.zip /tmp/mhpacks tools/kaynak/out 2>&1 | grep -vE "^\[(INFO|DEBUG)" | tail -30
           python tools/kaynak/mh_deneme.py -- tools/kaynak/out 2>&1 | grep -vE "^\[(INFO|DEBUG)|WARNING: User property|Fra:" | tail -40
           python3 -c "from PIL import Image; Image.open('tools/kaynak/out/mh_deneme.png').convert('RGB').save('tools/kaynak/out/mh_deneme.jpg', quality=88)" || true
