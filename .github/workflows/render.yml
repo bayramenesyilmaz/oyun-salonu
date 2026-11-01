@@ -2,7 +2,7 @@ name: render
 on:
   push:
     branches: [varliklar]
-    paths: ['tools/render/**', '.github/workflows/render.yml']
+    paths: ['tools/render/**', '!tools/render/cin_*.py', '.github/workflows/render.yml']
 permissions:
   contents: write
 concurrency: render
