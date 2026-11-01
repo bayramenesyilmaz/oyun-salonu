@@ -1,3 +1,4 @@
-8.0K	assets-src/CREDITS.md
-625M	assets-src/polyhaven
-46M	assets-src/rocketbox
+12K	assets-src/CREDITS.md
+807M	assets-src/polyhaven
+116M	assets-src/rocketbox
+688K	assets-src/space
