@@ -47,27 +47,57 @@ def human(x, macro, skin, assets):
     h.location.x = x
     return h
 chosen = {}
-def A(sub, *w, atype='Clothes', avoid=()):
-    p = pick(sub, *w, avoid=avoid)
-    chosen.setdefault('_', []).append((sub, w, p and os.path.relpath(p, ud)))
-    return (sub, p, atype)
-eyes = A('eyes', 'high', atype='Eyes') if pick('eyes', 'high') else A('eyes', '.mhclo', atype='Eyes')
-brows = A('eyebrows', 'eyebrow001', atype='Eyebrows')
-lash = A('eyelashes', '.mhclo', atype='Eyelashes')
-women_skin = pick('skins', 'old', 'female') or pick('skins', 'female')
-men_skin = pick('skins', 'old', 'male', avoid=('female',)) or pick('skins', 'male', avoid=('female',))
-young_skin = pick('skins', 'young', 'male', avoid=('female',)) or men_skin
-chosen['skins'] = [women_skin, men_skin, young_skin]
-human(-0.75, {'gender': 0.0, 'age': 0.95, 'weight': 0.65, 'muscle': 0.3, 'caucasian': 0.8, 'asian': 0.1, 'african': 0.1}, women_skin,
-      [eyes, brows, lash, A('hair', 'bun') if pick('hair', 'bun') else A('hair', 'short', avoid=('male',), atype='Hair'), A('clothes', 'dress', avoid=('flapper',)), A('clothes', 'shoe', avoid=('heel', 'overknee', 'boot'))])
-human(0.0, {'gender': 1.0, 'age': 0.95, 'weight': 0.55, 'muscle': 0.4, 'caucasian': 0.8, 'asian': 0.1, 'african': 0.1}, men_skin,
-      [eyes, brows, lash, A('hair', 'short', atype='Hair'), A('clothes', 'suit', avoid=('female',)), A('clothes', 'shoe', avoid=('heel', 'female', 'overknee', 'boot'))])
-human(0.75, {'gender': 1.0, 'age': 0.5, 'weight': 0.5, 'muscle': 0.5, 'caucasian': 0.75, 'asian': 0.15, 'african': 0.1}, young_skin,
-      [eyes, brows, lash, A('hair', 'short', atype='Hair'), A('clothes', 'shirt', avoid=('female',)), A('clothes', 'pants', avoid=('female',)), A('clothes', 'shoe', avoid=('heel', 'female', 'overknee', 'boot'))])
+def F(rel):
+    p = os.path.join(ud, rel)
+    if not os.path.exists(p):
+        hits = [q for q in inv_all if rel.split('/')[-1] in q]
+        p = os.path.join(ud, hits[0]) if hits else None
+    chosen.setdefault('_', []).append((rel, p and os.path.relpath(p, ud)))
+    return p
+inv_all = [p for v in inv.values() for p in v]
+def C(name, atype='Clothes', sub='clothes'):
+    return (sub, F(f'{sub}/{name}/{name}.mhclo'), atype)
+def grey_hair(h, tone=0.62):
+    # saç malzemesini griye çek
+    for o in h.children:
+        if 'hair' in o.name.lower() or (o.get('mpfb_asset_type') or '').lower() == 'hair':
+            for slot in o.material_slots:
+                m = slot.material
+                if not m or not m.node_tree: continue
+                for n in m.node_tree.nodes:
+                    if n.type == 'BSDF_PRINCIPLED':
+                        for l in list(n.inputs['Base Color'].links):
+                            hs = m.node_tree.nodes.new('ShaderNodeHueSaturation')
+                            hs.inputs['Saturation'].default_value = 0.05
+                            hs.inputs['Value'].default_value = 2.6
+                            m.node_tree.links.new(l.from_socket, hs.inputs['Color'])
+                            m.node_tree.links.new(hs.outputs['Color'], n.inputs['Base Color'])
+                        if not n.inputs['Base Color'].links:
+                            n.inputs['Base Color'].default_value = (tone, tone, tone * 0.97, 1)
+eyes = ('eyes', F('eyes/high-poly/high-poly.mhclo'), 'Eyes')
+brows = ('eyebrows', F('eyebrows/eyebrow001/eyebrow001.mhclo'), 'Eyebrows')
+lash = ('eyelashes', F('eyelashes/eyelashes01/eyelashes01.mhclo'), 'Eyelashes')
+anatolian = {'caucasian': 0.7, 'asian': 0.2, 'african': 0.1}
+nine = human(-1.1, {'gender': 0.0, 'age': 1.0, 'weight': 0.75, 'muscle': 0.25, **anatolian},
+      F('skins/onlytheghosts_old_eurasian_female/onlytheghosts_old_eurasian_female.mhmat'),
+      [eyes, brows, lash, C('elvs_reverse_french_braid_bun', 'Hair', 'hair'), C('toigo_fisherman_sweater'), C('toigo_harem_pants'), C('toigo_flats')])
+grey_hair(nine)
+dede = human(-0.37, {'gender': 1.0, 'age': 1.0, 'weight': 0.55, 'muscle': 0.35, **anatolian},
+      F('skins/old_caucasian_male/old_caucasian_male.mhmat'),
+      [eyes, brows, lash, C('short02', 'Hair', 'hair'), C('male_worksuit01'), C('jujube_newsboy_cap'), C('shoes01')])
+grey_hair(dede)
+kom = human(0.37, {'gender': 1.0, 'age': 0.8, 'weight': 0.6, 'muscle': 0.5, **anatolian},
+      F('skins/middleage_caucasian_male/middleage_caucasian_male.mhmat'),
+      [eyes, brows, lash, C('short04', 'Hair', 'hair'), C('male_elegantsuit01'), C('fedora01'), C('shoes02')])
+grey_hair(kom, 0.45)
+genc = human(1.1, {'gender': 1.0, 'age': 0.5, 'weight': 0.5, 'muscle': 0.5, **anatolian},
+      F('skins/young_caucasian_male/young_caucasian_male.mhmat'),
+      [eyes, brows, lash, C('short02', 'Hair', 'hair'), C('toigo_fisherman_sweater'), C('toigo_wool_pants'), C('shoes03')])
+chosen['skins'] = 'explicit'
 json.dump(chosen, open(OUT + '/mh_secilen.json', 'w'), indent=1, default=str)
 world_hdri('qwantani_night_puresky', 0.05)
 plane('floor', (8, 8), (0, 0, 0), pbr('old_wooden_floor_02', 2))
 area((-1.5, -2.5, 2.5), (0, 0, 1.2), 400, 2, (1, 0.85, 0.7))
 area((2, 1.5, 2.2), (0, 0, 1.3), 250, 1, (0.6, 0.7, 1))
-camera((0, -4.2, 1.15), (0, 0, 0.95), lens=40)
+camera((0, -4.6, 1.25), (0, 0, 1.0), lens=38)
 render(OUT + '/mh_deneme.png')
