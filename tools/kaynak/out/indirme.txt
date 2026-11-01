@@ -1,8 +1,8 @@
-OK ual2_standard.zip <- https://opengameart.org/sites/default/files/universal_animation_library_2standard.zip (9.8M)
+VAR assets-src/quaternius/ual2_standard.zip
 /tmp/mhpacks:
 total 818332
-drwxr-xr-x  2 runner runner      4096 Nov  1 15:13 .
-drwxrwxrwt 22 root   root        4096 Nov  1 15:13 ..
+drwxr-xr-x  2 runner runner      4096 Nov  1 15:16 .
+drwxrwxrwt 22 root   root        4096 Nov  1 15:16 ..
 -rw-r--r--  1 runner runner  46598791 Nov  1 15:05 dress01.zip
 -rw-r--r--  1 runner runner 227775853 Nov  1 15:05 hair01.zip
 -rw-r--r--  1 runner runner   6636192 Nov  1 15:04 hats01.zip
@@ -15,13 +15,13 @@ drwxrwxrwt 22 root   root        4096 Nov  1 15:13 ..
 
 assets-src/quaternius:
 total 10028
-drwxr-xr-x 2 runner runner     4096 Nov  1 15:13 .
-drwxr-xr-x 6 runner runner     4096 Nov  1 15:13 ..
--rw-r--r-- 1 runner runner 10257419 Nov  1 15:13 ual2_standard.zip
+drwxr-xr-x 2 runner runner     4096 Nov  1 15:16 .
+drwxr-xr-x 6 runner runner     4096 Nov  1 15:16 ..
+-rw-r--r-- 1 runner runner 10257419 Nov  1 15:16 ual2_standard.zip
 MPFB2 6ff1eb3 2026-10-24 14:02:24 +0200
-total 818332
-drwxr-xr-x  2 runner runner      4096 Nov  1 15:13 .
-drwxrwxrwt 23 root   root        4096 Nov  1 15:13 ..
+total 818336
+drwxr-xr-x  2 runner runner      4096 Nov  1 15:16 .
+drwxrwxrwt 23 root   root        4096 Nov  1 15:17 ..
 -rw-r--r--  1 runner runner  46598791 Nov  1 15:05 dress01.zip
 -rw-r--r--  1 runner runner 227775853 Nov  1 15:05 hair01.zip
 -rw-r--r--  1 runner runner   6636192 Nov  1 15:04 hats01.zip
