@@ -1,0 +1,46 @@
+name: kaynak
+on:
+  push:
+    branches: [varliklar]
+    paths: ['tools/kaynak/**', '.github/workflows/kaynak.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: kaynak
+jobs:
+  getir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/cache@v4
+        with:
+          path: /tmp/mhpacks
+          key: mhpacks-v1
+      - name: İndir
+        run: bash tools/kaynak/fetch.sh
+      - name: MPFB2 (GitHub) ve Blender kur
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq libxi6 libxxf86vm1 libxfixes3 libxrender1 libgl1 libxkbcommon0 libsm6 libegl1 > /dev/null
+          pip install -q bpy==5.0.1 numpy pillow
+          git clone -q --depth 1 https://github.com/makehumancommunity/mpfb2 /tmp/mpfb2
+          (cd /tmp/mpfb2/src/mpfb && zip -qr /tmp/mpfb.zip . -x "*.pyc")
+          git -C /tmp/mpfb2 log -1 --format='MPFB2 %h %ci' | tee -a tools/kaynak/out/indirme.txt
+      - name: Paketleri aç, envanter, deneme karakterleri
+        run: |
+          mkdir -p tools/kaynak/out
+          python tools/kaynak/mh_kur.py -- /tmp/mpfb.zip /tmp/mhpacks tools/kaynak/out 2>&1 | grep -vE "^\[(INFO|DEBUG)" | tail -30
+          python tools/kaynak/mh_deneme.py -- tools/kaynak/out 2>&1 | grep -vE "^\[(INFO|DEBUG)|WARNING: User property|Fra:" | tail -40
+          python3 -c "from PIL import Image; Image.open('tools/kaynak/out/mh_deneme.png').convert('RGB').save('tools/kaynak/out/mh_deneme.jpg', quality=88)" || true
+          rm -f tools/kaynak/out/mh_deneme.png
+      - name: Kaydet
+        if: always()
+        run: |
+          git config user.name "varlik-botu"
+          git config user.email "actions@users.noreply.github.com"
+          git add tools/kaynak/out assets-src/quaternius
+          git commit -m "Kaynaklar indirildi [skip ci]" || true
+          git pull --rebase -q origin varliklar && git push
