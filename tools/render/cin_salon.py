@@ -259,7 +259,22 @@ for k, (label, root) in items.items():
                 xs.append(p.x); ys.append(1 - p.y)
     if xs:
         boxes[k] = {'label': label, 'x0': round(min(xs), 4), 'y0': round(min(ys), 4), 'x1': round(max(xs), 4), 'y1': round(max(ys), 4)}
+# gözlem noktaları (listede olmayan ipuçları)
+def objs_box(objs):
+    xs, ys = [], []
+    for o in objs:
+        for c in o.bound_box:
+            p = world_to_camera_view(sc, cam, o.matrix_world @ Vector(c))
+            if p.z > 0:
+                xs.append(p.x); ys.append(1 - p.y)
+    return {'x0': round(max(0, min(xs)), 4), 'y0': round(max(0, min(ys)), 4), 'x1': round(min(1, max(xs)), 4), 'y1': round(min(1, max(ys)), 4)}
+spots = {
+    'kapak': objs_box([bpy.data.objects['trapdoor']]),
+    'izler': objs_box([o for o in bpy.data.objects if o.name.startswith(('sole', 'heel'))]),
+    'saat': objs_box(meshes(clock)),
+    'ayna': objs_box([sheet]),
+}
 os.makedirs(os.path.dirname(OUT) or '.', exist_ok=True)
-json.dump({'w': rx, 'h': ry, 'items': boxes}, open(os.path.splitext(OUT)[0] + '.json', 'w'), ensure_ascii=False, indent=1)
+json.dump({'w': rx, 'h': ry, 'items': boxes, 'spots': spots}, open(os.path.splitext(OUT)[0] + '.json', 'w'), ensure_ascii=False, indent=1)
 print('KUTULAR', json.dumps(boxes, ensure_ascii=False))
 render(OUT)

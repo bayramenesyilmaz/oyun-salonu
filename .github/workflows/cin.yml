@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        scene: [salon]
+        scene: [salon, kesit]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -27,7 +27,9 @@ jobs:
         run: |
           mkdir -p out
           if [ "${{ matrix.scene }}" = salon ]; then
-            KS_WIDTH=1920 python tools/render/cin_salon.py -- out/salon.png 2>&1 | grep -vE "WARNING: User property|^Info|INFO:" | tail -30
+            KS_WIDTH=2560 python tools/render/cin_salon.py -- out/salon.png 2>&1 | grep -vE "WARNING: User property|^Info|INFO:" | tail -30
+          elif [ "${{ matrix.scene }}" = kesit ]; then
+            python tools/render/cin_kesit.py -- out/kesit 2>&1 | grep -vE "WARNING: User property|^Info|INFO:" | tail -30
           else
             python tools/render/cin_portre.py -- out/portre 2>&1 | grep -vE "WARNING: User property|^Info|INFO:" | tail -30
           fi
@@ -54,8 +56,12 @@ jobs:
           from PIL import Image
           for f in glob.glob('dl/**/*.png', recursive=True):
               n = os.path.basename(f)[:-4]
+              if '/kesit/' in f:
+                  os.makedirs('renders/cin/kesit', exist_ok=True)
+                  Image.open(f).save(f'renders/cin/kesit/{n}.webp', quality=90)
+                  print('kesit', n); continue
               im = Image.open(f).convert('RGB')
-              im.save(f'renders/cin/{n}.jpg', quality=90)
+              im.save(f'renders/cin/{n}.jpg', quality=92)
               print(n, im.size)
           for f in glob.glob('dl/**/*.json', recursive=True):
               shutil.copy(f, 'renders/cin/')
