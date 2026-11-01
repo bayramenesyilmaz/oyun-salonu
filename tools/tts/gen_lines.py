@@ -1,4 +1,4 @@
-# Kuşyolu replikleri: Chatterbox Multilingual (MIT) ile Türkçe seslendirme.
+# Kuşyolu ve Karaçam Dosyaları replikleri: Chatterbox Multilingual (MIT) ile Türkçe seslendirme.
 # Erkek sesler Piper (CC0) referanslarından klonlanır, kadın sesler modelin kendi sesinden türetilir.
 import os, sys, json, time, subprocess, traceback
 import torch, torchaudio as ta
@@ -11,6 +11,17 @@ os.makedirs(OUT, exist_ok=True)
 os.makedirs('/tmp/ref', exist_ok=True)
 torch.set_num_threads(os.cpu_count() or 4)
 torch.manual_seed(7)
+def _h(s):
+    h = 0x811c9dc5
+    for ch in s:
+        h ^= ord(ch)
+        h = (h * 0x01000193) & 0xffffffff
+    return f'{h:08x}'
+_retry = set(json.load(open(f'tools/tts/{GAME}_retry.json'))) if os.path.exists(f'tools/tts/{GAME}_retry.json') else set()
+_todo = [i for i, (s_, t_) in enumerate(LINES) if i % int(os.environ.get('NSHARD', '1')) == int(os.environ.get('SHARD', '0')) and (not os.path.exists(f'{OUT}/{_h(s_ + "|" + t_)}.mp3') or _h(s_ + "|" + t_) in _retry)]
+if not _todo:
+    print(GAME, 'yapılacak replik yok')
+    sys.exit(0)
 model = ChatterboxMultilingualTTS.from_pretrained(device='cpu')
 
 def hash_line(s):
@@ -33,8 +44,14 @@ shift('tools/tts/ref/fettah.wav', '/tmp/ref/mert.wav', -1.5)
 shift('tools/tts/ref/fettah.wav', '/tmp/ref/polis.wav', -3.0)
 shift('tools/tts/ref/fahrettin.wav', '/tmp/ref/bekci.wav', -4.5)
 shift('/tmp/ref/female.wav', '/tmp/ref/kumru.wav', -1.0)
+shift('tools/tts/ref/fettah.wav', '/tmp/ref/yusuf.wav', 0.8)
+shift('tools/tts/ref/fahrettin.wav', '/tmp/ref/riza.wav', -3.0)
+shift('tools/tts/ref/fahrettin.wav', '/tmp/ref/selim.wav', 0.6)
+shift('/tmp/ref/female.wav', '/tmp/ref/nazmiye.wav', -3.0)
+shift('/tmp/ref/female.wav', '/tmp/ref/hatice.wav', 0.6)
 REFS = {'elif': '/tmp/ref/female.wav', 'zeynep': '/tmp/ref/zeynep.wav', 'arda': 'tools/tts/ref/fahrettin.wav', 'kaan': '/tmp/ref/kaan.wav', 'mert': '/tmp/ref/mert.wav',
-        'polis': '/tmp/ref/polis.wav', 'bekci': '/tmp/ref/bekci.wav', 'kumru': '/tmp/ref/kumru.wav'}
+        'polis': '/tmp/ref/polis.wav', 'bekci': '/tmp/ref/bekci.wav', 'kumru': '/tmp/ref/kumru.wav',
+        'yusuf': '/tmp/ref/yusuf.wav', 'riza': '/tmp/ref/riza.wav', 'selim': '/tmp/ref/selim.wav', 'nazmiye': '/tmp/ref/nazmiye.wav', 'hatice': '/tmp/ref/hatice.wav'}
 FX = {'kumru': 'highpass=f=180,aecho=0.8:0.5:12|24:0.25|0.15,chorus=0.6:0.8:30:0.3:0.2:1.5,', 'polis': '', 'bekci': ''}
 SHARD = int(os.environ.get('SHARD', '0'))
 NSHARD = int(os.environ.get('NSHARD', '1'))
