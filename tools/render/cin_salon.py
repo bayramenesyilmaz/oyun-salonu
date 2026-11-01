@@ -114,12 +114,28 @@ clock = put('vintage_grandfather_clock_01', -0.85, D / 2 - 0.24, rz=0)
 fit_h(clock, 2.05)
 mirror = put('ornate_mirror_01', 0.15, D / 2 - 0.01, 1.6, floor=False)
 # aynanın üstüne yarı kaymış çarşaf
-sheet = plane('sheet', (0.4, 0.95), (0.33, D / 2 - 0.05, 1.5), simple((0.86, 0.85, 0.8), 0.85, name='sheet'), rot=(math.pi / 2, 0.12, 0))
-sub = sheet.modifiers.new('s', 'SUBSURF'); sub.levels = sub.render_levels = 4; sub.subdivision_type = 'SIMPLE'
-dsp = sheet.modifiers.new('d', 'DISPLACE')
-tx = bpy.data.textures.new('wr', 'CLOUDS'); tx.noise_scale = 0.12
-dsp.texture = tx; dsp.strength = 0.04; dsp.direction = 'Y'
-sheet.modifiers.new('sol', 'SOLIDIFY').thickness = 0.004
+bpy.ops.mesh.primitive_grid_add(x_subdivisions=60, y_subdivisions=80, size=1)
+sheet = bpy.context.active_object; sheet.name = 'sheet'
+sheet.scale = (0.62, 0.95, 1)
+sheet.rotation_euler = (math.pi / 2, 0.05, 0)
+sheet.location = (0.2, D / 2 - 0.07, 1.42)
+bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+me = sheet.data
+noise = __import__('mathutils').noise
+for v in me.vertices:
+    x, z = v.co.x, v.co.z
+    t = max(0.0, min(1.0, (0.48 - z) / 0.95))  # 0 üstte, 1 altta
+    n = noise.noise(Vector((x * 5, 1.3, z * 4)))
+    # aşağı doğru açılan, derinleşen kıvrımlar
+    fold = (math.sin(x * 26 + n * 2.5) * 0.035 + n * 0.03) * t ** 0.8
+    v.co.y -= fold + 0.05 * (1 - t) ** 4
+    v.co.x *= 1 + 0.18 * t
+    if t > 0.8:  # düzensiz alt kenar
+        v.co.z += noise.noise(Vector((x * 9, 4.0, 0))) * 0.06 * (t - 0.8) * 5
+sheet.data.materials.append(simple((0.5, 0.49, 0.45), 0.92, name='sheet'))
+sheet.modifiers.new('sol', 'SOLIDIFY').thickness = 0.003
+sm = sheet.modifiers.new('sub', 'SUBSURF'); sm.levels = 0; sm.render_levels = 1
+for p_ in me.polygons: p_.use_smooth = True
 cabinet = put('vintage_cabinet_01', 1.6, D / 2 - 0.3, rz=0, s=0.8)
 shelf = put('wooden_bookshelf_worn', -W / 2 + 0.3, 0.75, rz=-90, s=0.85)
 sofa = put('sofa_02', W / 2 - 0.45, 0.35, rz=90)
@@ -143,7 +159,6 @@ put('wicker_basket_01', -1.55, 2.05, rz=15)
 put('ceramic_vase_01', -0.25, D / 2 - 0.2, rz=0)
 
 # duvar süsleri
-put('hanging_picture_frame_01', -1.75, D / 2 - 0.01, 1.85, floor=False)
 put('wall_clock', W / 2 - 0.01, 0.35, 1.85, rz=90, floor=False)
 
 # masa üstü: çay takımı, gaz lambası (yanık)
@@ -155,18 +170,27 @@ point(((mn.x + mx.x) / 2, (mn.y + mx.y) / 2, fz + 0.03), 45, (1.0, 0.6, 0.28), 0
 sphere('flame', 0.008, ((mn.x + mx.x) / 2, (mn.y + mx.y) / 2, fz), emission((1, 0.55, 0.2), 60, 'flame'), scale=(1, 1, 2.4))
 
 put('pull_chain_light_socket', 0.25, 0.45, H, floor=False)
-on(cabinet, 'brass_candleholders', 0.72, 0.5, rz=0, s=0.35)
 
 # kömürlük kapağı (zeminde) ve çamurlu ayak izleri: kapaktan saate
 TRAP = pbr('wood_table_worn', 1.0, tint=(0.35, 0.25, 0.18))
 box('trapdoor', (0.7, 0.6, 0.03), (-1.2, 1.35, 0.012), TRAP)
 box('trap_ring', (0.08, 0.02, 0.01), (-1.2, 1.08, 0.03), simple((0.1, 0.09, 0.08), 0.4, 0.9, name='ring'))
-MUD = simple((0.3, 0.22, 0.14), 0.95, name='mud', alpha=0.95)
+MUD = simple((0.13, 0.09, 0.055), 0.95, name='mud')
+def blob(name, loc, sx, sy, rz):
+    bpy.ops.mesh.primitive_circle_add(vertices=20, radius=1, fill_type='NGON', location=loc)
+    o = bpy.context.active_object; o.name = name
+    o.scale = (sx, sy, 1); o.rotation_euler = (0, 0, rz)
+    o.data.materials.append(MUD)
+    return o
 for i in range(5):
     t = i / 4
     x, y = -0.95 + 0.2 * t, 1.55 + 0.45 * t
     side = 0.06 if i % 2 else -0.06
-    plane('foot%d' % i, (0.09, 0.24), (x + side, y, 0.0045), MUD, rot=(0, 0, -0.6))
+    rz = -0.45
+    dx, dy = -math.sin(rz), math.cos(rz)
+    cx, cy = x + side, y
+    blob('sole%d' % i, (cx + dx * 0.05, cy + dy * 0.05, 0.0035), 0.042, 0.075, rz)
+    blob('heel%d' % i, (cx - dx * 0.085, cy - dy * 0.085, 0.0035), 0.035, 0.04, rz)
 
 # ---------- aranan nesneler ----------
 items = {}
@@ -181,7 +205,7 @@ item('fener', 'El feneri', put('vintage_flashlight', 1.45, 0.75, rz=120))
 item('ordek', 'Oyuncak ördek', put('rubber_duck_toy', -0.35, 0.1, rz=-30, s=0.3))
 item('kapan', 'Fare kapanı', put('mousetrap', -2.35, 2.1, rz=10))
 item('kartpostal', 'Almanya kartpostalları', on(table, 'postcard_set_01', 0.3, 0.3, rz=-25, rx=90, s=0.4))
-item('calar', 'Çalar saat', on(cabinet, 'alarm_clock_01', 0.2, 0.5, rz=-15))
+item('calar', 'Çalar saat', put('alarm_clock_01', -0.1, 2.0, rz=-25))
 item('samdan', 'Şamdan', put('wooden_candlestick', -1.85, 0.35, rz=0, rx=90))
 item('kaset', 'Kasetçalar', on(ottoman, 'portable_cassette_player', 0.5, 0.5, rz=20))
 item('buyutec', 'Büyüteç', on(table, 'magnifying_glass_01', 0.6, 0.25, rz=60, rx=90))
