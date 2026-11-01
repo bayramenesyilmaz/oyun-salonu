@@ -1,6 +1,16 @@
 // Oyun listesi. Yeni oyun eklemek: klasörünü src/games/ altına koy, buraya bir satır ekle.
 export const GAMES = [
   {
+    id: 'karacam',
+    title: 'Karaçam Dosyaları',
+    tag: 'Gizem · Dedektif',
+    blurb: 'Karaçam, 1986. Genç Yusuf Hoca ve şüpheci Komiser Rıza “cin işi” denen vakaları çözüyor. Cin mi, insan mı?',
+    color: '#c9a35a',
+    icon: '/icons-karacam/icon-512.png',
+    fonts: 'https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Courier+Prime:wght@400;700&family=Literata:opsz,wght@7..72,400;7..72,600&display=swap',
+    load: () => import('./games/karacam/App.jsx'),
+  },
+  {
     id: 'karakuyu',
     title: 'Karakuyu',
     tag: 'Korku',

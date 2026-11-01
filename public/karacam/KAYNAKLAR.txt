@@ -1,0 +1,20 @@
+KARAÇAM DOSYALARI — kullanılan hazır varlıklar ve lisansları
+
+Karakter modelleri: Microsoft Rocketbox Avatar Library (MIT lisansı, Copyright (c) 2020 Microsoft)
+  https://github.com/microsoft/Microsoft-Rocketbox
+  Yusuf Hoca: Male_Adult_15 · Rıza Bektaş: Male_Adult_03 · Nazmiye Demirci: Female_Adult_06
+  Hatice Demirci: Female_Adult_09 · Selim Demirci: Male_Adult_13
+
+Eşya modelleri, dokular ve gökyüzü ışığı: Poly Haven (CC0, kamu malı) — https://polyhaven.com
+  Örnekler: vintage_grandfather_clock_01, ornate_mirror_01, vintage_cabinet_01, barrel_stove, sofa_02,
+  Rockingchair_01, round_wooden_table_01, tea_set_01, vintage_oil_lamp, pocket_watch, postcard_set_01,
+  rubber_duck_toy, mousetrap, vintage_flashlight, portable_cassette_player; old_wooden_floor_02,
+  decrepit_wallpaper, dirty_carpet dokuları; qwantani_night_puresky.
+
+Sahneler ve portreler bu proje için Blender (Cycles) ile çizildi.
+Seslendirme: Chatterbox Multilingual (Resemble AI, MIT lisansı) ile üretildi.
+  Erkek seslerin referansları: Piper tr_TR fahrettin / fettah ses modelleri (CC0 veri kümesi).
+  Kadın seslerin referansı modelin kendi varsayılan sesinden türetildi.
+Ses efektleri kodla üretildi.
+
+Kişiler, yerler ve olaylar kurgudur.
