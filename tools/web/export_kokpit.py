@@ -33,26 +33,29 @@ SEAT = simple((0.13, 0.11, 0.1), 0.85, name='seat')
 METAL = simple((0.75, 0.75, 0.75), 0.25, 1.0, name='switchmetal')
 
 box('floor', (2.6, 3.6, 0.05), (0, -0.8, -0.03), DARK)
-box('ceil', (2.6, 2.8, 0.05), (0, -1.1, 2.05), HULLIN)
+box('ceil', (2.6, 2.9, 0.05), (0, -1.15, 2.45), HULLIN)
 for x in (-1.3, 1.3):
-    box('side', (0.05, 3.6, 2.1), (x, -0.8, 1.0), HULLIN)
-    box('sidewin', (0.06, 0.7, 0.45), (x * 0.99, 0.3, 1.45), simple((0.02, 0.03, 0.05), 0.05, name='sideglass'))
-box('back', (2.6, 0.05, 2.1), (0, -2.6, 1.0), HULLIN)
+    # yan duvar: önde geniş yan pencere boşluğu bırak (cam three.js'te eklenir)
+    box('side', (0.05, 2.5, 2.5), (x, -1.35, 1.2), HULLIN)
+    box('side_lo', (0.05, 1.1, 1.0), (x, 0.75, 0.5), HULLIN)
+box('back', (2.6, 0.05, 2.5), (0, -2.6, 1.2), HULLIN)
 # ön cam çerçevesi (cam yok: görüntü temiz kalsın)
-WY, tilt = 1.15, math.radians(-30)
-for x, w in ((-1.25, 0.1), (0, 0.06), (1.25, 0.1)):
-    box('post', (w, 0.1, 1.15), (x, WY - 0.2, 1.45), DARK, rot=(tilt, 0, 0))
-box('frameT', (2.6, 0.55, 0.08), (0, WY - 0.6, 2.0), DARK)
-box('frameB', (2.6, 0.14, 0.1), (0, WY + 0.05, 0.95), DARK)
+# geniş, eğik ön cam: yalnızca ince dikmeler ve çerçeve
+WY, tilt = 1.15, math.radians(-26)
+for x, w in ((-1.27, 0.07), (1.27, 0.07)):
+    box('post', (w, 0.07, 1.55), (x, WY - 0.33, 1.68), DARK, rot=(tilt, 0, 0))
+box('frameT', (2.6, 0.16, 0.06), (0, WY - 0.82, 2.42), DARK)
+box('frameB', (2.6, 0.1, 0.06), (0, WY + 0.02, 0.93), DARK)
+for x in (-1.29, 1.29):  # yan pencere çerçeveleri
+    box('sframe_t', (0.06, 1.1, 0.05), (x, 0.75, 2.2), DARK)
+    box('sframe_b', (0.06, 1.1, 0.05), (x, 0.75, 1.0), DARK)
 # gösterge paneli
-box('dash', (2.5, 0.8, 0.06), (0, 0.7, 0.86), PANEL, rot=(math.radians(-62), 0, 0))
-box('dashtop', (2.5, 0.42, 0.05), (0, 0.98, 0.93), DARK)
+box('dash', (2.5, 0.62, 0.06), (0, 0.72, 0.74), PANEL, rot=(math.radians(-62), 0, 0))
+box('dashtop', (2.5, 0.3, 0.05), (0, 1.0, 0.9), DARK)
 box('console', (0.45, 0.9, 0.55), (0, 0.05, 0.27), PANEL)
-model('vintage_spacecraft_instrument', (-0.62, 0.66, 0.95), (math.radians(28), 0, math.radians(180)), 1.0)
-model('vintage_radio_transceiver', (0.66, 0.78, 0.96), (0, 0, math.radians(180)), 0.85)
+model('vintage_spacecraft_instrument', (-0.62, 0.62, 0.86), (math.radians(28), 0, math.radians(180)), 0.8)
+model('vintage_radio_transceiver', (1.05, -0.2, 0.62), (0, 0, math.radians(90)), 0.7)
 model('retro_multimeter', (0.0, 0.2, 0.56), (0, 0, math.radians(185)), 1.0)
-model('circuit_board', (1.0, 0.6, 0.95), (math.radians(28), 0, math.radians(170)), 1.0)
-model('classic_laptop', (0.05, 0.66, 0.96), (0, 0, math.radians(180)), 1.0)
 for i in range(16):
     x = -1.1 + i * 0.145
     sphere('led', 0.009, (x, 0.5, 0.7), emission(random.choice([(1, 0.2, 0.1), (0.2, 1, 0.3), (1, 0.7, 0.2), (0.3, 0.6, 1)]), 8 if random.random() < 0.7 else 0, 'led'), seg=8)
@@ -80,12 +83,15 @@ for i, x in enumerate((-0.75, 0.0, 0.75)):
 # borular, kablolar
 for i in range(6):
     cyl('pipe', 0.03, 3.2, (random.choice((-1.24, 1.24)), -0.9, 1.6 + i * 0.05), random.choice([DARK, TAPE]), rot=(math.radians(90), 0, 0), n=8)
-sphere('cabinlamp', 0.05, (0, -1.0, 2.0), emission((1.0, 0.25, 0.1), 6, 'cabinred'), seg=10)
+sphere('cabinlamp', 0.05, (0, -1.0, 2.4), emission((1.0, 0.25, 0.1), 6, 'cabinred'), seg=10)
 
 weblib.merge_groups(lambda o: GROUP.get(o.name, 'static'))
 weblib.export_glb(f'{OUT}/kokpit.glb')
 meta = {
-    'eye': to_three((-0.62, -0.32, 1.27)), 'switches': switches, 'seats': seats,
+    'eye': to_three((-0.62, -0.25, 1.5)), 'switches': switches, 'seats': seats,
     'window': to_three((0, 1.2, 1.45)),
+    'glass': {'front': [to_three((-1.27, 0.95, 0.95)), to_three((1.27, 0.95, 0.95)), to_three((1.27, 0.33, 2.4)), to_three((-1.27, 0.33, 2.4))],
+              'left': [to_three((-1.3, 0.2, 1.0)), to_three((-1.3, 1.3, 1.0)), to_three((-1.3, 1.3, 2.2)), to_three((-1.3, 0.2, 2.2))],
+              'right': [to_three((1.3, 0.2, 1.0)), to_three((1.3, 1.3, 1.0)), to_three((1.3, 1.3, 2.2)), to_three((1.3, 0.2, 2.2))]},
 }
 weblib.write_meta(f'{OUT}/kokpit.json', meta)
