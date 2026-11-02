@@ -4,6 +4,7 @@ import sys, os, json, importlib, math
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from lib import *
 import bpy
+from mathutils import Matrix, Vector
 
 OUT = sys.argv[-1]
 pv = '--preview' in sys.argv
@@ -51,6 +52,11 @@ def old_man(x, outfit):
     for k, v in {'gender': 1.0, 'age': 1.0, 'weight': 0.48, 'muscle': 0.35, 'caucasian': 0.7, 'asian': 0.2, 'african': 0.1, 'height': 0.4}.items():
         HOP.set_value(k, v, entity_reference=h)
     TS.reapply_macro_details(h)
+    rig = None
+    try:
+        rig = HS.add_builtin_rig(h, 'default')  # giysiler iskelete bağlansın diye önce iskelet
+    except Exception as e:
+        print('iskelet eklenemedi', e)
     HS.set_character_skin(A('skins/old_caucasian_male/old_caucasian_male.mhmat'), h, skin_type='ENHANCED_SSS')
     for sub, rel, t in [('eyes', 'eyes/high-poly/high-poly.mhclo', 'Eyes'), ('eyebrows', 'eyebrows/eyebrow001/eyebrow001.mhclo', 'Eyebrows'),
                         ('eyelashes', 'eyelashes/eyelashes01/eyelashes01.mhclo', 'Eyelashes'), ('hair', 'hair/short02/short02.mhclo', 'Hair')] + outfit:
@@ -60,7 +66,20 @@ def old_man(x, outfit):
                 grey(o)
         except Exception as e:
             print('eklenemedi', rel, e)
-    h.location.x = x
+    if rig:
+        # A-duruşundan kolları yanlara indir (karakter -Y'ye bakıyor; .L +X tarafında)
+        bpy.context.view_layer.update()
+        for side, ang in (('L', 40), ('R', -40)):
+            pb = rig.pose.bones.get('upperarm01.' + side)
+            if not pb:
+                print('kemik yok', side); continue
+            M = pb.matrix.copy()
+            T = Matrix.Translation(M.translation)
+            pb.matrix = T @ Matrix.Rotation(math.radians(ang), 4, (rig.matrix_world.inverted().to_3x3() @ Vector((0, 1, 0))).normalized()) @ T.inverted() @ M
+            bpy.context.view_layer.update()
+        rig.location.x = x
+    else:
+        h.location.x = x
     return h
 
 SHOTS = [
