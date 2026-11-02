@@ -53,7 +53,13 @@
     "fabric_pattern_07",
     "dirty_carpet",
     "velour_velvet",
-    "wood_table_worn"
+    "wood_table_worn",
+    "wooden_rough_planks",
+    "wood_planks_dirt",
+    "plastered_stone_wall",
+    "stone_floor",
+    "wood_planks",
+    "dirt_floor"
    ]
   },
   "models": {
@@ -159,7 +165,23 @@
     "brass_diya_lantern",
     "wooden_bowl_01",
     "jug_01",
-    "vintage_electric_kettle"
+    "vintage_electric_kettle",
+    "wooden_bucket_01",
+    "hatchet",
+    "wooden_spoon",
+    "rusted_spade_01",
+    "wooden_crate_01",
+    "wooden_barrels_01",
+    "cement_bag",
+    "binder_notebook",
+    "small_oil_can_01",
+    "rubber_boots",
+    "wooden_broom",
+    "wooden_stool_01",
+    "wooden_ladder",
+    "sledgehammer_01",
+    "folding_wooden_stool",
+    "wooden_crate_02"
    ]
   },
   "hdris_web": {
@@ -183,6 +205,7 @@
   "nazmiye": "Adults/Female_Adult_06",
   "hatice": "Adults/Female_Adult_09",
   "selim": "Adults/Male_Adult_13",
-  "sevgi": "Children/Female_Child_02"
+  "sevgi": "Children/Female_Child_02",
+  "kadir": "Adults/Male_Adult_07"
  }
 }
