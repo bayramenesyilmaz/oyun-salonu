@@ -56,6 +56,20 @@ for i, ph in enumerate((0, 0.25, 0.5, 0.75, 1.0)):
     }))
 CLIPS['run'] = R
 
+# cin tutmuş hâller (Karakuyu Bölüm 2): yana düşmüş baş, ani seğirme, öne eğik koşu
+CI = {'Head': (0, 34, -6), 'Neck': (0, 14, 0), 'Spine2': (0, 0, 8), 'Spine1': (0, 0, 4),
+      'L UpperArm': (0, 30, 8), 'R UpperArm': (0, -30, 6), 'L Forearm': (0, 0, -4), 'R Forearm': (0, 0, -4)}
+CIN_CLIPS = {
+    'cin_idle': [(1, CI), (50, {**CI, 'Head': (0, 38, -8)}), (52, {**CI, 'Head': (6, 12, 4), 'Spine2': (0, 0, 4)}),
+                 (57, {**CI, 'Head': (-4, 40, -10)}), (90, {**CI, 'Head': (0, 36, -4), 'Neck': (2, 16, 0)}), (120, CI)],
+    'cin_run': [(f, {**p, 'Spine1': (0, 0, 50), 'Spine2': (0, 0, 22), 'Neck': (0, 0, -22), 'Head': (0, 16, -40),
+                     'L UpperArm': (0, 22, -25), 'R UpperArm': (0, -22, -25), 'L Forearm': (0, 0, -10), 'R Forearm': (0, 0, -10)}) for f, p in R],
+    'collapse': [(1, {'L Thigh': (0, 0, 95), 'L Calf': (0, 0, -150), 'R Thigh': (0, 0, 95), 'R Calf': (0, 0, -150), 'Pelvis': (0, 0, 0),
+                      'Spine1': (0, 0, 30), 'Spine2': (0, 0, 15), 'Head': (20, 0, 30), 'L Forearm': (0, 0, -20), 'R Forearm': (0, 0, -20)})],
+}
+if os.environ.get('CIN_CLIPS'):
+    CLIPS.update(CIN_CLIPS)
+
 
 def key_pose(arm, frame, pose):
     p = dict(BASE)
