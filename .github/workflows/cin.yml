@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        scene: [salon, kesit]
+        scene: [degirmen, kesit, mh]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -23,13 +23,68 @@ jobs:
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq libxi6 libxxf86vm1 libxfixes3 libxrender1 libgl1 libxkbcommon0 libsm6 libegl1 > /dev/null
           pip install -q bpy==5.0.1 numpy pillow
+      - if: matrix.scene == 'mh'
+        uses: actions/cache/restore@v4
+        with:
+          path: /tmp/mhpacks/makehuman_system_assets.zip
+          key: mh-makehuman_system_assets-v1
+      - if: matrix.scene == 'mh'
+        uses: actions/cache/restore@v4
+        with:
+          path: /tmp/mhpacks/skins01.zip
+          key: mh-skins01-v1
+      - if: matrix.scene == 'mh'
+        uses: actions/cache/restore@v4
+        with:
+          path: /tmp/mhpacks/hair01.zip
+          key: mh-hair01-v1
+      - if: matrix.scene == 'mh'
+        uses: actions/cache/restore@v4
+        with:
+          path: /tmp/mhpacks/dress01.zip
+          key: mh-dress01-v1
+      - if: matrix.scene == 'mh'
+        uses: actions/cache/restore@v4
+        with:
+          path: /tmp/mhpacks/suits01.zip
+          key: mh-suits01-v1
+      - if: matrix.scene == 'mh'
+        uses: actions/cache/restore@v4
+        with:
+          path: /tmp/mhpacks/shirts01.zip
+          key: mh-shirts01-v1
+      - if: matrix.scene == 'mh'
+        uses: actions/cache/restore@v4
+        with:
+          path: /tmp/mhpacks/pants01.zip
+          key: mh-pants01-v1
+      - if: matrix.scene == 'mh'
+        uses: actions/cache/restore@v4
+        with:
+          path: /tmp/mhpacks/shoes01.zip
+          key: mh-shoes01-v1
+      - if: matrix.scene == 'mh'
+        uses: actions/cache/restore@v4
+        with:
+          path: /tmp/mhpacks/hats01.zip
+          key: mh-hats01-v1
+      - name: MPFB2 kur (yalnızca mh)
+        if: matrix.scene == 'mh'
+        run: |
+          git clone -q --depth 1 https://github.com/makehumancommunity/mpfb2 /tmp/mpfb2
+          (cd /tmp/mpfb2/src/mpfb && zip -qr /tmp/mpfb.zip . -x "*.pyc")
+          mkdir -p /tmp/mhinv && python tools/kaynak/mh_kur.py -- /tmp/mpfb.zip /tmp/mhpacks /tmp/mhinv 2>&1 | grep -vE "^\[(INFO|DEBUG)" | tail -5
       - name: Çiz
         run: |
           mkdir -p out
           if [ "${{ matrix.scene }}" = salon ]; then
             KS_WIDTH=2560 python tools/render/cin_salon.py -- out/salon.png 2>&1 | grep -vE "WARNING: User property|^Info|INFO:" | tail -30
+          elif [ "${{ matrix.scene }}" = degirmen ]; then
+            KS_WIDTH=2560 python tools/render/cin_degirmen.py -- out/degirmen.png 2>&1 | grep -vE "WARNING: User property|^Info|INFO:" | tail -30
+          elif [ "${{ matrix.scene }}" = mh ]; then
+            python tools/render/cin_mh.py -- out/kesit 2>&1 | grep -vE "WARNING: User property|^Info|INFO:|^\[(INFO|DEBUG)" | tail -30
           elif [ "${{ matrix.scene }}" = kesit ]; then
-            python tools/render/cin_kesit.py -- out/kesit 2>&1 | grep -vE "WARNING: User property|^Info|INFO:" | tail -30
+            KS_ONLY=gulsum,gulsum_cin_1,gulsum_cin_2,gulsum_cin_3,kadir,kadir_gergin python tools/render/cin_kesit.py -- out/kesit 2>&1 | grep -vE "WARNING: User property|^Info|INFO:" | tail -30
           else
             python tools/render/cin_portre.py -- out/portre 2>&1 | grep -vE "WARNING: User property|^Info|INFO:" | tail -30
           fi
@@ -68,6 +123,7 @@ jobs:
           PY
           git config user.name "varlik-botu"
           git config user.email "actions@users.noreply.github.com"
+          git checkout -- tools/render/__pycache__ 2>/dev/null || true
           git add renders/cin
           git commit -m "Cin vakaları görselleri çizildi [skip ci]" || true
-          git pull --rebase -q origin varliklar && git push
+          git pull --rebase --autostash -q origin varliklar && git push
