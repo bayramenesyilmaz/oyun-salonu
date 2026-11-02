@@ -49,10 +49,15 @@ shift('tools/tts/ref/fahrettin.wav', '/tmp/ref/riza.wav', -3.0)
 shift('tools/tts/ref/fahrettin.wav', '/tmp/ref/selim.wav', 0.6)
 shift('/tmp/ref/female.wav', '/tmp/ref/nazmiye.wav', -3.0)
 shift('/tmp/ref/female.wav', '/tmp/ref/hatice.wav', 0.6)
+shift('/tmp/ref/female.wav', '/tmp/ref/gulsum.wav', 1.5)
+shift('/tmp/ref/female.wav', '/tmp/ref/gulsum_cin.wav', -2.0)
+shift('tools/tts/ref/fahrettin.wav', '/tmp/ref/huseyin.wav', -2.5)
+shift('tools/tts/ref/fettah.wav', '/tmp/ref/kadir.wav', 0.8)
 REFS = {'elif': '/tmp/ref/female.wav', 'zeynep': '/tmp/ref/zeynep.wav', 'arda': 'tools/tts/ref/fahrettin.wav', 'kaan': '/tmp/ref/kaan.wav', 'mert': '/tmp/ref/mert.wav',
         'polis': '/tmp/ref/polis.wav', 'bekci': '/tmp/ref/bekci.wav', 'kumru': '/tmp/ref/kumru.wav',
-        'yusuf': '/tmp/ref/yusuf.wav', 'riza': '/tmp/ref/riza.wav', 'selim': '/tmp/ref/selim.wav', 'nazmiye': '/tmp/ref/nazmiye.wav', 'hatice': '/tmp/ref/hatice.wav'}
-FX = {'kumru': 'highpass=f=180,aecho=0.8:0.5:12|24:0.25|0.15,chorus=0.6:0.8:30:0.3:0.2:1.5,', 'polis': '', 'bekci': ''}
+        'yusuf': '/tmp/ref/yusuf.wav', 'riza': '/tmp/ref/riza.wav', 'selim': '/tmp/ref/selim.wav', 'nazmiye': '/tmp/ref/nazmiye.wav', 'hatice': '/tmp/ref/hatice.wav',
+        'gulsum': '/tmp/ref/gulsum.wav', 'gulsum_cin': '/tmp/ref/gulsum_cin.wav', 'huseyin': '/tmp/ref/huseyin.wav', 'kadir': '/tmp/ref/kadir.wav'}
+FX = {'gulsum_cin': 'asetrate=24000*0.78,aresample=24000,atempo=1.2,aecho=0.8:0.55:45|95:0.45|0.3,lowpass=f=3800,', 'kumru': 'highpass=f=180,aecho=0.8:0.5:12|24:0.25|0.15,chorus=0.6:0.8:30:0.3:0.2:1.5,', 'polis': '', 'bekci': ''}
 SHARD = int(os.environ.get('SHARD', '0'))
 NSHARD = int(os.environ.get('NSHARD', '1'))
 retry = set(json.load(open(f'tools/tts/{GAME}_retry.json'))) if os.path.exists(f'tools/tts/{GAME}_retry.json') else set()
