@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        scene: [degirmen, kesit, mh]
+        scene: [degirmen, kesit]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -84,7 +84,7 @@ jobs:
           elif [ "${{ matrix.scene }}" = mh ]; then
             python tools/render/cin_mh.py -- out/kesit 2>&1 | grep -vE "WARNING: User property|^Info|INFO:|^\[(INFO|DEBUG)" | tail -30
           elif [ "${{ matrix.scene }}" = kesit ]; then
-            KS_ONLY=gulsum,gulsum_cin_1,gulsum_cin_2,gulsum_cin_3,kadir,kadir_gergin python tools/render/cin_kesit.py -- out/kesit 2>&1 | grep -vE "WARNING: User property|^Info|INFO:" | tail -30
+            KS_ONLY=kadir,kadir_gergin python tools/render/cin_kesit.py -- out/kesit 2>&1 | grep -vE "WARNING: User property|^Info|INFO:" | tail -30
           else
             python tools/render/cin_portre.py -- out/portre 2>&1 | grep -vE "WARNING: User property|^Info|INFO:" | tail -30
           fi

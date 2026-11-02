@@ -53,8 +53,7 @@ for name, size, loc, rot, mat in (
     plane(name, size, loc, mat, rot=rot)
 for i, x in enumerate((-2.2, -0.7, 0.8, 2.3)):
     box('beam%d' % i, (0.22, D, 0.26), (x, 0, H - 0.14), PLANK)
-for i, y in enumerate((-1.2, 1.2)):
-    box('post%d' % i, (0.2, 0.2, H), (-0.7, y, H / 2), PLANK)
+box('post0', (0.2, 0.2, H), (-2.0, 2.2, H / 2), PLANK)
 
 # değirmen taşı tezgâhı
 STN = pbr('stone_floor', 0.6, tint=(0.8, 0.78, 0.74))
@@ -69,36 +68,48 @@ box('chute', (0.15, 0.5, 0.06), (-0.4, 0.5, 0.75), PLANK, rot=(0, math.radians(-
 TASOBJ = [o for o in bpy.data.objects if o.name.split('.')[0] in ('platform', 'vat', 'runner', 'hopper', 'eye')]
 # un yığını ve un lekeleri
 FLOUR = simple((0.92, 0.9, 0.85), 0.95, name='flour')
-pile = sphere('flourpile', 0.35, (-0.05, 0.25, 0.0), FLOUR, scale=(1.3, 1.0, 0.32))
-for i in range(14):
+pile = sphere('flourpile', 0.32, (0.05, 0.2, 0.0), FLOUR, scale=(1.4, 1.1, 0.35))
+for i in range(60):
     a = random.random() * math.tau
-    r = 0.3 + random.random() * 1.2
-    p = plane('flour%d' % i, (0.3 + random.random() * 0.5, 0.2 + random.random() * 0.4), (-0.6 + math.cos(a) * r, 0.5 + math.sin(a) * r, 0.003 + i * 0.0003), FLOUR, rot=(0, 0, random.random() * 3))
+    r = 0.25 + random.random() ** 0.7 * 1.3
+    rr = 0.03 + random.random() * 0.09
+    sphere('flour%d' % i, rr, (0.0 + math.cos(a) * r, 0.35 + math.sin(a) * r, 0.0), FLOUR, seg=10, scale=(1.6, 1.3, 0.18))
 UNOBJ = [pile] + [o for o in bpy.data.objects if o.name.startswith('flour') and o.type == 'MESH']
 
 # su çarkı mili ve dişli (sol duvarda)
 GEAR = pbr('wooden_rough_planks', 0.8, tint=(0.5, 0.4, 0.3))
-gx, gy, gz = -W / 2 + 0.45, 1.0, 1.4
-cyl('gear', 1.05, 0.14, (gx, gy, gz), GEAR, rot=(0, math.radians(90), 0), n=48)
+_before = set(bpy.data.objects)
+cyl('gear', 1.0, 0.14, (0, 0, 0), GEAR, rot=(0, math.radians(90), 0), n=48)
 for i in range(24):
     a = i / 24 * math.tau
-    box('tooth', (0.16, 0.08, 0.12), (gx + 0.12, gy + math.cos(a) * 1.08, gz + math.sin(a) * 1.08), GEAR, rot=(a, 0, 0))
+    box('tooth', (0.16, 0.08, 0.12), (0.12, math.cos(a) * 1.03, math.sin(a) * 1.03), GEAR, rot=(a, 0, 0))
 for i in range(4):
-    a = i / 4 * math.pi
-    box('spoke', (0.1, 2.0, 0.1), (gx - 0.02, gy, gz), PLANK, rot=(a, 0, 0))
-cyl('axle', 0.09, 2.2, (gx + 0.9, gy, gz), simple((0.08, 0.07, 0.06), 0.5, 0.8, name='iron'), rot=(0, math.radians(90), 0), n=16)
+    box('spoke', (0.1, 1.9, 0.1), (-0.02, 0, 0), PLANK, rot=(i / 4 * math.pi, 0, 0))
+cyl('axle', 0.09, 1.2, (0.6, 0, 0), simple((0.08, 0.07, 0.06), 0.5, 0.8, name='iron'), rot=(0, math.radians(90), 0), n=16)
+groot = bpy.data.objects.new('gearroot', None)
+sc.collection.objects.link(groot)
+for o in set(bpy.data.objects) - _before:
+    if o is not groot:
+        o.parent = groot
+groot.location = (-1.0, D / 2 - 0.25, 1.6)
+groot.rotation_euler = (0, 0, math.radians(90))
 
 # devlet ambarı çuvalları (sağ arka)
 SACKS = []
+BURLAP = simple((0.5, 0.41, 0.29), 0.95, name='burlap')
 for i, (x, y, z, rz) in enumerate([(1.9, 1.9, 0, 10), (2.45, 1.85, 0, -15), (2.2, 1.45, 0, 30), (2.15, 1.75, 0.3, 80), (1.55, 1.4, 0, -40), (2.6, 1.2, 0, 5)]):
     s = put('cement_bag', x, y, z, rz=rz)
+    for m in meshes(s):
+        m.data = m.data.copy()
+        m.data.materials.clear()
+        m.data.materials.append(BURLAP)
     SACKS.append(s)
 STAMP = simple((0.55, 0.06, 0.05), 0.8, name='stamp', alpha=0.85)
 for s in SACKS[:4]:
     mn, mx = bbox(s)
     plane('stamp', (0.18, 0.12), ((mn.x + mx.x) / 2, (mn.y + mx.y) / 2, mx.z + 0.002), STAMP, rot=(0, 0, random.random()))
-crate = put('wooden_crate_01', 2.4, -0.4, rz=20)
-put('wooden_barrels_01', -2.4, -1.6, rz=40)
+crate = put('wooden_crate_01', 2.35, 0.45, rz=20)
+put('wooden_barrels_01', -2.3, 1.4, rz=40)
 put('wooden_ladder', 0.6, D / 2 - 0.25, rz=0, rx=12)
 
 # pencere (sağ duvar, aralık) + ay ışığı
@@ -128,15 +139,15 @@ def item(key, label, obj):
 
 item('defter', 'Gülsüm’ün defteri', on(SACKS[4], 'binder_notebook', 0.5, 0.5, rz=30, dz=-0.02))
 item('cakmak', 'Çakmak', put('vintage_lighter', -0.25, 0.05, rz=40, rx=90))
-item('yag', 'Yağ kutusu', put('small_oil_can_01', -2.55, 0.1, rz=20))
-item('cizme', 'Lastik çizmeler', put('rubber_boots', 1.2, -1.75, rz=-30))
+item('yag', 'Yağ kutusu', put('small_oil_can_01', -1.35, 1.95, rz=20))
+item('cizme', 'Lastik çizmeler', put('rubber_boots', 1.45, 0.2, rz=-30))
 item('kepce', 'Tahta kepçe', on(SACKS[2], 'wooden_spoon', 0.5, 0.5, rz=60, rx=90, dz=-0.02))
-item('balta', 'Balta', put('hatchet', -2.3, -0.6, rz=70, rx=90))
+item('balta', 'Balta', put('hatchet', 0.95, 1.85, rz=70, rx=90))
 item('kase', 'Tahta kâse', on(crate, 'wooden_bowl_01', 0.4, 0.5, rz=0))
-item('kova', 'Kova', put('wooden_bucket_01', -1.6, -0.7, rz=0))
-item('kurek', 'Kürek', put('rusted_spade_01', 2.85, -1.2, rz=90, rx=80))
-item('supurge', 'Süpürge', put('wooden_broom', -2.8, -1.0, rz=0, ry=15))
-item('tabure', 'Tabure', put('folding_wooden_stool', 0.9, -0.9, rz=25))
+item('kova', 'Kova', put('wooden_bucket_01', -1.75, 0.2, rz=0))
+item('kurek', 'Kürek', put('rusted_spade_01', 2.75, 1.0, rz=90, rx=80))
+item('supurge', 'Süpürge', put('wooden_broom', -1.55, 2.3, rz=0, ry=15))
+item('tabure', 'Tabure', put('folding_wooden_stool', 0.85, -0.2, rz=25))
 item('balyoz', 'Balyoz', put('sledgehammer_01', 1.4, 0.4, rz=-60, rx=90))
 
 # görünme noktası (Gülsüm'ün karanlıkta belirdiği yer)
@@ -145,8 +156,8 @@ appar = Vector((1.25, 2.1, 0.0))
 # ---------- ışık ----------
 world_hdri('qwantani_night_puresky', 0.02)
 compositor_glare(1.2, 0.6, 0.35)
-cam = camera((0.3, -D / 2 + 0.15, 1.6), (-0.1, 1.5, 0.8), lens=21)
-sc.view_settings.exposure = 0.5
+cam = camera((0.6, -D / 2 + 0.12, 1.9), (0.0, 1.3, 0.65), lens=19)
+sc.view_settings.exposure = 0.75
 
 # ---------- ekran kutuları ----------
 bpy.context.view_layer.update()
