@@ -6,6 +6,7 @@ sys.path.insert(0, HERE)
 import lib
 from lib import *
 import weblib
+from mathutils import Vector
 from weblib import webmat, collider, to_three
 
 OUT = sys.argv[-1]
@@ -59,15 +60,39 @@ def part_a():
     M.dish(5.8, 4.3, ROOF + 1.5, rz=math.radians(200))
     ac = model('exterior_aircon_unit', (-5.5, -1.0 + 3.5, ROOF), (0, 0, math.radians(90)), 1.0)
     collider(ac)
-    t = cyl('tank', 0.75, 1.7, (5.2, -2.5, ROOF + 0.85), M.WHITE_METAL)
+    def bbox_of(root):
+        bpy.context.view_layer.update()
+        objs = [o for o in [root] + list(root.children_recursive) if o.type == 'MESH']
+        pts = [o.matrix_world @ Vector(c) for o in objs for c in o.bound_box]
+        return (Vector((min(p.x for p in pts), min(p.y for p in pts), min(p.z for p in pts))),
+                Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts))))
+    def floor_it(root, z):
+        mn, mx = bbox_of(root)
+        root.location.z += z - mn.z
+        return root
+    # su deposu: ayaklı demir sehpanın üstünde
+    STAND = simple((0.18, 0.18, 0.2), 0.6, 0.6, name='tankstand')
+    for dx in (-0.55, 0.55):
+        for dy in (-0.55, 0.55):
+            box('tankleg', (0.07, 0.07, 0.6), (5.2 + dx, -2.5 + dy, ROOF + 0.3), STAND)
+    box('tanktop', (1.4, 1.4, 0.08), (5.2, -2.5, ROOF + 0.62), STAND)
+    t = cyl('tank', 0.7, 1.6, (5.2, -2.5, ROOF + 0.66 + 0.8), M.WHITE_METAL)
     collider(t)
-    crate = model('plastic_crate_01', (0.9, -1.2, ROOF), (0, 0, 0.3), 1.0)
+    # çay: kasanın üstüne (modelin gerçek boyuna göre)
+    crate = floor_it(model('plastic_crate_01', (0.9, -1.2, ROOF), (0, 0, 0.3), 1.0), ROOF)
     collider(crate)
-    model('tea_set_01', (0.9, -1.2, ROOF + 0.3), (0, 0, 0.4), 1.0)
+    cmn, cmx = bbox_of(crate)
+    tea = model('tea_set_01', ((cmn.x + cmx.x) / 2, (cmn.y + cmx.y) / 2, ROOF + 1), (0, 0, 0.4), 0.5)
+    floor_it(tea, cmx.z + 0.002)
+    tmn, tmx = bbox_of(tea)
+    print('CAY', [round(v, 2) for v in cmx], [round(v, 2) for v in tmn], [round(v, 2) for v in tmx])
     chairs = [(-0.4, -1.9, -150), (2.0, -2.1, 160), (1.6, 0.2, 20), (-0.2, -0.3, -40)]
+    seats = []
     for x, y, r in chairs:
-        c = model('plastic_monobloc_chair_01', (x, y, ROOF), (0, 0, math.radians(r)), 1.0)
+        c = floor_it(model('plastic_monobloc_chair_01', (x, y, ROOF), (0, 0, math.radians(r)), 1.0), ROOF)
         collider(c, pad=-0.08)
+        mn, mx = bbox_of(c)
+        seats.append(((mn.x + mx.x) / 2, (mn.y + mx.y) / 2))
     sd = box('stairdoor', (2.6, 2.4, 2.6), (-6.0, -4.2, ROOF + 1.3), P0)
     collider(sd)
     box('door', (0.95, 0.06, 2.05), (-5.4, -2.97, ROOF + 1.03), webmat('painted_metal_shutter', 1.0, (0.45, 0.55, 0.6)))
@@ -144,8 +169,8 @@ def part_a():
         'npc': {
             'kaan': {'p': to_three((-1.4, 4.4, ROOF)), 'yaw': 180},
             'elif': {'p': to_three((0.4, 4.2, ROOF)), 'yaw': 175},
-            'mert': {'p': to_three((2.0, -2.1, ROOF)), 'yaw': 160, 'clip': 'sit_tea', 'sitH': 0.42},
-            'zeynep': {'p': to_three((-0.4, -1.9, ROOF)), 'yaw': -150, 'clip': 'sit', 'sitH': 0.42},
+            'mert': {'p': to_three((seats[1][0], seats[1][1], ROOF)), 'yaw': 160, 'clip': 'sit_tea', 'sitH': 0.42},
+            'zeynep': {'p': to_three((seats[0][0], seats[0][1], ROOF)), 'yaw': -150, 'clip': 'sit', 'sitH': 0.42},
         },
         'meteor': {'from': to_three((60, 280, 135)), 'to': to_three((-18, 260, 118)), 'impact': to_three((-35, 140, 0))},
     }
