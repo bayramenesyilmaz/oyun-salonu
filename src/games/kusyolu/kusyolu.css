@@ -2,6 +2,8 @@
   position: fixed;
   inset: 0;
   overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
   background: #020308;
   color: #eef2f8;
   font-family: 'Onest', system-ui, sans-serif;
@@ -559,3 +561,14 @@ kbd {
   mix-blend-mode: screen; animation: ky-warp .6s linear infinite; }
 @keyframes ky-warp { to { transform: scale(1.06); } }
 .ky-mark.off b { display: block; font-size: 26px; color: #8ff0d6; text-shadow: 0 0 10px #8ff0d6; line-height: 1; }
+
+/* dokunmatik: her zaman görünen düğmeler */
+.ky-stick.idle { left: 92px; top: auto; bottom: 36px; margin: 0 0 0 -55px; opacity: 0.55; pointer-events: none; z-index: 3; }
+.ky-stick.idle span { position: absolute; bottom: -18px; left: 0; right: 0; text-align: center; font-size: 10px; letter-spacing: 0.2em; color: rgba(255, 255, 255, 0.6); }
+.ky-lookhint { position: absolute; right: 18px; bottom: 14px; font-size: 11px; letter-spacing: 0.12em; color: rgba(255, 255, 255, 0.45); pointer-events: none; z-index: 3; }
+.ky-run, .ky-pausebtn { position: absolute; z-index: 5; border: 1px solid rgba(255, 255, 255, 0.35); background: rgba(10, 12, 18, 0.5); color: #eef2f8; border-radius: 50%; font-weight: 700; touch-action: none; }
+.ky-run { left: 190px; bottom: 40px; width: 58px; height: 58px; font-size: 12px; letter-spacing: 0.08em; }
+.ky-run.on { background: rgba(255, 155, 78, 0.75); border-color: #ff9b4e; color: #1a0f05; }
+.ky-pausebtn { right: 14px; top: 14px; width: 42px; height: 42px; font-size: 18px; }
+.ky-menu, .ky-card { touch-action: pan-y; }
+.ky-pause.touchp div { display: flex; flex-direction: column; gap: 10px; align-items: center; }

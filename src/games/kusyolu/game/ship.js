@@ -48,10 +48,11 @@ export async function makeShip(g, { crew = true } = {}) {
   if (crew) {
     const seats = km.seats;
     for (const [id, p] of Object.entries({ elif: seats.copilot, kaan: seats.back0, mert: seats.back1, zeynep: seats.back2 })) {
-      const n = await g.loadNPC(id, { p: [p[0], p[1] - 0.85, p[2]], yaw: 180, clip: 'sit' });
+      const n = await g.loadNPC(id, { p: [p[0], p[1] - 0.8, p[2] + 0.2], yaw: 180, clip: 'sit' });
       g.scene.remove(n.root);
       rig.add(n.root);
       n.root.rotation.y = Math.PI;
+      n.lookTarget = null; // koltukta önüne baksın
       n.wantYaw = Math.PI;
     }
   }

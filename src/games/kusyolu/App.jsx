@@ -141,6 +141,9 @@ export default function App() {
   const joy = useRef({ id: null, x0: 0, y0: 0, x: 0, y: 0 });
   const lookT = useRef({ id: null, x: 0, y: 0 });
   const [stick, setStick] = useState(null);
+  const runRef = useRef(false);
+  const [runOn, setRunOn] = useState(false);
+  const [tpause, setTpause] = useState(false);
   const onJoyStart = (e) => {
     const t = e.changedTouches[0];
     joy.current = { id: t.identifier, x0: t.clientX, y0: t.clientY, x: 0, y: 0 };
@@ -155,7 +158,7 @@ export default function App() {
         dx /= l;
         dy /= l;
       }
-      game.current.setMove(dx, -dy, l > 1.6);
+      game.current.setMove(dx, -dy, l > 1.6 || runRef.current);
       setStick((s) => s && { ...s, x: dx, y: dy });
     }
   };
@@ -334,11 +337,38 @@ export default function App() {
         <>
           <div className="ky-joyzone" onTouchStart={onJoyStart} onTouchMove={onJoyMove} onTouchEnd={onJoyEnd} onTouchCancel={onJoyEnd} />
           <div className="ky-lookzone" onTouchStart={onLookStart} onTouchMove={onLookMove} />
-          {stick && (
+          {stick ? (
             <div className="ky-stick" style={{ left: stick.x0, top: stick.y0 }}>
               <i style={{ transform: `translate(${stick.x * 40}px, ${stick.y * 40}px)` }} />
             </div>
+          ) : (
+            <div className="ky-stick idle">
+              <i />
+              <span>YÜRÜ</span>
+            </div>
           )}
+          <div className="ky-lookhint">sağ taraf: etrafa bak</div>
+          <button
+            className={'ky-run' + (runOn ? ' on' : '')}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              runRef.current = !runRef.current;
+              setRunOn(runRef.current);
+            }}
+          >
+            KOŞ
+          </button>
+          <button
+            className="ky-pausebtn"
+            onTouchStart={(e) => {
+              e.preventDefault();
+              game.current.pause(true);
+              setTpause(true);
+            }}
+            aria-label="Duraklat"
+          >
+            ❚❚
+          </button>
         </>
       )}
       {phase === 'loading' && (
@@ -396,6 +426,15 @@ export default function App() {
           <div>
             <b>Duraklatıldı</b>
             <span>Devam etmek için tıkla</span>
+          </div>
+        </div>
+      )}
+      {tpause && (
+        <div className="ky-pause touchp">
+          <div>
+            <b>Duraklatıldı</b>
+            <button className="ky-btn" onClick={() => { game.current.pause(false); setTpause(false); }}>Devam et</button>
+            <button className="ky-btn ghost" onClick={() => location.reload()}>Bölüm menüsü</button>
           </div>
         </div>
       )}

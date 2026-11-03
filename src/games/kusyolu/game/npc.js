@@ -134,8 +134,12 @@ export class NPC {
       this.head.getWorldPosition(hp);
       const to = this.lookTarget.clone().sub(hp);
       const dist = to.length();
-      const yaw = this.root.rotation.y;
-      const fwd = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+      // gövdenin dünyadaki yönü (araç içinde olsa da doğru)
+      const rq = new THREE.Quaternion();
+      this.root.getWorldQuaternion(rq);
+      const fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(rq);
+      fwd.y = 0;
+      fwd.normalize();
       const flat = new THREE.Vector3(to.x, 0, to.z).normalize();
       const ang = Math.atan2(fwd.x * flat.z - fwd.z * flat.x, fwd.dot(flat));
       const want = dist < 7 && Math.abs(ang) < 1.6 ? 1 : 0;

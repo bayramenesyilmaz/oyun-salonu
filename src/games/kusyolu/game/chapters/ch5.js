@@ -94,10 +94,11 @@ export class Chapter5 {
     const seats = km.seats;
     const crew = { elif: seats.copilot, kaan: seats.back0, mert: seats.back1, zeynep: seats.back2 };
     for (const [id, p] of Object.entries(crew)) {
-      const n = await g.loadNPC(id, { p: [p[0], p[1] - 0.85, p[2]], yaw: 180, clip: 'sit' });
+      const n = await g.loadNPC(id, { p: [p[0], p[1] - 0.8, p[2] + 0.2], yaw: 180, clip: 'sit' });
       g.scene.remove(n.root);
       rig.add(n.root);
       n.root.rotation.y = Math.PI;
+      n.lookTarget = null; // koltukta önüne baksın
       n.wantYaw = Math.PI;
     }
     // geniş ön cam ve yan camlar
