@@ -135,6 +135,45 @@ export const EPILOGUE = [
   { s: 'yusuf', t: 'Aynı ev, aynı saat. Demek her şey burada başlamış.' },
 ];
 
+import { CASE2, SPEAKERS2 } from './case2.js';
+Object.assign(SPEAKERS, SPEAKERS2);
+
+export const CASE1 = {
+  id: 1,
+  title: 'Saat Üçte Duran Saatler',
+  sub: 'Karaçam, Kasım 1986 · Demirci evi, 03.15',
+  bg: 'salon',
+  intro: INTRO,
+  scene: SCENE,
+  suspects: SUSPECTS,
+  accuse: ACCUSE,
+  ending: ENDING,
+  epilogue: EPILOGUE,
+  epilogueCard: { title: 'Ertesi gece', sub: 'Saat 02.59' },
+  next: 'Değirmendeki Ses',
+};
+CASE2.epilogueCard = { title: 'Ertesi sabah', sub: 'Karakol, 08.10' };
+export const CASES = { 1: CASE1, 2: CASE2 };
+
+const caseLines = (C) => {
+  const out = [];
+  const add = (l) => l && l.s && l.t && out.push([l.s, l.t]);
+  [...C.intro, ...C.scene.done, ...C.accuse.wrong, ...C.accuse.notEnough, ...C.ending, ...C.epilogue].forEach(add);
+  Object.values(C.scene.found).forEach(add);
+  Object.values(C.scene.spots).forEach(add);
+  if (C.scene.apparition) add(C.scene.apparition.line);
+  for (const s of Object.values(C.suspects)) {
+    s.open.forEach(add);
+    s.q.forEach((q) => q.a.forEach(add));
+    if (s.possession) {
+      s.possession.lines.forEach(add);
+      Object.values(s.possession.choice.after).forEach((ls) => ls.forEach(add));
+    }
+  }
+  return out;
+};
+export const ALL_CASE_LINES = () => [...caseLines(CASE1), ...caseLines(CASE2)];
+
 export const ALL_LINES = () => {
   const out = [];
   const add = (l) => l && l.s && l.t && out.push([l.s, l.t]);

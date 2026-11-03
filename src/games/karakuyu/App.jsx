@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import './ui.css';
 import { Game } from './game/Game.js';
-import { INTRO, ENDING as ENDING_HALF, ENDING_TRUE } from './game/story.js';
+import { Chapter2 } from './game/chapter2.js';
+import { INTRO as INTRO1, ENDING as ENDING_HALF, ENDING_TRUE } from './game/story.js';
+import { INTRO2, ENDING2 } from './game/story2.js';
 import TouchControls from './TouchControls.jsx';
 import { narrator } from './game/narrator.js';
 
@@ -61,6 +63,27 @@ function strawImage() {
   return STRAW_URL;
 }
 
+// Bölüm 2, birinci bölüm bir kez bitince (ya da ?ch2 ile) açılır
+function ch2Unlocked() {
+  if (typeof window === 'undefined') return false;
+  if (/[?&]ch2\b/.test(location.search)) return true;
+  try {
+    const k = JSON.parse(localStorage.getItem('karakuyu-endings') || '{}');
+    return !!(k.true || k.half || k.ch2) || !!localStorage.getItem('karakuyu2-save');
+  } catch {
+    return false;
+  }
+}
+function initialChapter() {
+  if (typeof window === 'undefined') return 1;
+  if (/[?&]ch2\b/.test(location.search)) return 2;
+  try {
+    return ch2Unlocked() && +localStorage.getItem('karakuyu-chapter') === 2 ? 2 : 1;
+  } catch {
+    return 1;
+  }
+}
+
 function loadSettings() {
   try {
     return { sens: 1, vol: 0.8, low: IS_TOUCH, narr: true, voice: '', ...JSON.parse(localStorage.getItem('karakuyu-settings') || '{}') };
@@ -84,7 +107,11 @@ export default function App() {
   const [introStep, setIntroStep] = useState(0);
   const [endStep, setEndStep] = useState(0);
   const [endKind, setEndKind] = useState('half');
-  const ENDING = endKind === 'true' ? ENDING_TRUE : ENDING_HALF;
+  const [chapter, setChapter] = useState(initialChapter);
+  const [unlocked2, setUnlocked2] = useState(ch2Unlocked);
+  const INTRO = chapter === 2 ? INTRO2 : INTRO1;
+  const ENDING = endKind === 'ch2' ? ENDING2 : endKind === 'true' ? ENDING_TRUE : ENDING_HALF;
+  const GameClass = chapter === 2 ? Chapter2 : Game;
   const [settings, setSettings] = useState(loadSettings);
   const [showSettings, setShowSettings] = useState(false);
   const [locked, setLocked] = useState(false);
@@ -93,7 +120,7 @@ export default function App() {
   const [portrait, setPortrait] = useState(false);
   const [portraitOk, setPortraitOk] = useState(false);
   const [, setVoiceTick] = useState(0);
-  const [hasSave, setHasSave] = useState(() => Game.hasSave());
+  const [hasSave, setHasSave] = useState(() => (initialChapter() === 2 ? Chapter2 : Game).hasSave());
   // PWA: "uygulama olarak yükle"
   const [installEvt, setInstallEvt] = useState(null);
   const isIOS = typeof navigator !== 'undefined' && /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -148,7 +175,7 @@ export default function App() {
     // önce yükleme ekranı çizilsin
     const id = setTimeout(() => {
       try {
-        g = new Game(mount.current, onUI, { quality: settings.low ? 'low' : 'high', touch: isTouch });
+        g = new GameClass(mount.current, onUI, { quality: settings.low ? 'low' : 'high', touch: isTouch });
         game.current = g;
         g.setSensitivity(settings.sens);
         g.setVolume(settings.vol);
@@ -163,7 +190,15 @@ export default function App() {
       g && g.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [chapter]);
+  const pickChapter = (c) => {
+    if (c === chapter) return;
+    try { localStorage.setItem('karakuyu-chapter', String(c)); } catch { /* yok say */ }
+    if (c === 2) setUnlocked2(true);
+    setPhase('loading');
+    setHasSave((c === 2 ? Chapter2 : Game).hasSave());
+    setChapter(c);
+  };
 
   useEffect(() => {
     try { localStorage.setItem('karakuyu-settings', JSON.stringify(settings)); } catch { /* yok say */ }
@@ -239,7 +274,7 @@ export default function App() {
   }, [phase, death]);
 
   useEffect(() => {
-    if (phase === 'menu' || phase === 'paused') setHasSave(Game.hasSave());
+    if (phase === 'menu' || phase === 'paused') setHasSave(GameClass.hasSave());
   }, [phase]);
 
   const goFullscreen = () => {
@@ -339,7 +374,7 @@ export default function App() {
       <div ref={mount} className="stage" />
 
       {phase === 'loading' && (
-        <div className="screen center"><p className="loading">Köy yükleniyor…</p></div>
+        <div className="screen center"><p className="loading">{chapter === 2 ? 'Ev yükleniyor…' : 'Köy yükleniyor…'}</p></div>
       )}
       {phase === 'error' && (
         <div className="screen center">
@@ -351,7 +386,13 @@ export default function App() {
         <div className="screen menu">
           <div className="menu-inner">
             <h1>KARAKUYU</h1>
-            <p className="tag">Bir Anadolu korku hikâyesi</p>
+            <p className="tag">{chapter === 2 ? 'Bölüm 2 · Gülsüm' : 'Bir Anadolu korku hikâyesi'}</p>
+            {unlocked2 && (
+              <div className="chapters">
+                <button className={chapter === 1 ? 'on' : ''} onClick={() => pickChapter(1)}><small>Bölüm 1</small>Karakuyu</button>
+                <button className={chapter === 2 ? 'on' : ''} onClick={() => pickChapter(2)}><small>Bölüm 2</small>Gülsüm</button>
+              </div>
+            )}
             {hasSave && <button className="primary" onClick={continueGame}>Devam et</button>}
             <button className={hasSave ? 'ghost' : 'primary'} onClick={start}>{hasSave ? 'Yeni oyun' : 'Başla'}</button>
             <button className="ghost" onClick={() => setShowSettings((s) => !s)}>{showSettings ? 'Ayarları gizle' : 'Ayarlar'}</button>
@@ -360,7 +401,7 @@ export default function App() {
             <a className="ghost back-link" href="/">← Oyun Salonu</a>
             {!installEvt && isIOS && !standalone && <p className="hint">Uygulama gibi oynamak için: Paylaş → Ana Ekrana Ekle</p>}
             {Controls}
-            <p className="hint">{isTouch ? 'Telefonu yan çevir, kulaklık tak.' : 'Kulaklıkla, karanlık bir odada oyna.'} Yaklaşık 20 dakika.</p>
+            <p className="hint">{isTouch ? 'Telefonu yan çevir, kulaklık tak.' : 'Kulaklıkla, karanlık bir odada oyna.'} {chapter === 2 ? 'Yaklaşık 15 dakika.' : 'Yaklaşık 20 dakika.'}</p>
           </div>
         </div>
       )}
@@ -368,7 +409,7 @@ export default function App() {
       {phase === 'intro' && (
         <div className="screen intro" onClick={advanceIntro}>
           <p key={introStep} className="intro-line">{INTRO[introStep]}</p>
-          <p className="intro-hint">{introStep < INTRO.length - 1 ? 'devam' : 'köye yürü'} — {isTouch ? 'dokun' : 'tıkla'}</p>
+          <p className="intro-hint">{introStep < INTRO.length - 1 ? 'devam' : chapter === 2 ? 'içeri gir' : 'köye yürü'} — {isTouch ? 'dokun' : 'tıkla'}</p>
         </div>
       )}
 
@@ -448,11 +489,15 @@ export default function App() {
             <p className="muted">
               {[journal.key && 'Muhtarın evinin anahtarı', ...(journal.items || []), 'Gaz lambası'].filter(Boolean).join(' · ')}
             </p>
-            <p className="muted">Demir: {journal.iron || 0}{journal.offered ? ' · Kuyuya hakları bırakıldı' : ''}</p>
-            <h4>Kuyu taşları</h4>
-            <ul className="dials">
-              {journal.dials.map((d) => <li key={d.label}><span>{d.label}</span><b>{d.motif}</b></li>)}
-            </ul>
+            <p className="muted">Demir: {journal.iron || 0}{journal.offered ? (chapter === 2 ? ' · Eşiğe hakları bırakıldı' : ' · Kuyuya hakları bırakıldı') : ''}</p>
+            {journal.dials && journal.dials.length > 0 && (
+              <>
+                <h4>Kuyu taşları</h4>
+                <ul className="dials">
+                  {journal.dials.map((d) => <li key={d.label}><span>{d.label}</span><b>{d.motif}</b></li>)}
+                </ul>
+              </>
+            )}
             <button className="ghost small" onClick={() => game.current.closeJournal()}>Kapat{isTouch ? '' : ' (J)'}</button>
           </div>
         </div>
@@ -487,9 +532,14 @@ export default function App() {
           {endStep > ENDING.length && (
             <div className="credits">
               <h1>KARAKUYU</h1>
-              <p className="end-kind">{endKind === 'true' ? 'Gerçek son: Hakkını veren' : 'Yarım son: Bir şey seninle geldi'}</p>
-              {endKind !== 'true' && <p className="muted">İpucu: günlüğün son sayfası, taşlardan önce yapılması gereken bir şeyden bahsediyordu.</p>}
-              <p className="muted">Bütün modeller, dokular ve sesler kodla üretildi.</p>
+              <p className="end-kind">{endKind === 'ch2' ? 'Bölüm 2: Gülsüm — Horoz öttü' : endKind === 'true' ? 'Gerçek son: Hakkını veren' : 'Yarım son: Bir şey seninle geldi'}</p>
+              {endKind === 'half' && <p className="muted">İpucu: günlüğün son sayfası, taşlardan önce yapılması gereken bir şeyden bahsediyordu.</p>}
+              {endKind === 'ch2' ? (
+                <p className="muted">Gülsüm nine: Microsoft Rocketbox (MIT) karakter modeli. Seslendirme: Chatterbox Multilingual (MIT). Ev, dokular ve efektler kodla üretildi.</p>
+              ) : (
+                <p className="muted">Bütün modeller, dokular ve sesler kodla üretildi.</p>
+              )}
+              {endKind !== 'ch2' && <button className="primary" onClick={() => { setEndStep(0); pickChapter(2); }}>Bölüm 2: Gülsüm</button>}
               <button className="ghost" onClick={restartAll}>Tekrar oyna</button>
             </div>
           )}

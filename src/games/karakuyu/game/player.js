@@ -260,7 +260,7 @@ export class Player {
   }
 
   updateLantern(dt, t, moving) {
-    const on = this.lanternOn;
+    const on = this.lanternOn && !this.noLantern;
     const flick = 0.85 + Math.sin(t * 17) * 0.05 + Math.sin(t * 7.3) * 0.06 + (Math.random() - 0.5) * 0.08;
     const target = on ? 5.5 * flick * (this.flickerMul ?? 1) : 0;
     this.light.intensity += (target - this.light.intensity) * Math.min(1, dt * 20);
@@ -274,7 +274,7 @@ export class Player {
       this.lanternBase.z
     );
     this.lantern.rotation.z = sway * 4;
-    this.lantern.visible = !this.hidden;
+    this.lantern.visible = !this.hidden && !this.noLantern;
   }
 
   forward(out = new THREE.Vector3()) {

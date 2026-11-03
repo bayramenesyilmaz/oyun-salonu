@@ -58,9 +58,7 @@ export class Game {
 
     // ---------- Dünya ----------
     this.T = makeTextures();
-    this.world = buildWorld(scene, this.T);
-    this.player = new Player(this.camera, this.world, scene);
-    this.creature = new Creature(scene, this.world, this.T);
+    this.setupWorld(scene);
     this.audio = new AudioEngine();
     this.post = createPost(renderer, scene, this.camera);
 
@@ -91,8 +89,7 @@ export class Game {
     this.apparition = { done: false, active: false, look: 0, t: 0 };
     this.checkpoint = null;
 
-    this.player.setSpawn(-1, 64.5, 0);
-    this.applyFlags();
+    this.setupSpawn();
 
     this.bindInput();
     this.resize();
@@ -104,6 +101,18 @@ export class Game {
 
     // test ve hata ayıklama için
     window.__karakuyu = this;
+  }
+
+  // Bölümler bu iki adımı kendi dünyalarıyla değiştirir
+  setupWorld(scene) {
+    this.world = buildWorld(scene, this.T);
+    this.player = new Player(this.camera, this.world, scene);
+    this.creature = new Creature(scene, this.world, this.T);
+  }
+
+  setupSpawn() {
+    this.player.setSpawn(-1, 64.5, 0);
+    this.applyFlags();
   }
 
   freshFlags() {
@@ -356,25 +365,29 @@ export class Game {
     // tarayıcıya kaydet: sayfa kapansa da kaldığın yerden devam
     try {
       const c = this.checkpoint;
-      localStorage.setItem('karakuyu-save', JSON.stringify({ ...c, pos: [c.pos.x, c.pos.z], t: Date.now() }));
+      localStorage.setItem(this.saveKey, JSON.stringify({ ...c, pos: [c.pos.x, c.pos.z], t: Date.now() }));
     } catch { /* yok say */ }
   }
 
-  static hasSave() {
+  get saveKey() {
+    return 'karakuyu-save';
+  }
+
+  static hasSave(key = 'karakuyu-save') {
     try {
-      return !!localStorage.getItem('karakuyu-save');
+      return !!localStorage.getItem(key);
     } catch {
       return false;
     }
   }
 
   clearSave() {
-    try { localStorage.removeItem('karakuyu-save'); } catch { /* yok say */ }
+    try { localStorage.removeItem(this.saveKey); } catch { /* yok say */ }
   }
 
   continueSaved() {
     let d;
-    try { d = JSON.parse(localStorage.getItem('karakuyu-save')); } catch { d = null; }
+    try { d = JSON.parse(localStorage.getItem(this.saveKey)); } catch { d = null; }
     if (!d) return this.start();
     this.audio.init();
     this.checkpoint = { ...d, pos: new THREE.Vector3(d.pos[0], 0, d.pos[1]) };

@@ -173,3 +173,9 @@ html, body { touch-action: none; overscroll-behavior: none; -webkit-tap-highligh
 .journal ul.lore { margin: 4px 0 10px; padding-left: 18px; color: var(--bone-dim); line-height: 1.45; font-size: 15px; }
 .journal ul.lore li { margin: 2px 0; }
 .end-kind { font-style: italic; letter-spacing: 0.06em; margin: 4px 0 8px; }
+
+/* bölüm seçimi */
+.chapters { display: flex; gap: 8px; margin: 4px 0 6px; }
+.chapters button { flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(220,200,160,0.22); color: #d8ccb4; padding: 8px 10px; font: inherit; cursor: pointer; text-align: left; border-radius: 3px; }
+.chapters button small { display: block; font-size: 0.7em; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.6; }
+.chapters button.on { border-color: #c9a46a; background: rgba(201,164,106,0.12); color: #f0e2c4; }

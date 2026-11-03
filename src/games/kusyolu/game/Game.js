@@ -14,9 +14,11 @@ import { Chapter2 } from './chapters/ch2.js';
 import { Chapter3 } from './chapters/ch3.js';
 import { Chapter4 } from './chapters/ch4.js';
 import { Chapter5 } from './chapters/ch5.js';
+import { Chapter6 } from './chapters/ch6.js';
+import { Chapter7 } from './chapters/ch7.js';
 
 import { BASE, V3 } from './util.js';
-const CH = { 1: Chapter1, 2: Chapter2, 3: Chapter3, 4: Chapter4, 5: Chapter5 };
+const CH = { 1: Chapter1, 2: Chapter2, 3: Chapter3, 4: Chapter4, 5: Chapter5, 6: Chapter6, 7: Chapter7 };
 const SAVE = 'kusyolu-save';
 
 export function loadSave() {
@@ -88,6 +90,7 @@ export class Game {
     this.clock = new THREE.Clock();
     this.running = true;
     window.__kusyolu = this;
+    if (/[?&]test\b/.test(location.search)) window.__THREE = THREE;
     requestAnimationFrame(this.loop);
   }
 
@@ -155,6 +158,11 @@ export class Game {
     this.emit('prompt', null);
     this.emit('carry', null);
     this.emit('stealth', null);
+    this.emit('hud', null);
+    this.emit('shipcam', null);
+    this.emit('engineBtn', false);
+    this.emit('warp', 0);
+    this.engineHeld = false;
   }
   // oyun zamanına bağlı zamanlayıcı (duraklatınca bekler)
   later(sec, fn) {
@@ -290,7 +298,7 @@ export class Game {
     writeSave(s);
     this.emit('saved', s);
     const nx = CHAPTERS.find((c) => c.n === next);
-    this.emit('card', { title: `Bölüm ${this.chNum} tamamlandı`, sub: nx ? `Sıradaki: ${nx.title}` : 'Sıradaki: Sessiz Komşu (Ay) · yakında', end: true, next: nx ? next : null });
+    this.emit('card', { title: `Bölüm ${this.chNum} tamamlandı`, sub: nx ? `Sıradaki: ${nx.title}` : 'Sıradaki: Ay’ın karanlık yüzü · yakında', end: true, next: nx ? next : null });
   }
   async nextChapter(n) {
     this.emit('card', null);
@@ -301,6 +309,12 @@ export class Game {
   choose(id) {
     this.emit('choice', null);
     this.ch && this.ch.choose && this.ch.choose(id);
+  }
+  toggleCam() {
+    this.ch && this.ch.toggleCam && this.ch.toggleCam();
+  }
+  setEngine(on) {
+    this.engineHeld = !!on;
   }
   toggleHide() {
     this.ch && this.ch.toggleHide && this.ch.toggleHide();
@@ -344,7 +358,8 @@ export class Game {
       this.keys[e.code] = true;
       if (e.code === 'KeyE' || e.code === 'Enter') this.onInteract();
       if (e.code === 'KeyQ' || e.code === 'KeyF') this.toggleHide();
-      if (e.code === 'Space' && this.voice.cur) {
+      if (e.code === 'KeyC') this.toggleCam();
+      if (e.code === 'Space' && this.voice.cur && !(this.ch && this.ch.noSpaceSkip)) {
         this.voice.cur.t = 999;
         this.voice.cur.ended = true;
       }
@@ -465,6 +480,8 @@ export class Game {
       for (const e of this.emissives) e.m.emissiveIntensity = e.base * k * (this.pulseMode && this.pulseAffects !== false ? pk : 1);
     }
     this.ch && this.ch.update && this.ch.update(dt, t);
+    // hızlı giden araçta kamera bir kare geride kalmasın: koltuk görüşünü araç hareket ettikten sonra yenile
+    if (this.player.seat) this.player.updateSeat(0, t);
     for (const u of this.updaters) u(dt, t);
     const realVoice = !!(this.voice.el && !this.voice.el.paused);
     for (const n of Object.values(this.npcs)) {

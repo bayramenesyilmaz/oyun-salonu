@@ -194,7 +194,7 @@ export const CHAPTER3 = {
     { s: 'zeynep', t: 'Kumru’yu yükledim. Kumru, merhaba de bakalım.' },
     { s: 'kumru', t: 'Merhaba. Ben Kumru. Bu aracın yapısal güvenliği yüzde altmış iki. Bunu bilmenizi isterim.' },
     { s: 'kaan', t: 'Yüzde altmış iki iyi mi, kötü mü?' },
-    { s: 'kumru', t: 'Kötü, ama düzeltilebilir bir sorun.' },
+    { s: 'kumru', t: 'Durum kötü, ama bunu düzeltebiliriz.' },
   ],
   objectives: {
     watch: 'Kor’a bak',
@@ -283,10 +283,92 @@ export const CHAPTER5 = {
   },
 };
 
+
+export const CHAPTER6 = {
+  title: 'Boşluk',
+  place: 'Dünya yörüngesi · 420 km',
+  intro: [
+    { s: 'kumru', t: 'Yörüngedeyiz. Ay’a gitmek için önce burnumuzu ona çevirmemiz gerek.' },
+    { s: 'mert', t: 'Arda, dümen sende. Nereye bakarsan Leylek oraya döner.' },
+    { s: 'elif', t: 'Ay sağ üstte. Kumru üstüne bir işaret koydu.' },
+  ],
+  aimed: [{ s: 'kumru', t: 'Hizalandık. İleri tuşunu basılı tut, ateşleme başlasın.' }],
+  burnDone: [
+    { s: 'kumru', t: 'Geçiş hızına ulaştık. Hazırız.' },
+    { s: 'kaan', t: 'Sıçrama ne demek? Kimse bana sıçramadan bahsetmedi!' },
+    { s: 'zeynep', t: 'Kemerler bağlı mı? Tamam. Hadi bakalım.' },
+  ],
+  jump: [
+    { s: 'elif', t: 'Dünya küçülüyor. Avucumun içine sığacak kadar küçük.' },
+    { s: 'mert', t: 'Üç günlük yol diyorlardı. Kor bunu saatlere indirdi.' },
+    { s: 'kaan', t: 'Mavi bir bilye. Annem şu an o bilyenin içinde uyuyor.' },
+  ],
+  rocksWarn: [
+    { s: 'kumru', t: 'Dikkat! Önümüzde taş sürüsü var. Kor’un parçalarına benziyorlar.' },
+    { s: 'zeynep', t: 'Arda, sağa sola kaç! Yukarı aşağı da kaçabilirsin!' },
+  ],
+  rockHit: [
+    { s: 'mert', t: 'Gövde sarsıldı! Bir tane daha yersek yamalar dayanmaz.' },
+    { s: 'kaan', t: 'O taş parlıyordu! Gördünüz mü, mavi mavi parlıyordu!' },
+  ],
+  rocksFail: [{ s: 'kumru', t: 'Gövde kritik. Sürünün başına dönüyoruz, bir daha deneyelim.' }],
+  rocksDone: [
+    { s: 'elif', t: 'Geçtik. Sanki biri bu taşları yolumuza bırakmış gibi.' },
+    { s: 'kumru', t: 'Ay’a yaklaşıyoruz. Yörüngeye girmek için yavaşlamalıyız.' },
+  ],
+  retro: [{ s: 'kumru', t: 'Leylek’i geri çevir. Burnumuz geldiğimiz yöne bakmalı.' }],
+  retroAimed: [{ s: 'kumru', t: 'Doğru yön. İleri tuşuyla fren ateşlemesi yap.' }],
+  orbit: [
+    { s: 'kumru', t: 'Ay yörüngesine girdik. Yükseklik yüz kilometre.' },
+    { s: 'zeynep', t: 'Şu kraterlere bakın. Kimse bunları bu kadar yakından görmedi.' },
+    { s: 'elif', t: 'Kor’un sinyali aşağıdan geliyor. İnmemiz gerek.' },
+  ],
+  objectives: {
+    aim: 'Ay işaretine dön (bakarak yönlendir)',
+    burn: (p) => `İleri tuşunu basılı tut: Ay’a geçiş ateşlemesi %${p}`,
+    rocks: (h) => `Taş sürüsünden kaç (WASD) · Gövde %${h}`,
+    retro: 'Geri yön işaretine dön',
+    brake: (p) => `İleri tuşu: fren ateşlemesi %${p}`,
+  },
+};
+
+export const CHAPTER7 = {
+  title: 'İniş',
+  place: 'Ay · Kor’un sinyali',
+  intro: [
+    { s: 'kumru', t: 'İniş bölgesi işaretlendi. Yükseklik altı yüz metre.' },
+    { s: 'mert', t: 'Ana motoru yavaş yavaş aç. Aşağı hızın ikinin altında olsun.' },
+    { s: 'elif', t: 'Yerçekimi Dünya’nın altıda biri. Tüy gibi düşeceğiz.' },
+  ],
+  hint: [{ s: 'kumru', t: 'Yukarı itiş için ileri tuşu. Yana kaymak için sağ ve sol.' }],
+  fast: [{ s: 'mert', t: 'Çok hızlı iniyoruz! Motoru aç, motoru aç!' }],
+  crash: [{ s: 'kumru', t: 'Sert iniş. Ayaklar dayanmadı. İniş bölgesinin üstüne geri dönüyoruz.' }],
+  landed: [
+    { s: 'kumru', t: 'Temas. Leylek Ay’da.' },
+    { s: 'kaan', t: 'İndik mi? Gerçekten Ay’a mı indik? Kızılkaya’dan buraya!' },
+    { s: 'zeynep', t: 'Tarih yazıyor. Saat üç kırk yedi, Türkiye saatiyle.' },
+    { s: 'mert', t: 'Kaskları takın. İlk adımı Arda atsın, bu onun hakkı.' },
+  ],
+  eva: [
+    { s: 'elif', t: 'Sinyal şu tepenin ardından geliyor. Yavaş yürü, zıplar gibi.' },
+  ],
+  found: [
+    { s: 'elif', t: 'Bu bir taş değil. Bu Kor’un büyüğü… ve içi boş.' },
+    { s: 'kumru', t: 'Yeni bir sinyal. Kaynağı Ay’ın karanlık yüzü.' },
+    { s: 'arda', t: 'Demek ki Kor yalnız değilmiş. Biri bizi çağırıyor.' },
+  ],
+  objectives: {
+    land: 'İniş bölgesine yumuşak in',
+    walk: 'Sinyale yürü',
+  },
+};
+
 export const CHAPTERS = [
   { n: 1, title: CHAPTER1.title, sub: 'Bir yaz gecesi, gökyüzü yarılıyor.' },
   { n: 2, title: CHAPTER2.title, sub: 'Taşı mahalleden kimseye görünmeden geçir.' },
   { n: 3, title: CHAPTER3.title, sub: 'Kor’un sinyali ve Leylek’in yapımı.' },
   { n: 4, title: CHAPTER4.title, sub: 'Son gece. Vedalar.' },
   { n: 5, title: CHAPTER5.title, sub: 'Kokpitten yörüngeye.' },
+  { n: 6, title: CHAPTER6.title, sub: 'Leylek’i Ay’a sen sür.' },
+  { n: 7, title: CHAPTER7.title, sub: 'Ay’a iniş ve ilk adım.' },
 ];

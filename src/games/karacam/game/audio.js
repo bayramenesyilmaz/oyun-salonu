@@ -140,4 +140,69 @@ export class CinAudio {
     this.tone('sine', 55, 48, 3.5, 0.12, 0.4);
     this.tone('sine', 82, 70, 3.0, 0.05, 0.6);
   }
+
+  // cin nöbeti: alçak uğultu ve titreşen gürültü
+  possession(on) {
+    if (!this.ctx) return;
+    const c = this.ctx, t = c.currentTime;
+    if (on && !this.poss) {
+      const o = c.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.value = 46;
+      const o2 = c.createOscillator();
+      o2.type = 'sine';
+      o2.frequency.value = 47.3;
+      const f = c.createBiquadFilter();
+      f.type = 'lowpass';
+      f.frequency.value = 220;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.12, t + 1.2);
+      const lfo = c.createOscillator();
+      lfo.frequency.value = 6.5;
+      const lg = c.createGain();
+      lg.gain.value = 0.05;
+      lfo.connect(lg).connect(g.gain);
+      o.connect(f);
+      o2.connect(f);
+      f.connect(g).connect(this.master);
+      o.start();
+      o2.start();
+      lfo.start();
+      this.poss = { o, o2, lfo, g };
+    } else if (!on && this.poss) {
+      const p = this.poss;
+      p.g.gain.setTargetAtTime(0.0001, t, 0.4);
+      setTimeout(() => {
+        try {
+          p.o.stop();
+          p.o2.stop();
+          p.lfo.stop();
+        } catch (e) {}
+      }, 2000);
+      this.poss = null;
+    }
+  }
+  twitch() {
+    if (!this.ctx) return;
+    const c = this.ctx, t = c.currentTime;
+    const s = c.createBufferSource();
+    s.buffer = this.noise;
+    const f = c.createBiquadFilter();
+    f.type = 'bandpass';
+    f.frequency.value = 300 + Math.random() * 900;
+    f.Q.value = 3;
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.09, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    s.connect(f).connect(g).connect(this.master);
+    s.start(t, Math.random());
+    s.stop(t + 0.14);
+  }
+  // korku vurgusu: ani tiz çığlık benzeri yükseliş + vuruş
+  stinger() {
+    this.tone('sawtooth', 220, 880, 0.5, 0.06);
+    this.tone('square', 233, 932, 0.5, 0.04);
+    this.tone('sine', 60, 30, 1.2, 0.25, 0.02);
+  }
 }

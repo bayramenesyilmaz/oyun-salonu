@@ -16,6 +16,9 @@ Dünya ve Ay dokuları: NASA (kamu malı)
   Ay: CGI Moon Kit, LRO renk haritası (NASA Scientific Visualization Studio)
   NASA görüntüleri telif hakkına tabi değildir; NASA logosu ya da onayı kullanılmamıştır.
 
+Ay yüzeyi kayaları (Bölüm 7): Poly Haven moon_rock_01, moon_rock_02, moon_rock_03 (CC0) — https://polyhaven.com
+Ay'a iniş fiziği (Bölüm 7): Rapier (@dimforge/rapier3d-compat, Apache 2.0) — https://rapier.rs
+
 Seslendirme: Chatterbox Multilingual (Resemble AI, MIT lisansı) ile üretildi.
   Erkek seslerin referansları: Piper tr_TR fahrettin / fettah ses modelleri (CC0 veri kümesi).
   Kadın seslerin referansı modelin kendi varsayılan sesinden türetildi.

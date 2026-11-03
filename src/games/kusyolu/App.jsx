@@ -41,6 +41,10 @@ export default function App() {
   const [hideable, setHideable] = useState(false);
   const [carry, setCarry] = useState(null);
   const [white, setWhite] = useState(0);
+  const [hud, setHud] = useState(null);
+  const [shipcam, setShipcam] = useState(null);
+  const [engineBtn, setEngineBtn] = useState(false);
+  const [warp, setWarp] = useState(0);
 
   useEffect(() => {
     let g;
@@ -71,6 +75,10 @@ export default function App() {
       else if (type === 'hideable') setHideable(d);
       else if (type === 'carry') setCarry(d);
       else if (type === 'whiteflash') setWhite(d);
+      else if (type === 'hud') setHud(d);
+      else if (type === 'shipcam') setShipcam(d);
+      else if (type === 'engineBtn') setEngineBtn(d);
+      else if (type === 'warp') setWarp(d);
       else if (type === 'saved') setSave(d);
     };
     try {
@@ -194,6 +202,74 @@ export default function App() {
       )}
       {playing && obj && <div className="ky-obj">{obj}</div>}
       {playing && carry && <div className="ky-carry">Elinde: {carry}</div>}
+      {playing && hud && hud.items && (
+        <div className="ky-hud">
+          {hud.items.map((it) => (
+            <div key={it.k} className={it.warn ? 'warn' : ''}>
+              <small>{it.k}</small>
+              <b>{it.v}</b>
+            </div>
+          ))}
+        </div>
+      )}
+      {playing && hud && hud.marker && (() => {
+        // ekran dışındaysa kenara yapıştır ve yönü göster
+        let { x, y, behind, label } = hud.marker;
+        let dx = x - 0.5, dy = y - 0.5;
+        if (behind) {
+          dx = -dx;
+          dy = -dy;
+        }
+        const off = behind || x < 0.04 || x > 0.96 || y < 0.07 || y > 0.93;
+        if (off) {
+          const k = 0.44 / Math.max(Math.abs(dx), Math.abs(dy) * 1.05, 1e-6);
+          x = 0.5 + dx * k;
+          y = 0.5 + dy * k;
+        }
+        const ang = (Math.atan2(dy, dx) * 180) / Math.PI;
+        return (
+          <div className={'ky-mark' + (off ? ' off' : '')} style={{ left: `${x * 100}%`, top: `${y * 100}%` }}>
+            {off ? <b style={{ transform: `rotate(${ang}deg)` }}>➜</b> : <i />}
+            <span>{label}</span>
+          </div>
+        );
+      })()}
+      {playing && hud && hud.gauge && (
+        <div className="ky-gauge">
+          <span>{hud.gauge.label}</span>
+          <div className="bar">
+            <i style={{ width: `${Math.round(hud.gauge.p)}%` }} />
+          </div>
+        </div>
+      )}
+      {playing && shipcam && (IS_TOUCH ? (
+        <button className="ky-cam" onClick={() => game.current.toggleCam()}>
+          {shipcam === 'kokpit' ? 'Dış kamera' : 'Kokpit'}
+        </button>
+      ) : (
+        <div className="ky-camkey">
+          <kbd>C</kbd> {shipcam === 'kokpit' ? 'dış kamera' : 'kokpit'}
+          {engineBtn && (
+            <>
+              {' '}· <kbd>Boşluk</kbd> motor
+            </>
+          )}
+        </div>
+      ))}
+      {playing && engineBtn && IS_TOUCH && (
+        <button
+          className="ky-engine"
+          onTouchStart={(e) => {
+            e.preventDefault();
+            game.current.setEngine(true);
+          }}
+          onTouchEnd={() => game.current.setEngine(false)}
+          onTouchCancel={() => game.current.setEngine(false)}
+        >
+          MOTOR
+        </button>
+      )}
+      {warp > 0.01 && <div className="ky-warp" style={{ opacity: warp }} />}
       {playing && stealth && (
         <div className={'ky-stealth' + (stealth.sus > 0.66 ? ' hot' : stealth.sus > 0.05 ? ' warm' : '')}>
           <span>{stealth.hidden ? 'Taş saklı' : 'Taş görünüyor'}{stealth.lit ? ' · ışıktasın' : ''}</span>

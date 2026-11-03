@@ -6,6 +6,45 @@ import { CHAPTER5 as C5 } from '../story.js';
 import { loadDepo } from './depo.js';
 
 const ORDER = ['guc', 'cati', 'kor', 'atesle'];
+
+// cam: ışıklardan etkilenmeyen, bakış açısıyla belirginleşen (fresnel) ince bir yüzey.
+// Önden bakınca neredeyse görünmez, kenarlarda ve yatık açılarda hafif mavi-gri parlama ve ince çizikler.
+export function glassMaterial() {
+  return new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    uniforms: { tint: { value: new THREE.Color(0xbcd4e6) } },
+    vertexShader: `varying vec3 vN; varying vec3 vW; varying vec3 vL;
+      void main(){ vN=normalize(mat3(modelMatrix)*normal); vec4 w=modelMatrix*vec4(position,1.); vW=w.xyz; vL=position; gl_Position=projectionMatrix*viewMatrix*w; }`,
+    fragmentShader: `uniform vec3 tint; varying vec3 vN; varying vec3 vW; varying vec3 vL;
+      float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233)))*43758.5453); }
+      void main(){
+        vec3 v=normalize(cameraPosition-vW); float c=abs(dot(normalize(vN),v));
+        float fr=pow(1.0-c,3.0);
+        // ince çizikler ve hafif leke
+        vec2 q=vL.xy*vec2(9.0,3.0)+vL.z*5.0; float sc=smoothstep(0.985,1.0,h(floor(q*vec2(1.0,40.0))))*0.5;
+        float a=0.025+fr*0.32+sc*0.05;
+        gl_FragColor=vec4(tint*(0.55+fr*0.6), clamp(a,0.0,0.45));
+      }`,
+  });
+}
+export function addGlass(rig, panes) {
+  const mat = glassMaterial();
+  const out = [];
+  for (const pts of Object.values(panes || {})) {
+    const g = new THREE.BufferGeometry();
+    const v = pts.flat();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+    g.setIndex([0, 1, 2, 0, 2, 3]);
+    g.computeVertexNormals();
+    const m = new THREE.Mesh(g, mat);
+    m.renderOrder = 5;
+    rig.add(m);
+    out.push(m);
+  }
+  return out;
+}
 const RE = 6371; // km (uzay evresinde 1 birim = 1 km)
 const ease = (x) => x * x * (3 - 2 * x);
 
@@ -35,7 +74,7 @@ export class Chapter5 {
     // kabin ışıkları
     const red = new THREE.PointLight(0xff3a20, 3, 4, 2);
     red.position.set(0, 1.9, 1.0);
-    const dash = new THREE.PointLight(0x60ffa0, 2.2, 3, 2);
+    const dash = new THREE.PointLight(0xffd8a0, 0.35, 1.6, 2);
     dash.position.set(0, 1.0, -0.6);
     const warm = new THREE.PointLight(0xffc890, 0.7, 4, 2);
     warm.position.set(0, 1.7, 0.2);
@@ -61,11 +100,9 @@ export class Chapter5 {
       n.root.rotation.y = Math.PI;
       n.wantYaw = Math.PI;
     }
-    // dizüstü bilgisayar camı kapatıyor: gizle; göz biraz yukarı ve geri
-    rig.traverse((o) => {
-      if (/classic_laptop|lid_floaters/.test(o.name)) o.visible = false;
-    });
-    g.player.seat = { rig, eye: V3(km.eye).add(new THREE.Vector3(0, 0.24, 0.12)), yawLim: 2.2 };
+    // geniş ön cam ve yan camlar
+    this.glass = addGlass(rig, km.glass);
+    g.player.seat = { rig, eye: V3(km.eye), yawLim: 2.2 };
     g.player.yaw = 0;
     g.player.pitch = -0.05;
     this.dust = makeSmoke(V3(meta.ship.p).setY(0), { n: 160, rise: 6, drift: 3, alpha: 0, color: [0.55, 0.5, 0.45] });
@@ -109,7 +146,7 @@ export class Chapter5 {
     g.audio.beep(true);
     f.hidden = true;
     if (k === 'guc') {
-      this.cabin.dash.intensity = 4;
+      this.cabin.dash.intensity = 0.6;
       this.cabin.warm.intensity = 2.5;
     }
     if (k === 'cati') {

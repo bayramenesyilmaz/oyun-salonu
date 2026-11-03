@@ -130,6 +130,7 @@ export class NPC {
     // başı oyuncuya çevir (yumuşak, sınırlı)
     if (this.head && this.lookTarget) {
       const hp = new THREE.Vector3();
+      this.head.updateWorldMatrix(true, false);
       this.head.getWorldPosition(hp);
       const to = this.lookTarget.clone().sub(hp);
       const dist = to.length();

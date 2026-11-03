@@ -1,12 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { SPEAKERS, INTRO, SCENE, SUSPECTS, ACCUSE, ENDING, EPILOGUE } from './game/story.js';
+import { SPEAKERS, CASES } from './game/story.js';
+
+// etkin vaka (oyun başlarken seçilir; bileşenler buradan okur)
+let C = CASES[1];
+const img = (n) => `${BASE}${n}.jpg`;
+function loadSave() {
+  try {
+    return { max: 1, ...JSON.parse(localStorage.getItem('karacam-save') || '{}') };
+  } catch {
+    return { max: 1 };
+  }
+}
 import { CinAudio } from './game/audio.js';
 import { Dialogue } from './game/dialogue.js';
 import './karacam.css';
 
 const BASE = '/karacam/';
 const TEST = typeof location !== 'undefined' && /[?&]test\b/.test(location.search);
-const pic = (l) => `${BASE}kesit/${l.p || l.s}.webp`;
+const pic = (l) => `${BASE}kesit/${l.p || (l.s.endsWith('_cin') ? l.s + '_1' : l.s)}.webp`;
 const fmt = (s) => Math.floor(s / 60) + ':' + String(Math.floor(s) % 60).padStart(2, '0');
 
 function loadSettings() {
@@ -48,7 +59,11 @@ export default function App() {
   const [want, setWant] = useState([]);
   const [got, setGot] = useState(() => new Set());
   const [seen, setSeen] = useState(() => new Set());
-  const [asked, setAsked] = useState(() => ({ nazmiye: new Set(), hatice: new Set(), selim: new Set() }));
+  const [asked, setAsked] = useState(() => ({}));
+  const [possDone, setPossDone] = useState(() => new Set());
+  const [fit, setFit] = useState(null); // cin nöbeti: { id, frame }
+  const [choice, setChoice] = useState(null);
+  const [apparShown, setApparShown] = useState(false);
   const [opened, setOpened] = useState(() => new Set());
   const [notes, setNotes] = useState([]);
   const [suspect, setSuspect] = useState(null);
@@ -56,12 +71,7 @@ export default function App() {
   const stats = useRef({ t0: 0, penalty: 0, hints: 0, wrong: 0, sceneTime: 0, score: 0 });
 
   useEffect(() => {
-    fetch(BASE + 'salon.json')
-      .then((r) => r.json())
-      .then(setData)
-      .catch(() => setErr('Vaka dosyası yüklenemedi. Bağlantını kontrol edip sayfayı yenile.'));
-    const img = new Image();
-    img.src = BASE + 'salon.jpg';
+    setData(true);
     return () => {
       dlg.stop();
       audio.ticking(false);
@@ -97,28 +107,44 @@ export default function App() {
   const addNote = (t) => t && setNotes((n) => (n.includes(t) ? n : [...n, t]));
 
   // ---------- akış ----------
-  const start = () => {
+  const start = async (id = 1) => {
     audio.init();
     audio.setVolume(settings.vol);
-    if (!data) return;
-    const pool = Object.keys(data.items).filter((k) => !SCENE.evidence.includes(k));
-    setWant(shuffle([...SCENE.evidence, ...shuffle(pool).slice(0, SCENE.fillers)]));
+    C = CASES[id];
+    let d;
+    try {
+      d = await (await fetch(`${BASE}${C.bg}.json`)).json();
+      await new Promise((ok) => {
+        const im = new Image();
+        im.onload = im.onerror = ok;
+        im.src = img(C.bg);
+      });
+    } catch {
+      return setErr('Vaka dosyası yüklenemedi. Bağlantını kontrol edip sayfayı yenile.');
+    }
+    setData(d);
+    const data_ = d;
+    const pool = Object.keys(data_.items).filter((k) => !C.scene.evidence.includes(k));
+    setWant(shuffle([...C.scene.evidence, ...shuffle(pool).slice(0, C.scene.fillers)]));
     setGot(new Set());
     setSeen(new Set());
-    setAsked({ nazmiye: new Set(), hatice: new Set(), selim: new Set() });
+    setAsked(Object.fromEntries(Object.keys(C.suspects).map((k) => [k, new Set()])));
+    setPossDone(new Set());
+    setFit(null);
+    setApparShown(false);
     setOpened(new Set());
     setNotes([]);
     setAccuse({ who: null, step: 'who' });
     stats.current = { t0: 0, penalty: 0, hints: 0, wrong: 0, sceneTime: 0, score: 0 };
-    dlg.preload(INTRO);
+    dlg.preload(C.intro);
     fadeTo(() => {
       setScreen('intro');
       audio.wind(true);
       audio.ticking(true);
-      setCard({ title: 'Vaka 1 · Saat Üçte Duran Saatler', sub: 'Karaçam, Kasım 1986 · Demirci evi, 03.15' });
+      setCard({ title: `Vaka ${C.id} · ${C.title}`, sub: C.sub });
       setTimeout(() => {
         setCard(null);
-        say(INTRO, () => {
+        say(C.intro, () => {
           stats.current.t0 = performance.now();
           setScreen('scene');
         });
@@ -128,7 +154,7 @@ export default function App() {
 
   const sceneFinished = () => {
     stats.current.sceneTime = (performance.now() - stats.current.t0) / 1000 + stats.current.penalty;
-    say(SCENE.done, () => fadeTo(() => setScreen('hub')));
+    say(C.scene.done, () => fadeTo(() => setScreen('hub')));
   };
 
   const onFind = (k) => {
@@ -138,12 +164,12 @@ export default function App() {
     setGot(g);
     const el = (performance.now() - stats.current.t0) / 1000 + stats.current.penalty;
     stats.current.score += Math.max(100, 1000 - Math.round(el * 4));
-    const ev = SCENE.found[k];
+    const ev = C.scene.found[k];
     if (ev) {
       audio.evidence();
       say([ev], null, false);
     } else audio.found();
-    if (want.every((w) => g.has(w)) && Object.keys(SCENE.spots).every((s) => seen.has(s))) setTimeout(sceneFinished, ev ? 3500 : 900);
+    if (want.every((w) => g.has(w)) && Object.keys(C.scene.spots).every((s) => seen.has(s))) setTimeout(sceneFinished, ev ? 3500 : 900);
   };
   const onSpot = (k) => {
     if (seen.has(k)) return;
@@ -152,8 +178,8 @@ export default function App() {
     setSeen(s);
     stats.current.score += 250;
     audio.evidence();
-    say([SCENE.spots[k]], null, false);
-    if (want.every((w) => got.has(w)) && Object.keys(SCENE.spots).every((x) => s.has(x))) setTimeout(sceneFinished, 3500);
+    say([C.scene.spots[k]], null, false);
+    if (want.every((w) => got.has(w)) && Object.keys(C.scene.spots).every((x) => s.has(x))) setTimeout(sceneFinished, 3500);
   };
   const onMiss = () => {
     stats.current.penalty += 5;
@@ -166,19 +192,52 @@ export default function App() {
     setScreen('sorgu');
     if (!opened.has(id)) {
       setOpened(new Set([...opened, id]));
-      dlg.preload(SUSPECTS[id].q.flatMap((q) => q.a));
-      setTimeout(() => say(SUSPECTS[id].open), 400);
+      dlg.preload(C.suspects[id].q.flatMap((q) => q.a));
+      setTimeout(() => say(C.suspects[id].open), 400);
     }
   };
   const ask = (q) => {
     if (modal) return;
     const a = { ...asked, [suspect]: new Set([...asked[suspect], q.id]) };
     setAsked(a);
-    say(q.a, () => addNote(q.note));
+    const P = C.suspects[suspect].possession;
+    say(q.a, () => {
+      addNote(q.note);
+      if (P && !possDone.has(suspect) && a[suspect].size >= P.after) setTimeout(() => possess(suspect), TEST ? 50 : 900);
+    });
+  };
+  // cin nöbeti: görünüş ve hareket değişir, ses bozulur, sonunda oyuncu ne yapacağını seçer
+  const fitTimer = useRef(null);
+  const possess = (id) => {
+    const P = C.suspects[id].possession;
+    setPossDone((d) => new Set([...d, id]));
+    audio.possession(true);
+    let f = 0;
+    const jerk = () => {
+      f = (f + 1 + Math.floor(Math.random() * 2)) % P.frames.length;
+      setFit({ id, frame: f, k: Math.random() });
+      audio.twitch();
+      fitTimer.current = setTimeout(jerk, 90 + Math.random() * (Math.random() < 0.3 ? 900 : 260));
+    };
+    setFit({ id, frame: 0, k: 0 });
+    fitTimer.current = setTimeout(jerk, 400);
+    say(P.lines, () => {
+      setChoice(P.choice);
+      document.exitPointerLock?.();
+    });
+  };
+  const pickChoice = (opt) => {
+    const P = C.suspects[suspect].possession;
+    setChoice(null);
+    clearTimeout(fitTimer.current);
+    setFit(null);
+    audio.possession(false);
+    audio.page();
+    say(P.choice.after[opt], () => addNote(P.choice.note));
   };
   const canAccuse = () => Object.values(asked).every((s) => s.size >= 2);
   const goAccuse = () => {
-    if (!canAccuse()) return say(ACCUSE.notEnough);
+    if (!canAccuse()) return say(C.accuse.notEnough);
     audio.page();
     setAccuse({ who: null, step: 'who' });
     setScreen('karar');
@@ -186,26 +245,26 @@ export default function App() {
   const choose = (step, id) => {
     if (modal) return;
     if (step === 'who') {
-      if (id !== ACCUSE.who.answer) {
+      if (id !== C.accuse.who.answer) {
         stats.current.wrong++;
         audio.miss();
-        return say(ACCUSE.wrong);
+        return say(C.accuse.wrong);
       }
       audio.page();
       setAccuse({ who: id, step: 'why' });
     } else {
-      if (id !== ACCUSE.why.answer) {
+      if (id !== C.accuse.why.answer) {
         stats.current.wrong++;
         audio.miss();
-        return say(ACCUSE.wrong);
+        return say(C.accuse.wrong);
       }
       audio.stamp();
-      setAccuse({ who: ACCUSE.who.answer, step: 'ok' });
+      setAccuse({ who: C.accuse.who.answer, step: 'ok' });
       setTimeout(
         () =>
           fadeTo(() => {
             setScreen('son');
-            setTimeout(() => say(ENDING, ending2), 300);
+            setTimeout(() => say(C.ending, ending2), 300);
           }),
         TEST ? 50 : 1600
       );
@@ -215,11 +274,11 @@ export default function App() {
     fadeTo(() => {
       setScreen('epilog');
       audio.ticking(true);
-      setCard({ title: 'Ertesi gece', sub: 'Saat 02.59' });
+      setCard(C.epilogueCard);
       setTimeout(() => {
         setCard(null);
         audio.stopClocks();
-        setTimeout(() => say(EPILOGUE, () => fadeTo(() => finish(), 1400)), TEST ? 50 : 2500);
+        setTimeout(() => say(C.epilogue, () => fadeTo(() => finish(), 1400)), TEST ? 50 : 2500);
       }, TEST ? 50 : 3400);
     }, 1200);
   };
@@ -232,6 +291,10 @@ export default function App() {
     try {
       const best = JSON.parse(localStorage.getItem('karacam-best') || '{}');
       if (!best.score || s.score > best.score) localStorage.setItem('karacam-best', JSON.stringify({ score: s.score, stars: s.stars }));
+    } catch {}
+    try {
+      const sv = loadSave();
+      if (C.id + 1 > sv.max) localStorage.setItem('karacam-save', JSON.stringify({ max: C.id + 1 }));
     } catch {}
     setScreen('bitti');
   };
@@ -259,23 +322,34 @@ export default function App() {
 
   return (
     <div className="kc-root" onClick={() => line && modal && dlg.skip()}>
-      {showSalon && screen !== 'scene' && <div className={'kc-bg' + (bgBlur ? ' blur' : '') + (screen === 'epilog' ? ' dark' : '')} style={{ backgroundImage: `url(${BASE}salon.jpg)` }} />}
+      {showSalon && screen !== 'scene' && <div className={'kc-bg' + (bgBlur ? ' blur' : '') + (screen === 'epilog' ? ' dark' : '')} style={{ backgroundImage: `url(${img(C.bg)})` }} />}
 
       {screen === 'menu' && <Menu data={data} settings={settings} setSettings={setSettings} onStart={start} />}
 
       {screen === 'scene' && data && (
-        <Scene data={data} want={want} got={got} seen={seen} onFind={onFind} onSpot={onSpot} onMiss={onMiss} stats={stats} audio={audio} line={line} />
+        <Scene data={data} want={want} got={got} seen={seen} onFind={onFind} onSpot={onSpot} onMiss={onMiss} stats={stats} audio={audio} line={line} onAppar={(l) => { audio.stinger(); say([l], null, false); }} />
       )}
 
       {screen === 'hub' && <Hub asked={asked} notes={notes} onOpen={openSuspect} onAccuse={goAccuse} canAccuse={canAccuse()} />}
 
       {screen === 'sorgu' && suspect && (
-        <Sorgu id={suspect} asked={asked[suspect]} got={got} seen={seen} line={line} modal={modal} onAsk={ask} onBack={() => !modal && (audio.page(), setScreen('hub'))} />
+        <Sorgu id={suspect} asked={asked[suspect]} got={got} seen={seen} line={line} modal={modal || !!choice} fit={fit} onAsk={ask} onBack={() => !modal && (audio.page(), setScreen('hub'))} />
       )}
 
       {screen === 'karar' && <Karar state={accuse} onChoose={choose} onBack={() => !modal && setScreen('hub')} />}
 
-      {screen === 'bitti' && <Bitti stats={stats.current} onAgain={() => setScreen('menu')} />}
+      {screen === 'bitti' && <Bitti stats={stats.current} onAgain={() => setScreen('menu')} onNext={(id) => start(id)} />}
+      {fit && <div className="kc-fitfx" key={fit.k} />}
+      {choice && (
+        <div className="kc-choice" onClick={(e) => e.stopPropagation()}>
+          <p>{choice.prompt}</p>
+          {choice.options.map((o) => (
+            <button key={o.id} className="kc-btn" onClick={() => pickChoice(o.id)}>
+              {o.t}
+            </button>
+          ))}
+        </div>
+      )}
 
       {(screen === 'intro' || screen === 'son' || screen === 'epilog') && line && <Portrait line={line} side="right" />}
       {screen !== 'scene' && line && <SubBox line={line} />}
@@ -301,10 +375,11 @@ function Menu({ data, settings, setSettings, onStart }) {
       return null;
     }
   });
+  const [save] = useState(loadSave);
   const fsOk = typeof document !== 'undefined' && !!document.documentElement.requestFullscreen;
   return (
     <div className="kc-menu">
-      <div className="kc-menu-bg" style={{ backgroundImage: `url(${BASE}salon.jpg)` }} />
+      <div className="kc-menu-bg" style={{ backgroundImage: `url(${img(C.bg)})` }} />
       <div className="inner">
         <div className="kicker">Karaçam · 1986</div>
         <h1>
@@ -313,21 +388,27 @@ function Menu({ data, settings, setSettings, onStart }) {
           <span>Dosyaları</span>
         </h1>
         <p className="tag">Cin mi, insan mı?</p>
-        <div className="case">
-          <small>Vaka 1</small>
-          <b>Saat Üçte Duran Saatler</b>
-          {best && <em>En iyi: {best.score} puan · {'★'.repeat(best.stars)}</em>}
+        <div className="cases">
+          {Object.values(CASES).map((c) => {
+            const locked = c.id > save.max;
+            return (
+              <button
+                key={c.id}
+                className={'case' + (locked ? ' locked' : '')}
+                disabled={locked}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStart(c.id);
+                }}
+              >
+                <small>Vaka {c.id}</small>
+                <b>{locked ? 'Kilitli' : c.title}</b>
+                {!locked && <em>{c.id === save.max ? 'Başla' : 'Yeniden oyna'}</em>}
+              </button>
+            );
+          })}
         </div>
-        <button
-          className="kc-btn big"
-          disabled={!data}
-          onClick={(e) => {
-            e.stopPropagation();
-            onStart();
-          }}
-        >
-          {data ? 'Vakaya başla' : 'Yükleniyor…'}
-        </button>
+        {best && <p className="small">En iyi: {best.score} puan · {'★'.repeat(best.stars)}</p>}
         <div className="row">
           <label className="vol">
             Ses
@@ -359,7 +440,7 @@ function Menu({ data, settings, setSettings, onStart }) {
 }
 
 // ---------------- olay yeri: kaydır / yakınlaştır / bul ----------------
-function Scene({ data, want, got, seen, onFind, onSpot, onMiss, stats, audio, line }) {
+function Scene({ data, want, got, seen, onFind, onSpot, onMiss, stats, audio, line, onAppar }) {
   const box = useRef(null);
   const [view, setView] = useState({ s: 1, tx: 0, ty: 0, cw: 1, ch: 1 });
   const v = useRef(view);
@@ -369,6 +450,16 @@ function Scene({ data, want, got, seen, onFind, onSpot, onMiss, stats, audio, li
   const [hints, setHints] = useState(3);
   const [, force] = useState(0);
   const W = data.w, H = data.h;
+  // karanlıkta beliren figür (yalnızca bazı vakalarda)
+  const AP = C.scene.apparition;
+  const [appar, setAppar] = useState(0); // 0 yok, 1 görünür, 2 bitti
+  useEffect(() => {
+    if (!AP || !data.apparition || appar || got.size < AP.after) return;
+    setAppar(1);
+    onAppar && onAppar(AP.line);
+    const t = setTimeout(() => setAppar(2), 2200);
+    return () => clearTimeout(t);
+  }, [got.size]);
 
   const clamp = (s, tx, ty, cw, ch) => {
     const minS = Math.max(cw / W, ch / H);
@@ -502,7 +593,7 @@ function Scene({ data, want, got, seen, onFind, onSpot, onMiss, stats, audio, li
           zoomAt(v.current.s > Math.max(view.cw / W, view.ch / H) * 1.5 ? 0.4 : 2, e.clientX - r.left, e.clientY - r.top);
         }}
       >
-        <img src={BASE + 'salon.jpg'} alt="Demirci evinin salonu, gece" draggable="false" style={{ width: W * view.s, height: H * view.s, transform: `translate(${view.tx}px, ${view.ty}px)` }} />
+        <img src={img(C.bg)} alt={C.scene.title} draggable="false" style={{ width: W * view.s, height: H * view.s, transform: `translate(${view.tx}px, ${view.ty}px)` }} />
         {marks.map((m) =>
           m.miss ? (
             <div key={m.k} className="kc-miss" style={toScreen(m.cx, m.cy)} />
@@ -510,12 +601,18 @@ function Scene({ data, want, got, seen, onFind, onSpot, onMiss, stats, audio, li
             <div key={m.k} className={'kc-mark' + (m.spot ? ' spot' : '')} style={{ ...toScreen(m.cx, m.cy), width: Math.max(34, m.r * 2 * view.s), height: Math.max(34, m.r * 2 * view.s) }} />
           )
         )}
+        {appar === 1 && (() => {
+          const a = data.apparition;
+          const hpx = Math.abs(a.h) * H * view.s;
+          const pos = toScreen(a.x, a.y);
+          return <img className="kc-appar" src={`${BASE}kesit/${AP.img}.webp`} alt="" style={{ left: pos.left, top: pos.top - hpx, height: hpx * 1.08 }} />;
+        })()}
         {hint && <div className="kc-hint" style={{ ...toScreen(hint.cx, hint.cy), width: Math.max(60, hint.r * 2 * view.s), height: Math.max(60, hint.r * 2 * view.s) }} />}
       </div>
 
       <div className="kc-top">
         <div className="pill">
-          <small>Olay yeri</small> {SCENE.title} · {SCENE.time}
+          <small>Olay yeri</small> {C.scene.title} · {C.scene.time}
         </div>
         <div className="pill num">
           <small>Süre</small> {fmt(el)}
@@ -532,7 +629,7 @@ function Scene({ data, want, got, seen, onFind, onSpot, onMiss, stats, audio, li
 
       <div className="kc-strip" onPointerDown={(e) => e.stopPropagation()}>
         {want.map((k) => (
-          <span key={k} className={'chip' + (got.has(k) ? ' got' : '') + (SCENE.evidence.includes(k) ? ' ev' : '')}>
+          <span key={k} className={'chip' + (got.has(k) ? ' got' : '') + (C.scene.evidence.includes(k) ? ' ev' : '')}>
             {data.items[k].label}
           </span>
         ))}
@@ -551,7 +648,7 @@ function Hub({ asked, notes, onOpen, onAccuse, canAccuse }) {
       <h2>Sorgu</h2>
       <p className="sub">Şüphelilerden birini seç. Karar vermek için her birine en az iki soru sor.</p>
       <div className="kc-sus">
-        {Object.entries(SUSPECTS).map(([id, s]) => (
+        {Object.entries(C.suspects).map(([id, s]) => (
           <button
             key={id}
             className="sus"
@@ -594,14 +691,18 @@ function Hub({ asked, notes, onOpen, onAccuse, canAccuse }) {
   );
 }
 
-function Sorgu({ id, asked, got, seen, line, modal, onAsk, onBack }) {
-  const s = SUSPECTS[id];
+function Sorgu({ id, asked, got, seen, line, modal, fit, onAsk, onBack }) {
+  const s = C.suspects[id];
   const has = (k) => !k || got.has(k) || seen.has(k);
-  const main = line && line.s === id ? pic(line) : `${BASE}kesit/${id}.webp`;
-  const side = line && line.s !== id ? pic(line) : null;
+  const fitting = fit && fit.id === id;
+  const own = line && (line.s === id || line.s === id + '_cin');
+  let main = own ? pic(line) : `${BASE}kesit/${id}.webp`;
+  if (fitting) main = `${BASE}kesit/${s.possession.frames[fit.frame]}.webp`;
+  const side = line && !own ? pic(line) : null;
   return (
-    <div className="kc-sorgu">
-      <img className="kc-cut main" src={main} alt={SPEAKERS[id].name} />
+    <div className={'kc-sorgu' + (fitting ? ' fitting' : '')}>
+      {s.possession && s.possession.frames.map((f) => <link key={f} rel="preload" as="image" href={`${BASE}kesit/${f}.webp`} />)}
+      <img className={'kc-cut main' + (fitting ? ' jerk' : '')} src={main} alt={SPEAKERS[id].name} key={fitting ? 'f' + fit.k : main} />
       {side && <img className="kc-cut side" src={side} alt="" key={side} />}
       <div className={'kc-qs' + (modal ? ' busy' : '')} onClick={(e) => e.stopPropagation()}>
         <div className="who">
@@ -627,16 +728,16 @@ function Sorgu({ id, asked, got, seen, line, modal, onAsk, onBack }) {
 
 function Karar({ state, onChoose, onBack }) {
   const step = state.step === 'ok' ? 'why' : state.step;
-  const Q = ACCUSE[step];
+  const Q = C.accuse[step];
   return (
     <div className="kc-karar" onClick={(e) => e.stopPropagation()}>
       <div className="paper">
-        <small>Karar · Vaka 1</small>
+        <small>Karar · Vaka {C.id}</small>
         <h2>{Q.q}</h2>
         <div className="opts">
           {Q.options.map((o) => (
             <button key={o.id} className="opt" onClick={() => onChoose(step, o.id)} disabled={state.step === 'ok'}>
-              {step === 'who' && <img src={o.id === 'cin' ? `${BASE}cin.jpg` : `${BASE}kesit/${o.id}.webp`} alt="" />}
+              {step === 'who' && <img src={o.id === 'cin' ? (C.id === 1 ? `${BASE}cin.jpg` : `${BASE}kesit/gulsum_cin_1.webp`) : `${BASE}kesit/${o.id}.webp`} alt="" />}
               <span>{o.t}</span>
             </button>
           ))}
@@ -652,12 +753,13 @@ function Karar({ state, onChoose, onBack }) {
   );
 }
 
-function Bitti({ stats, onAgain }) {
+function Bitti({ stats, onAgain, onNext }) {
+  const nx = CASES[C.id + 1];
   return (
     <div className="kc-end">
       <div className="paper">
-        <small>Vaka 1 kapandı</small>
-        <h2>Saat Üçte Duran Saatler</h2>
+        <small>Vaka {C.id} kapandı</small>
+        <h2>{C.title}</h2>
         <div className="stars">{'★'.repeat(stats.stars) + '☆'.repeat(3 - stats.stars)}</div>
         <dl>
           <dt>Olay yeri süresi</dt>
@@ -669,8 +771,19 @@ function Bitti({ stats, onAgain }) {
           <dt>Yanlış karar</dt>
           <dd>{stats.wrong}</dd>
         </dl>
-        <p>Dedenin defterinde yeni bir sayfa açıldı. Sıradaki vaka: Değirmendeki Ses · yakında</p>
+        <p>Dedenin defterinde yeni bir sayfa açıldı. Sıradaki vaka: {C.next}{nx ? '' : ' · yakında'}</p>
         <div className="row">
+          {nx && (
+            <button
+              className="kc-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                onNext(nx.id);
+              }}
+            >
+              Sıradaki vaka
+            </button>
+          )}
           <button
             className="kc-btn"
             onClick={(e) => {

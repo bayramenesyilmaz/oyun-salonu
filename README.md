@@ -5,12 +5,13 @@ Tarayıcıda oynanan 3B oyunlar için tek site ve ortak motor.
 | Adres | Oyun |
 |---|---|
 | `/` | Oyun Salonu (portal) |
-| `/karakuyu` | Karakuyu — Anadolu cin inançları üzerine korku (iki son) |
+| `/karakuyu` | Karakuyu — Anadolu cin inançları üzerine korku; Bölüm 1 köy (iki son), Bölüm 2 "Gülsüm": cin tutmuş nine |
 | `/karakol` | KARAKOL — Son Tahliye — aksiyon/kurtarma, 5 bölüm |
 | `/keci` | Keçi Kaçtı! — komedi/macera, Rapier fizik motoru |
 | `/evsahibi` | Ev Sahibi — komedi/bulmaca: cin Cingöz, kiracı Necmi Bey (2 gün) |
 | `/radyo` | Dedemin Radyosu — gizem/seçim: geçmişe bağlanan radyo, 2 gece, 3 son |
-| `/kusyolu` | Kuşyolu — birinci şahıs macera; 5 bölüm: Göktaşı, Kor, Depo, Hazırlık, Kalkış (gerçekçi modeller, açık modelle seslendirme) |
+| `/karacam` | Karaçam Dosyaları — Criminal Case tarzı cin/dedektif; 2 vaka, cin tutma sahneleri |
+| `/kusyolu` | Kuşyolu — birinci şahıs macera; 7 bölüm: Göktaşı, Kor, Depo, Hazırlık, Kalkış, Ay yolu, Ay’a iniş (gerçekçi modeller, açık modelle seslendirme) |
 
 Bir bölümü doğrudan açmak (geliştirme için): `/karakol?level=3`.
 
