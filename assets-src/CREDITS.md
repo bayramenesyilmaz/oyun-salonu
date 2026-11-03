@@ -54,6 +54,11 @@
 | Poly Haven | doku | stone_floor | CC0 |
 | Poly Haven | doku | wood_planks | CC0 |
 | Poly Haven | doku | dirt_floor | CC0 |
+| Poly Haven | doku | cobblestone_floor_04 | CC0 |
+| Poly Haven | doku | cobblestone_floor_07 | CC0 |
+| Poly Haven | doku | cobblestone_square | CC0 |
+| Poly Haven | doku | pavement_05 | CC0 |
+| Poly Haven | doku | stone_tiles_02 | CC0 |
 | Poly Haven | model | modular_urban_apartments_facade | CC0 |
 | Poly Haven | model | street_lamp_01 | CC0 |
 | Poly Haven | model | street_lamp_02 | CC0 |
