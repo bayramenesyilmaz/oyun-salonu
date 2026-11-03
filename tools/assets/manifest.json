@@ -59,7 +59,12 @@
     "plastered_stone_wall",
     "stone_floor",
     "wood_planks",
-    "dirt_floor"
+    "dirt_floor",
+    "cobblestone_floor_04",
+    "cobblestone_floor_07",
+    "cobblestone_square",
+    "pavement_05",
+    "stone_tiles_02"
    ]
   },
   "models": {
