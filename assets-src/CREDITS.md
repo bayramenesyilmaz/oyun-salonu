@@ -184,5 +184,6 @@
 | Microsoft Rocketbox | insan modeli | selim (Adults/Male_Adult_13) | MIT |
 | Microsoft Rocketbox | insan modeli | sevgi (Children/Female_Child_02) | MIT |
 | Microsoft Rocketbox | insan modeli | kadir (Professions/Business_Male_03) | MIT |
+| Microsoft Rocketbox | insan modeli | kemal (Adults/Male_Adult_05) | MIT |
 
 Microsoft Rocketbox: Copyright (c) 2020 Microsoft, MIT lisansı. Poly Haven: CC0 (kamu malı).
