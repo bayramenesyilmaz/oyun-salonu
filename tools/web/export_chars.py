@@ -70,6 +70,28 @@ CIN_CLIPS = {
 if os.environ.get('CIN_CLIPS'):
     CLIPS.update(CIN_CLIPS)
 
+# Hamal (Kemal): öne eğik taşıma duruşu, kısa adımlı yük yürüyüşü, sendeleme
+HB = {'Spine': (0, 0, 14), 'Spine1': (0, 0, 22), 'Spine2': (0, 0, 14), 'Neck': (0, 0, -22), 'Head': (0, 0, -24),
+      'L UpperArm': (0, 50, -30), 'R UpperArm': (0, -50, -30), 'L Forearm': (0, 0, -95), 'R Forearm': (0, 0, -95)}
+HW = []
+for i, ph in enumerate((0, 0.25, 0.5, 0.75, 1.0)):
+    a = math.sin(ph * 2 * math.pi)
+    b = math.cos(ph * 2 * math.pi)
+    HW.append((1 + int(ph * 34), {**HB,
+        'L Thigh': (0, 0, 20 * a + 8), 'R Thigh': (0, 0, -20 * a + 8),
+        'L Calf': (0, 0, -16 - 30 * max(0, -b)), 'R Calf': (0, 0, -16 - 30 * max(0, b)),
+        'Pelvis': (0, 3 * a, 0), 'Spine1': (0, 2 * a, 22)}))
+HAMAL_CLIPS = {
+    'carry_idle': [(1, HB), (50, {**HB, 'Spine1': (0, 0, 23.5), 'Head': (0, 0, -22)}), (100, HB)],
+    'carry_walk': HW,
+    'stumble': [(1, {**HB, 'L UpperArm': (0, 20, 60), 'R UpperArm': (0, -20, 60), 'L Forearm': (0, 0, -20), 'R Forearm': (0, 0, -20), 'Spine1': (0, 8, 30)}),
+                (8, {**HB, 'L UpperArm': (0, 0, 90), 'R UpperArm': (0, 0, 80), 'L Forearm': (0, 0, -10), 'R Forearm': (0, 0, -30), 'Spine1': (0, -8, 34)}),
+                (16, {**HB, 'L UpperArm': (0, 20, 60), 'R UpperArm': (0, -20, 60), 'L Forearm': (0, 0, -20), 'R Forearm': (0, 0, -20), 'Spine1': (0, 8, 30)})],
+    'cheer': [(1, {'L UpperArm': (-45, -60, -150), 'R UpperArm': (-45, 60, 150)}), (15, {'L UpperArm': (-45, -60, -130), 'R UpperArm': (-45, 60, 130), 'Head': (0, 0, -10)}), (30, {'L UpperArm': (-45, -60, -150), 'R UpperArm': (-45, 60, 150)})],
+}
+if os.environ.get('HAMAL_CLIPS'):
+    CLIPS.update(HAMAL_CLIPS)
+
 
 def key_pose(arm, frame, pose):
     p = dict(BASE)
