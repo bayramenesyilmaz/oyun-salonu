@@ -3,12 +3,24 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath } from 'node:url';
 
+// Her yayının kimliği: Vercel'de commit, yerelde zaman damgası. Portal ve oyunlar /version.json ile karşılaştırır.
+const BUILD_ID = (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 10) || Date.now().toString(36);
+const BUILD_TIME = new Date().toISOString();
+const versionFile = () => ({
+  name: 'surum-dosyasi',
+  generateBundle() {
+    this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ id: BUILD_ID, time: BUILD_TIME }) });
+  },
+});
+
 export default defineConfig({
+  define: { __BUILD_ID__: JSON.stringify(BUILD_ID), __BUILD_TIME__: JSON.stringify(BUILD_TIME) },
   resolve: {
     alias: { '@engine': fileURLToPath(new URL('./src/engine', import.meta.url)) },
   },
   plugins: [
     react(),
+    versionFile(),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: false,
@@ -40,12 +52,23 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 12 * 1024 * 1024,
         runtimeCaching: [
           {
+            // sürüm dosyası asla önbellekten gelmesin
+            urlPattern: ({ url, sameOrigin }) => sameOrigin && url.pathname === '/version.json',
+            handler: 'NetworkOnly',
+          },
+          {
+            // sahne/ayar dosyaları önce ağdan (yeni sürümde eski düzen görünmesin)
+            urlPattern: ({ url, sameOrigin }) => sameOrigin && /\.json$/.test(url.pathname),
+            handler: 'NetworkFirst',
+            options: { cacheName: 'oyun-veri', networkTimeoutSeconds: 4, expiration: { maxEntries: 300 } },
+          },
+          {
             urlPattern: ({ url, sameOrigin }) => sameOrigin && url.pathname.startsWith('/assets/'),
             handler: 'CacheFirst',
             options: { cacheName: 'oyun-kod', expiration: { maxEntries: 200 } },
           },
           {
-            urlPattern: ({ url, sameOrigin }) => sameOrigin && /\.(png|svg|jpg|webp|glb|gltf|mp3|ogg|wav|json|bin)$/.test(url.pathname),
+            urlPattern: ({ url, sameOrigin }) => sameOrigin && /\.(png|svg|jpg|webp|glb|gltf|mp3|ogg|wav|bin|hdr)$/.test(url.pathname),
             handler: 'StaleWhileRevalidate',
             options: { cacheName: 'oyun-varlik', expiration: { maxEntries: 1500 } },
           },

@@ -1,5 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import { GAMES } from './games.js';
+import { checkUpdate, hardRefresh } from './update.js';
 
 // Basit yönlendirme: her oyun kendi adresinde, tam sayfa yüklemesiyle açılır.
 // Böylece bir oyunun kodu ve CSS'i diğerine karışmaz; yalnızca açılan oyun indirilir.
@@ -14,9 +15,23 @@ function loadFonts(href) {
   document.head.appendChild(l);
 }
 
+// "Güncelle" sonrası adresteki ?v=… izini temizle
+if (/[?&]v=/.test(location.search)) {
+  const u = new URL(location.href);
+  u.searchParams.delete('v');
+  history.replaceState(null, '', u.pathname + u.search + u.hash);
+}
+
 async function boot() {
   let mod;
   if (game) {
+    // oyun açılırken yeni yayın varsa önbelleği bir kez kendiliğinden temizle
+    const v = await checkUpdate(1500);
+    const key = 'oyun-guncel-' + (v && v.id);
+    if (v && !sessionStorage.getItem(key)) {
+      sessionStorage.setItem(key, '1');
+      return hardRefresh();
+    }
     document.title = game.title;
     loadFonts(game.fonts);
     mod = await game.load();
