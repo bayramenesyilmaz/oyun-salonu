@@ -1,6 +1,21 @@
 // Oyun listesi. Yeni oyun eklemek: klasörünü src/games/ altına koy, buraya bir satır ekle.
 export const GAMES = [
   {
+    id: 'hamal',
+    title: 'Hamal',
+    tag: 'Fizik · Komedi',
+    cats: ['Komedi', 'Aksiyon'],
+    length: '5 iş · ~25 dk',
+    updated: '2026-11-03',
+    news: 'Yeni oyun!',
+    keywords: 'istanbul 1974 karaköy galata yük denge fizik piyano buzdolabı yokuş merdiven',
+    blurb: 'İstanbul, 1974. Sırtında semer, üstünde buzdolabı, önünde Galata yokuşu. Yükü gerçek fizikle dengele, düşürme.',
+    color: '#e2a93c',
+    icon: '/icons-hamal/icon-512.png',
+    fonts: 'https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Bitter:wght@400;600;700&display=swap',
+    load: () => import('./games/hamal/App.jsx'),
+  },
+  {
     id: 'karacam',
     cats: ['Gizem', 'Korku'],
     length: '2 vaka · ~40 dk',

@@ -1,0 +1,19 @@
+HAMAL — kullanılan hazır varlıklar ve lisansları
+
+Kemal (hamal) ve sokaktaki insanlar: Microsoft Rocketbox Avatar Library (MIT lisansı, Copyright (c) 2020 Microsoft)
+  https://github.com/microsoft/Microsoft-Rocketbox
+  Kemal: Male_Adult_05 · Reis: Male_Adult_14 · Hayri: Male_Adult_08 · Madam Eleni: Female_Adult_04
+  Doktor Nuri: Male_Adult_17 · Nazife Hanım: Female_Adult_06 · Leyla Hanım: Female_Adult_12
+  Taşıma duruşları ve klipler bu proje için Blender'da hazırlandı.
+
+Eşya modelleri ve dokular: Poly Haven (CC0, kamu malı) — https://polyhaven.com
+  wooden_crate_01, wooden_crate_02, tea_set_01, vintage_suitcase, wicker_basket_01, Television_01,
+  street_lamp_01, metal_trash_can, Barrel_01, WoodenChair_01, wooden_stool_01, round_wooden_table_01, brass_pot_01;
+  cobblestone_floor_04, cobblestone_square, stone_tiles_02, concrete_pavers, asphalt_02, painted_plaster_wall,
+  yellow_plaster_02, white_plaster_rough_02, worn_plaster_wall, red_plaster_weathered, brick_wall_02, clay_roof_tiles_02.
+
+Fizik: Rapier (@dimforge/rapier3d-compat, Apache 2.0) — https://rapier.rs
+Gökyüzü: three.js Sky (MIT).
+Seslendirme: Chatterbox Multilingual (Resemble AI, MIT lisansı); erkek seslerin referansları Piper tr_TR (CC0).
+Sokaklar, Galata Kulesi, vapur, dolmuş, buzdolabı, piyano, kafes, sesler ve efektler bu proje için kodla üretildi.
+Kişiler ve olaylar kurgudur; marka ya da gerçek kişi kullanılmamıştır.
