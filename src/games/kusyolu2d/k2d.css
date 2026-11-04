@@ -286,3 +286,85 @@
     display: none;
   }
 }
+
+.k2-touch .k2-vpad {
+  position: absolute;
+  right: max(130px, calc(env(safe-area-inset-right) + 130px));
+  bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.k2-touch .k2-vpad button {
+  width: 62px;
+  height: 52px;
+  border-radius: 16px;
+  font-size: 20px;
+}
+.k2-toast {
+  position: absolute;
+  right: max(76px, env(safe-area-inset-right));
+  top: 14px;
+  max-width: min(360px, 44vw);
+  padding: 10px 14px 12px;
+  background: rgba(240, 244, 255, 0.95);
+  color: #141a30;
+  border-radius: 16px;
+  font-size: 15px;
+  line-height: 1.35;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  animation: k2in 0.35s ease-out;
+  pointer-events: none;
+}
+.k2-toast b {
+  display: block;
+  font-size: 12px;
+  color: #3a5ad8;
+  margin-bottom: 2px;
+}
+@keyframes k2in {
+  from {
+    transform: translateY(-12px);
+    opacity: 0;
+  }
+}
+.k2-choice {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(560px, 86vw);
+  padding: 20px;
+  background: rgba(14, 16, 40, 0.94);
+  border: 1px solid rgba(255, 210, 122, 0.4);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.k2-choice p {
+  margin: 0 0 4px;
+  font-weight: 700;
+  font-size: 18px;
+  color: #ffd27a;
+}
+.k2-choice .k2-btn {
+  text-align: left;
+}
+.k2-timecard {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  pointer-events: none;
+}
+.k2-timecard h2 {
+  font-family: 'Unbounded', 'Onest', sans-serif;
+  font-size: clamp(28px, 5vw, 48px);
+  margin: 0;
+}
+.k2-timecard p {
+  color: #c8cce0;
+  font-size: 18px;
+}

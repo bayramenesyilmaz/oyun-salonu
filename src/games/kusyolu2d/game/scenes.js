@@ -15,13 +15,13 @@ function chain(g, x, y, dir = 1) {
   });
 }
 
-function sky(x, cam, img, k = 0.04) {
+export function sky(x, cam, img, k = 0.04) {
   x.drawImage(img, -Math.round(cam.x * k) - 40, -100 - Math.round(cam.y * 0.15));
 }
 
 // Ortak gece katmanları (bir kez üretilir)
 let SHARED = null;
-function shared() {
+export function shared() {
   if (SHARED) return SHARED;
   SHARED = {
     sky: makeSky(3200, 980, 5),
@@ -1079,13 +1079,7 @@ export class Arsa {
     await g.say(C1.take.slice(3));
     for (const f of FRIENDS) A[f].surprise = false;
     g.setObjective('');
-    p.goTo(1000);
-    for (const f of FRIENDS) A[f].goTo(900 + Math.random() * 60);
-    await g.wait(1.5);
-    await g.say(ARSA.end);
-    await g.fade(1, 1.4);
-    g.sfx.stopLoops();
-    g.chapterDone(1);
+    g.next('gece');
   }
   update(dt, g) {
     if (Math.random() < dt * 6)
@@ -1241,5 +1235,4 @@ export class Arsa {
   }
 }
 
-export const SCENES = { roof: Roof, stairs: Stairs, street: Street, arsa: Arsa };
 void canvas;

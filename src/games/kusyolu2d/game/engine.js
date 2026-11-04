@@ -3,7 +3,7 @@ import { VoiceBank } from '../../../engine/voicebank.js';
 import { drawChar, bubbleHint, glow } from './draw.js';
 import { SPEAKERS2 } from './story.js';
 import { Sfx } from './sfx.js';
-import { SCENES } from './scenes.js';
+import { SCENES } from './registry.js';
 
 export const VIEW_H = 720;
 const SAVE = 'kusyolu2d-save';
@@ -95,7 +95,7 @@ export class Game {
     this.test = !!opts.test;
     this.t = 0;
     this.keys = new Set();
-    this.touch = { left: false, right: false };
+    this.touch = { left: false, right: false, up: false, down: false };
     this.actors = {};
     this.cam = { x: 0, y: 0 };
     this.shakeT = 0;
@@ -178,6 +178,47 @@ export class Game {
     }
   }
 
+  get input() {
+    const k = this.keys,
+      T = this.touch;
+    return {
+      left: k.has('KeyA') || k.has('ArrowLeft') || T.left,
+      right: k.has('KeyD') || k.has('ArrowRight') || T.right,
+      up: k.has('KeyW') || k.has('ArrowUp') || T.up,
+      down: k.has('KeyS') || k.has('ArrowDown') || k.has('ControlLeft') || T.down,
+      act: k.has('KeyE') || k.has('Space') || T.act,
+    };
+  }
+
+  choose(prompt, options) {
+    return new Promise((res) => {
+      this.ui.choice &&
+        this.ui.choice({
+          prompt,
+          options,
+          pick: (id) => {
+            this.ui.choice(null);
+            res(id);
+          },
+        });
+      if (this.test) setTimeout(() => {
+        this.ui.choice(null);
+        res(options[0].id);
+      }, 50);
+    });
+  }
+  msg(m) {
+    this.ui.msg && this.ui.msg(m);
+    this.sfx.ping();
+  }
+  async card(title, sub, sec = 3) {
+    await this.fade(1, 0.6);
+    this.ui.card && this.ui.card({ title, sub });
+    await this.wait(this.test ? 0.3 : sec);
+    this.ui.card && this.ui.card(null);
+    this.fade(0, 0.8);
+  }
+
   get player() {
     return this.actors.arda;
   }
@@ -188,13 +229,16 @@ export class Game {
     return a;
   }
 
-  async loadScene(SceneClass, spawn) {
+  async loadScene(SceneClass, spawn, opts) {
     await this.fade(1, 0.5);
     this.actors = {};
     this.onAct = null;
     this.hint = null;
     this.sfx.stopLoops();
-    this.scene = new SceneClass(this);
+    this.setObjective('');
+    if (this.lineDone) this.lineDone();
+    this.scene = new SceneClass(this, opts);
+    this.sceneName = Object.keys(SCENES).find((k) => SCENES[k] === SceneClass);
     this.addActor('arda', spawn?.x ?? this.scene.spawn.x, spawn?.y ?? this.scene.spawn.y, { dir: spawn?.dir ?? 1, z: 5 });
     this.scene.setup && this.scene.setup(this);
     this.snapCamera();
@@ -203,16 +247,17 @@ export class Game {
     this.scene.start && this.runScript(() => this.scene.start(this));
   }
 
-  async next(name) {
+  async next(name, opts) {
     this.loading = true;
     try {
-      await this.loadScene(SCENES[name]);
+      await this.loadScene(SCENES[name], null, opts);
     } finally {
       this.loading = false;
     }
   }
-  async startAt(name) {
+  async startAt(name, flags) {
     this.fadeA = 1;
+    this.flags = { ...(flags || {}) };
     await this.next(name || 'roof');
   }
   chapterDone(n) {
@@ -224,7 +269,7 @@ export class Game {
     if (this.test && !this.saveInTest) return;
     try {
       const prev = JSON.parse(localStorage.getItem(SAVE) || '{}');
-      localStorage.setItem(SAVE, JSON.stringify({ ...prev, scene: key, max: Math.max(prev.max || 1, 1), t: Date.now() }));
+      localStorage.setItem(SAVE, JSON.stringify({ ...prev, scene: key, max: Math.max(prev.max || 1, 1), t: Date.now(), flags: this.flags }));
     } catch (e) {}
   }
   static loadSave() {
@@ -269,7 +314,13 @@ export class Game {
   }
 
   // Replik dizisini sırayla söylet (sesi varsa ses, yoksa yazı süresi kadar)
-  async say(lines) {
+  // replikler sıraya girer; aynı anda iki konuşma üst üste binmez
+  say(lines) {
+    const p = (this._sayQ || Promise.resolve()).then(() => this._say(lines));
+    this._sayQ = p.catch(() => {});
+    return p;
+  }
+  async _say(lines) {
     for (const l of lines) this.bank.preload(l.s + '|' + l.t);
     for (const l of lines) {
       if (!this.running) return;
@@ -324,19 +375,43 @@ export class Game {
     if (!sc) return;
     const p = this.player;
     // oyuncu kontrolü
-    if (p && !this.cutscene && !p.tween && !this.loading) {
-      const L = this.keys.has('KeyA') || this.keys.has('ArrowLeft') || this.touch.left;
-      const R = this.keys.has('KeyD') || this.keys.has('ArrowRight') || this.touch.right;
-      const dx = (R ? 1 : 0) - (L ? 1 : 0);
+    if (p && !this.cutscene && !p.tween && !this.loading && !sc.vehicle) {
+      const I = this.input;
+      const dx = (I.right ? 1 : 0) - (I.left ? 1 : 0);
       p.moving = false;
+      if (sc.canCrouch) p.crouch = I.down;
       if (dx) {
-        const nx = p.x + dx * 290 * dt;
+        const nx = p.x + dx * (p.crouch ? 140 : 290) * dt;
         p.x = sc.clampX ? sc.clampX(nx, p) : Math.max(60, Math.min(sc.width - 60, nx));
         p.dir = dx;
         p.moving = true;
         p.walk += dt * 12;
       }
-      if (sc.groundAt) p.y = sc.groundAt(p.x, p.y);
+      if (sc.jumpable) {
+        // zıplama ve platformlar (sahne groundAt(x, y) ile altındaki yüzeyi verir)
+        const grav = sc.gravity || 2400;
+        const gy = sc.groundAt(p.x, p.y);
+        const onGround = p.vy === undefined || (p.y >= gy - 1 && (p.vy || 0) >= 0);
+        if (onGround && I.up && !p.crouch) {
+          p.vy = -(sc.jumpV || 900);
+          this.sfx.thud();
+        }
+        if (!onGround || (p.vy || 0) < 0) {
+          p.vy = (p.vy || 0) + grav * dt;
+          p.y += p.vy * dt;
+          const g2 = sc.groundAt(p.x, p.y - p.vy * dt);
+          if (p.vy > 0 && p.y >= g2) {
+            p.y = g2;
+            p.vy = 0;
+          }
+          p.air = true;
+        } else {
+          p.y = gy;
+          p.vy = 0;
+          p.air = false;
+        }
+        if (sc.fall && p.y > sc.fall) sc.onFall && sc.onFall(this);
+      } else if (sc.groundAt) p.y = sc.groundAt(p.x, p.y);
     } else if (p && this.cutscene) {
       if (p.target != null || p.tween) p.update(dt, this);
       else p.moving = false;
@@ -410,7 +485,9 @@ export class Game {
       .sort((a, b) => a.z - b.z);
     for (const a of list) {
       a.t = this.t;
+      if (a.ghost) x.globalAlpha = a.ghost;
       drawChar(x, a);
+      x.globalAlpha = 1;
     }
     sc.drawFront && sc.drawFront(x, cam, this);
     if (this.hint && !this.cutscene && this.player) {

@@ -11,6 +11,10 @@ export const STYLES = {
   nevin: { top: '#7a4a8a', hair: '#d86aa0', scarf: true, leg: '#5a3a5a', skin: '#efc29c', old: true, big: 1.02 },
   hayri: { top: '#7a6a52', hair: '#cfcfcf', leg: '#3a342c', skin: '#e3ad84', old: true, mustache: true, big: 1.04 },
   cocuk: { top: '#e8b62a', hair: '#3a2416', leg: '#2a4a8a', small: 0.72 },
+  polis: { top: '#2a3a6a', hair: '#2a1a10', cap: '#1a2448', leg: '#1a2030', big: 1.05, badge: true },
+  bekci: { top: '#6a5a3a', hair: '#8a8a8a', cap: '#3a3020', leg: '#3a3428', mustache: true, old: true, big: 1.08 },
+  rifat: { top: '#4a5a6a', hair: '#6a6a6a', leg: '#2a2a2a', mustache: true, old: true, big: 1.1, apron: '#7a5a3a' },
+  anne: { top: '#b86a8a', hair: '#5a3424', pony: true, leg: '#4a3a4a', skin: '#efc29c' },
 };
 
 export function rr(x, X, Y, w, h, r) {
@@ -89,6 +93,13 @@ export function drawChar(x, a) {
   // gövde
   shape(x, () => x.roundRect(-24, by - 58, 48, 62, 16), st.top);
   if (st.scarf) shape(x, () => x.roundRect(-26, by - 62, 52, 14, 7), st.hair);
+  if (st.apron) shape(x, () => x.roundRect(-4, by - 44, 30, 50, 6), st.apron);
+  if (st.badge) {
+    x.fillStyle = '#ffd24a';
+    x.beginPath();
+    x.arc(12, by - 40, 5, 0, Math.PI * 2);
+    x.fill();
+  }
   // ön kol (tutuyorsa öne uzat)
   const hold = a.hold;
   const armA = hold ? -1.25 : sw * 0.6 + (a.crouch ? -0.6 : -0.08);
@@ -126,6 +137,21 @@ export function drawChar(x, a) {
       x.scale(a.dir < 0 ? -s : s, s);
       x.lineWidth = 5;
       x.strokeStyle = INK;
+    } else if (hold === 'kutu') {
+      shape(x, () => x.roundRect(hx - 26, hy - 44, 52, 44, 5), '#a07a4a');
+      x.lineWidth = 3;
+      x.beginPath();
+      x.moveTo(hx - 26, hy - 30);
+      x.lineTo(hx + 26, hy - 30);
+      x.stroke();
+      x.lineWidth = 5;
+    } else if (hold === 'kedi') {
+      shape(x, () => x.ellipse(hx, hy - 14, 22, 14, 0, 0, Math.PI * 2), '#f2f0ea');
+      shape(x, () => x.arc(hx + 20, hy - 26, 11, 0, Math.PI * 2), '#f2f0ea');
+      x.fillStyle = INK;
+      x.beginPath();
+      x.arc(hx + 24, hy - 28, 2.5, 0, Math.PI * 2);
+      x.fill();
     } else if (hold === 'telefon') {
       shape(x, () => x.roundRect(hx - 4, hy - 22, 12, 20, 3), '#22252e');
       glow(x, hx + 2, hy - 12, 16, '#9fd0ff', 0.6);
@@ -246,6 +272,19 @@ export function drawChar(x, a) {
   } else {
     x.beginPath();
     x.arc(26, 18, 8, 0.2, 1.6);
+    x.stroke();
+  }
+  if (a.helmet) {
+    x.lineWidth = 5;
+    x.fillStyle = 'rgba(180,220,255,0.18)';
+    x.beginPath();
+    x.arc(4, -4, 60, 0, Math.PI * 2);
+    x.fill();
+    x.stroke();
+    x.strokeStyle = 'rgba(255,255,255,0.7)';
+    x.lineWidth = 4;
+    x.beginPath();
+    x.arc(4, -4, 48, -2.2, -1.4);
     x.stroke();
   }
   x.restore();

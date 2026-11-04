@@ -10,7 +10,13 @@ const IS_TOUCH = (() => {
   return matchMedia('(pointer: coarse)').matches && !matchMedia('(hover: hover) and (pointer: fine)').matches;
 })();
 const TEST = /[?&]test\b/.test(typeof location !== 'undefined' ? location.search : '');
-const SCENE_NAMES = { roof: 'Çatı', stairs: 'Apartman', street: 'Sokak', arsa: 'Arsa' };
+const SCENE_NAMES = { roof: 'Çatı', stairs: 'Apartman', street: 'Sokak', arsa: 'Arsa', gece: 'Kaçış', depo: 'Depo', hurdalik: 'Hurdalık', cati2: 'Kaan’ın çatısı', kokpit: 'Kokpit', kalkis: 'Kalkış', bosluk: 'Boşluk', inis: 'İniş', ay: 'Ay' };
+
+const DONE_TEXT = {
+  1: 'Kor artık depoda, güvende. Kimse görmedi… sanırım.',
+  2: 'Leylek hazır. Herkes yerinde, kemerler bağlı.',
+  3: 'Ay’dasınız ve önünüzde bir Kapı var. Kapıların ardındaki gezegenler sıradaki bölümlerde.',
+};
 
 export default function App() {
   const cv = useRef(null);
@@ -28,6 +34,9 @@ export default function App() {
     }
   });
   const [save, setSave] = useState(() => Game.loadSave());
+  const [choice, setChoice] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [card, setCard] = useState(null);
 
   useEffect(() => {
     const g = (game.current = new Game(
@@ -35,6 +44,13 @@ export default function App() {
       {
         sub: setSub,
         objective: setObj,
+        choice: setChoice,
+        card: setCard,
+        msg: (m) => {
+          setToast({ ...m, k: Math.random() });
+          clearTimeout(window.__k2toast);
+          window.__k2toast = setTimeout(() => setToast(null), 5200);
+        },
         onPause: () => setPaused((p) => !p),
         chapterEnd: (n) => {
           setDone(n);
@@ -58,14 +74,14 @@ export default function App() {
     } catch {}
   }, [paused, phase, muted]);
 
-  const start = (scene) => {
+  const start = (scene, flags) => {
     const g = game.current;
     g.sfx.unlock();
     setDone(null);
     setPaused(false);
     setPhase('play');
     g.paused = false;
-    g.startAt(scene);
+    g.startAt(scene, flags);
   };
 
   const toMenu = () => {
@@ -119,6 +135,22 @@ export default function App() {
               <span>{sub.text}</span>
             </div>
           )}
+          {toast && (
+            <div className="k2-toast" key={toast.k}>
+              <b>{toast.from}</b>
+              {toast.t}
+            </div>
+          )}
+          {choice && (
+            <div className="k2-choice">
+              <p>{choice.prompt}</p>
+              {choice.options.map((o) => (
+                <button key={o.id} className="k2-btn" onPointerDown={(e) => e.stopPropagation()} onClick={() => choice.pick(o.id)}>
+                  {o.text}
+                </button>
+              ))}
+            </div>
+          )}
           {IS_TOUCH && (
             <div className="k2-touch">
               <div className="k2-dpad">
@@ -129,22 +161,40 @@ export default function App() {
                   ▶
                 </button>
               </div>
+              <div className="k2-vpad">
+                <button {...hold('up')} aria-label="Yukarı">
+                  ▲
+                </button>
+                <button {...hold('down')} aria-label="Aşağı">
+                  ▼
+                </button>
+              </div>
               <button
                 className="k2-act"
                 onPointerDown={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+                  game.current.touch.act = true;
                   game.current.act();
                 }}
+                onPointerUp={() => (game.current.touch.act = false)}
+                onPointerCancel={() => (game.current.touch.act = false)}
+                onPointerLeave={() => (game.current.touch.act = false)}
               >
                 ●
               </button>
             </div>
           )}
-          {!IS_TOUCH && <div className="k2-keys">A / D yürü · E konuş, kullan, geç · Esc duraklat</div>}
+          {!IS_TOUCH && <div className="k2-keys">A / D yürü · W / S yukarı, eğil · E konuş, kullan · Esc duraklat</div>}
         </>
       )}
 
+      {card && (
+        <div className="k2-timecard">
+          <h2>{card.title}</h2>
+          {card.sub && <p>{card.sub}</p>}
+        </div>
+      )}
       {paused && phase === 'play' && (
         <div className="k2-modal">
           <div className="k2-card">
@@ -167,11 +217,17 @@ export default function App() {
           <div className="k2-card">
             <small>Bölüm {done} tamamlandı</small>
             <h2>{CHAPTERS2D[done - 1].title}</h2>
-            <p>
-              Kor artık sizde. Bir sonraki bölüm <b>{CHAPTERS2D[done].title}</b> yakında geliyor: taşı polisten ve bekçiden saklayarak
-              depoya götüreceksiniz.
-            </p>
-            <button className="k2-btn primary" onClick={toMenu}>
+            <p>{DONE_TEXT[done]}</p>
+            {CHAPTERS2D[done] && CHAPTERS2D[done].ready ? (
+              <button className="k2-btn primary" onClick={() => start(CHAPTERS2D[done].start)}>
+                Sonraki bölüm: {CHAPTERS2D[done].title}
+              </button>
+            ) : (
+              <p>
+                <b>{CHAPTERS2D[done] ? CHAPTERS2D[done].title : ''}</b> yakında geliyor.
+              </p>
+            )}
+            <button className="k2-btn" onClick={toMenu}>
               Ana menü
             </button>
           </div>
@@ -190,21 +246,21 @@ export default function App() {
             <p className="k2-lead">Beş arkadaş, bir göktaşı ve hurdadan bir uzay aracı. Hikâyenin tamamı, yandan bakışlı çizgi film olarak.</p>
             <div className="k2-actions">
               {canContinue && (
-                <button className="k2-btn primary" onClick={() => start(save.scene)}>
+                <button className="k2-btn primary" onClick={() => start(save.scene, save.flags)}>
                   Devam et · {SCENE_NAMES[save.scene] || ''}
                 </button>
               )}
-              <button className={'k2-btn' + (canContinue ? '' : ' primary')} onClick={() => start('roof')}>
+              <button className={'k2-btn' + (canContinue ? '' : ' primary')} onClick={() => start('roof', {})}>
                 {canContinue ? 'Baştan başla' : 'Başla'}
               </button>
             </div>
             <div className="k2-chapters">
               {CHAPTERS2D.map((c) => (
-                <button key={c.id} className={'k2-ch' + (c.open ? '' : ' locked')} disabled={!c.open} onClick={() => c.open && start('roof')}>
+                <button key={c.id} className={'k2-ch' + (c.ready ? '' : ' locked')} disabled={!c.ready} onClick={() => c.ready && start(c.start)}>
                   <b>{c.id}</b>
                   <span>
                     {c.title}
-                    <small>{c.open ? c.place : 'Yakında'}</small>
+                    <small>{c.ready ? c.place : 'Yakında · ' + c.place}</small>
                   </span>
                 </button>
               ))}
