@@ -67,7 +67,8 @@ REFS = {'elif': '/tmp/ref/female.wav', 'zeynep': '/tmp/ref/zeynep.wav', 'arda': 
         'gulsum': '/tmp/ref/gulsum.wav', 'gulsum_cin': '/tmp/ref/gulsum_cin.wav', 'huseyin': '/tmp/ref/huseyin.wav', 'kadir': '/tmp/ref/kadir.wav',
         'narrator': 'tools/tts/ref/fahrettin.wav', 'nine': '/tmp/ref/nine.wav', 'cin': '/tmp/ref/gulsum_cin.wav', 'death': '/tmp/ref/gulsum_cin.wav',
         'kemal': '/tmp/ref/kemal.wav', 'reis': '/tmp/ref/reis.wav', 'hayri': '/tmp/ref/hayri.wav', 'eleni': '/tmp/ref/eleni.wav', 'nuri': '/tmp/ref/nuri.wav', 'nazife': '/tmp/ref/nazife.wav', 'leyla': '/tmp/ref/leyla.wav',
-        'nevin': '/tmp/ref/nazife.wav', 'cocuk': '/tmp/ref/leyla.wav', 'anlatici': 'tools/tts/ref/fahrettin.wav'}
+        'nevin': '/tmp/ref/nazife.wav', 'cocuk': '/tmp/ref/leyla.wav', 'anlatici': 'tools/tts/ref/fahrettin.wav',
+        'rifat': '/tmp/ref/reis.wav', 'anne': '/tmp/ref/eleni.wav'}
 _CINFX = 'asetrate=24000*0.74,aresample=24000,atempo=1.25,aecho=0.8:0.6:60|130:0.5|0.35,lowpass=f=3400,'
 FX = {'cin': _CINFX, 'death': _CINFX, 'gulsum_cin': 'asetrate=24000*0.78,aresample=24000,atempo=1.2,aecho=0.8:0.55:45|95:0.45|0.3,lowpass=f=3800,', 'kumru': 'highpass=f=180,aecho=0.8:0.5:12|24:0.25|0.15,chorus=0.6:0.8:30:0.3:0.2:1.5,', 'polis': '', 'bekci': ''}
 SHARD = int(os.environ.get('SHARD', '0'))
