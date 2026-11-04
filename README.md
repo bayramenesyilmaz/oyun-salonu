@@ -12,6 +12,7 @@ Tarayıcıda oynanan 3B oyunlar için tek site ve ortak motor.
 | `/radyo` | Dedemin Radyosu — gizem/seçim: geçmişe bağlanan radyo, 2 gece, 3 son |
 | `/karacam` | Karaçam Dosyaları — Criminal Case tarzı cin/dedektif; 2 vaka, cin tutma sahneleri |
 | `/hamal` | Hamal — İstanbul 1974: sırttaki yükü gerçek fizikle (Rapier) dengeleyerek Galata yokuşunu çık; 5 iş |
+| `/kusyolu2d` | Kuşyolu 2B — aynı hikâye yandan bakışlı çizgi film olarak; 1. bölüm: çatı, apartman, sokak, arsa |
 | `/kusyolu` | Kuşyolu — birinci şahıs macera; 7 bölüm: Göktaşı, Kor, Depo, Hazırlık, Kalkış, Ay yolu, Ay’a iniş (gerçekçi modeller, açık modelle seslendirme) |
 
 Bir bölümü doğrudan açmak (geliştirme için): `/karakol?level=3`.

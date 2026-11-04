@@ -1,6 +1,21 @@
 // Oyun listesi. Yeni oyun eklemek: klasörünü src/games/ altına koy, buraya bir satır ekle.
 export const GAMES = [
   {
+    id: 'kusyolu2d',
+    title: 'Kuşyolu 2B',
+    tag: 'Macera · Bilimkurgu',
+    cats: ['Macera', 'Bilimkurgu'],
+    length: '1. bölüm · ~20 dk (devamı geliyor)',
+    updated: '2026-11-04',
+    news: 'Yeni: Kuşyolu çizgi film olarak baştan',
+    keywords: 'uzay göktaşı arkadaşlar 2d iki boyutlu çizgi film yandan meteor perseid',
+    blurb: 'Kuşyolu’nun bütün hikâyesi yandan bakışlı çizgi film olarak. İlk bölüm: çatıda Perseid gecesi, apartman, mahalle ve arsaya düşen taş.',
+    color: '#ffb35a',
+    icon: '/icons-kusyolu/icon-512.png',
+    fonts: 'https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Onest:wght@400;500;600;700;800&display=swap',
+    load: () => import('./games/kusyolu2d/App.jsx'),
+  },
+  {
     id: 'hamal',
     title: 'Hamal',
     tag: 'Fizik · Komedi',
