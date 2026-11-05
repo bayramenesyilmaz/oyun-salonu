@@ -149,7 +149,7 @@ class Room {
   }
 }
 
-export async function createRoom() {
+export async function createRoom(game = 'golgedovus') {
   const F = await withTimeout(loadFirebase());
   const { m, db, uid } = F;
   for (let i = 0; i < 6; i++) {
@@ -157,7 +157,7 @@ export async function createRoom() {
     const metaRef = m.ref(db, `rooms/${code}/meta`);
     const snap = await withTimeout(m.get(metaRef));
     if (snap.exists()) continue;
-    await withTimeout(m.set(metaRef, { host: uid, game: 'golgedovus', v: 1 }));
+    await withTimeout(m.set(metaRef, { host: uid, game, v: 1 }));
     const room = new Room(F, code, true);
     m.onDisconnect(m.ref(db, `rooms/${code}`)).remove();
     // katılan olunca rakibi izle
