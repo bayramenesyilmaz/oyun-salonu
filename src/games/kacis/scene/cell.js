@@ -21,6 +21,7 @@ export class CellScene {
     this.T = makeCellTextures();
     this.t = 0;
     this.flash = 0;
+    this.auto = true;
     this.nextFlash = 2.2;
     this.build();
     this.post = createPost(this.r, this.scene, this.cam);
@@ -168,6 +169,41 @@ export class CellScene {
     this.dust = new THREE.Points(dg, new THREE.PointsMaterial({ color: '#cfd8e0', size: 0.006, transparent: true, opacity: 0.28, depthWrite: false }));
     this.scene.add(this.dust);
   }
+  // oynanış nesneleri: kapı, sütunlar, çıkış kapısı, kaşık
+  buildPlay() {
+    const T = this.T;
+    const wall = this.mats.wall;
+    const metal = mat(T.metal, { roughness: 0.6, metalness: 0.55 });
+    // hücre kapısı parmaklıkları tek grupta (açılınca yukarı kayar)
+    this.door = new THREE.Group();
+    const keep = [];
+    for (const o of this.scene.children) {
+      if (o.isMesh && Math.abs(o.position.z - 1.6) < 0.01 && o.position.y > 0.9 && Math.abs(o.position.x) < 1.85) keep.push(o);
+    }
+    for (const o of keep) this.door.attach(o);
+    this.scene.add(this.door);
+    // koridor sütunları (siper)
+    this.pillars = [[-1.2, 4.3], [1.25, 5.5]];
+    for (const [x, z] of this.pillars) this.box(0.55, 3.0, 0.55, wall, x, 1.5, z);
+    // çıkış kapısı + kol
+    this.box(1.3, 2.3, 0.1, metal, 0, 1.15, 6.66);
+    this.box(0.08, 0.5, 0.08, mat(T.metal, { color: '#a02820', metalness: 0.2 }), 0.75, 1.2, 6.6, false);
+    // kaşık (masada)
+    const sp = new THREE.Group();
+    const sm = new THREE.MeshStandardMaterial({ color: '#c9ccd0', metalness: 0.85, roughness: 0.3 });
+    const h = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.008, 0.02), sm);
+    const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), sm);
+    bowl.scale.set(1, 0.3, 0.8);
+    bowl.position.x = 0.09;
+    sp.add(h, bowl);
+    sp.position.set(1.5, 0.8, 0.28);
+    sp.rotation.y = 0.9;
+    this.scene.add(sp);
+    this.spoon = sp;
+    this.spoonGlow = new THREE.PointLight('#ffe9b0', 0.5, 1.2, 2);
+    this.spoonGlow.position.set(1.5, 0.95, 0.28);
+    this.scene.add(this.spoonGlow);
+  }
   makeGuard() {
     const g = new THREE.Group();
     const m = new THREE.MeshStandardMaterial({ color: '#14181c', roughness: 0.9 });
@@ -207,6 +243,7 @@ export class CellScene {
     this.lamp.intensity = 1.2 + 3 * (Math.sin(t * 13) > -0.2 ? 1 : 0.1);
     // acil ışık dönüşü
     this.red.intensity = 3 + 7 * Math.max(0, Math.sin(t * 2.6));
+    if (this.auto) {
     // gardiyan devriyesi: koridorda gider gelir, fener sağa sola
     const gx = 0.1 + Math.sin(t * 0.35) * 0.9;
     this.guard.position.x = gx;
@@ -215,6 +252,7 @@ export class CellScene {
     const tp = this.guard.position;
     this.torch.position.set(tp.x, 1.3, tp.z - 0.2);
     this.torch.target.position.set(tp.x + Math.sin(t * 0.9) * 2.4, 0.6, tp.z - 5);
+    }
     // yağmur
     const p = this.rain.pos;
     for (let i = 0; i < this.rain.N; i++) {
@@ -226,10 +264,12 @@ export class CellScene {
       }
     }
     this.rainLines.geometry.attributes.position.needsUpdate = true;
+    if (this.auto) {
     // kamera: hücrenin içinde, kapıya bakan oyuncu; yavaş bakış + nefes
     const look = Math.sin(t * 0.22);
     this.cam.position.set(0.1 + Math.sin(t * 1.1) * 0.01, 1.58 + Math.sin(t * 1.7) * 0.012, -1.2);
     this.cam.lookAt(0.1 + look * 1.2, 1.3 + Math.sin(t * 0.5) * 0.1, 3);
+    }
     this.post.u.uTime.value = t;
   }
   render() {
