@@ -44,7 +44,7 @@ export function makeNpcRifle() {
 }
 
 export function createHumanoid(kind, T, gltf = null, opts = {}) {
-  return gltf ? new GltfHumanoid(kind, gltf) : new ProcHumanoid(kind, T, opts);
+  return gltf ? new GltfHumanoid(kind, gltf, opts) : new ProcHumanoid(kind, T, opts);
 }
 
 class ProcHumanoid {
@@ -348,7 +348,7 @@ class ProcHumanoid {
 
 // GLB tabanlı karakter (aynı arayüz). Klip adları: idle, walk, run, aim/shoot, crouch, die
 class GltfHumanoid {
-  constructor(kind, gltf) {
+  constructor(kind, gltf, opts = {}) {
     this.kind = kind;
     this.root = new THREE.Group();
     this.model = cloneModel(gltf);
@@ -360,9 +360,14 @@ class GltfHumanoid {
       if (o.isMesh) o.castShadow = true;
     });
     this.root.add(this.model);
+    if ((kind === 'soldier' || kind === 'enemy') && !opts.unarmed) {
+      const rifle = makeNpcRifle();
+      rifle.position.set(0.17, 1.18, 0.32);
+      this.root.add(rifle);
+    }
     this.mixer = new THREE.AnimationMixer(this.model);
     this.actions = {};
-    for (const [k, re] of Object.entries({ idle: /idle/i, walk: /walk/i, run: /run|sprint/i, aim: /aim|shoot|fire/i, crouch: /crouch/i, die: /die|death/i })) {
+    for (const [k, re] of Object.entries({ idle: /idle/i, walk: /walk/i, run: /run|sprint/i, aim: /aim|shoot|fire|point/i, crouch: /crouch|kneel/i, die: /die|death/i })) {
       const c = findClip(gltf, re);
       if (c) this.actions[k] = this.mixer.clipAction(c);
     }

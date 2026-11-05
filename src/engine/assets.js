@@ -1,4 +1,5 @@
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 // İsteğe bağlı GLB/GLTF modelleri.
@@ -8,6 +9,7 @@ import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js
 export const MODEL_SLOTS = ['rifle', 'binoculars', 'soldier', 'enemy', 'civilian', 'truck'];
 
 const loader = new GLTFLoader();
+loader.setMeshoptDecoder(MeshoptDecoder);
 
 function loadUrl(url) {
   return new Promise((resolve) => {

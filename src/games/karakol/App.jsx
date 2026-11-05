@@ -145,6 +145,7 @@ export default function App() {
         const q = location.search.match(/[?&]level=(\d)/);
         g = new Game(mount.current, onUI, { settings: loadSave().settings, models, touch: IS_TOUCH, level: q ? +q[1] : 1 });
         game.current = g;
+        if (/[?&]test\b/.test(location.search)) window.__kg = g;
         modelsRef.current = models;
         setPhase('menu');
         setTimeout(() => setVoiceOk(g.voice.hasVoice), 1500);
