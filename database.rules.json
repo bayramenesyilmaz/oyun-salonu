@@ -1,0 +1,34 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "rooms": {
+      "$code": {
+        ".read": "auth != null && $code.matches(/^[A-Z0-9]{4,6}$/)",
+        ".write": "auth != null && !newData.exists() && data.child('meta/host').val() === auth.uid",
+        "meta": {
+          ".write": "auth != null && !data.exists() && newData.child('host').val() === auth.uid && $code.matches(/^[A-Z0-9]{4,6}$/)",
+          ".validate": "newData.hasChildren(['host', 'game'])"
+        },
+        "guest": {
+          ".write": "auth != null && ((!data.exists() && newData.val() === auth.uid && root.child('rooms').child($code).child('meta').exists()) || (data.val() === auth.uid && !newData.exists()))",
+          ".validate": "newData.isString() && newData.val().length < 40"
+        },
+        "p": {
+          "$uid": {
+            ".write": "auth != null && $uid === auth.uid && (root.child('rooms').child($code).child('meta/host').val() === auth.uid || root.child('rooms').child($code).child('guest').val() === auth.uid)",
+            ".validate": "newData.hasChildren(['x', 'y']) && newData.child('x').isNumber() && newData.child('y').isNumber()"
+          }
+        },
+        "ev": {
+          "$uid": {
+            "$id": {
+              ".write": "auth != null && $uid === auth.uid && (root.child('rooms').child($code).child('meta/host').val() === auth.uid || root.child('rooms').child($code).child('guest').val() === auth.uid)",
+              ".validate": "newData.hasChildren(['k']) && newData.child('k').isString() && newData.child('k').val().length < 12"
+            }
+          }
+        }
+      }
+    }
+  }
+}

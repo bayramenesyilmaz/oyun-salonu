@@ -1,6 +1,21 @@
 // Oyun listesi. Yeni oyun eklemek: klasörünü src/games/ altına koy, buraya bir satır ekle.
 export const GAMES = [
   {
+    id: 'golgedovus',
+    title: 'Gölge Dövüş',
+    tag: 'Dövüş · Online',
+    cats: ['Dövüş', 'Aksiyon'],
+    length: 'Düello · 2 raunt kazanan · online ya da bota karşı',
+    updated: '2026-11-05',
+    news: 'Yeni oyun: 5 karakter, silah, kombo ve bitiriş',
+    keywords: 'dövüş shadow fight kılıç çekiç yay kombo bitiriş online arkadaş oda düello arena çizgi film',
+    blurb: 'Kalın çizgili çizgi film dövüşü. Karakterini seç, silahınla kombo yap, ölçer dolunca bitirişini patlat. Bota karşı, aynı ekranda ya da online arkadaşınla.',
+    color: '#9a7bd6',
+    icon: '/icons-golgedovus/icon-512.png',
+    fonts: 'https://fonts.googleapis.com/css2?family=Lilita+One&family=Onest:wght@400;600;700&display=swap',
+    load: () => import('./games/golgedovus/App.jsx'),
+  },
+  {
     id: 'kusyolu2d',
     title: 'Kuşyolu 2B',
     tag: 'Macera · Bilimkurgu',

@@ -5,6 +5,7 @@ Tarayıcıda oynanan 3B oyunlar için tek site ve ortak motor.
 | Adres | Oyun |
 |---|---|
 | `/` | Oyun Salonu (portal) |
+| `/golgedovus` | Gölge Dövüş — yandan düello: 5 karakter (kılıç, çekiç, yay, asa, mızrak+kalkan), kombolar ve bitirişler; bota karşı, aynı ekranda 2 kişi veya Firebase ile online. Kurulum: `database.rules.json` Firebase kurallarına yapıştırılmalı; karakter kütüphanesi `src/characters` |
 | `/karakuyu` | Karakuyu — Anadolu cin inançları üzerine korku; Bölüm 1 köy (iki son), Bölüm 2 "Gülsüm": cin tutmuş nine |
 | `/karakol` | KARAKOL — Son Tahliye — aksiyon/kurtarma, 5 bölüm |
 | `/keci` | Keçi Kaçtı! — komedi/macera, Rapier fizik motoru |
