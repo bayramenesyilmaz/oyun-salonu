@@ -509,7 +509,7 @@ export default function App() {
             ) : (
               <label className="gd-nick big">
                 Oda kodu
-                <input value={code} maxLength={6} placeholder="ABCD" onChange={(e) => setCode(e.target.value.toUpperCase())} />
+                <input value={code} maxLength={6} placeholder="ABCD" type="text" inputMode="text" autoCapitalize="characters" autoCorrect="off" autoComplete="off" spellCheck={false} onChange={(e) => setCode(e.target.value.replace(/[^A-Za-z0-9]/g, ""))} />
               </label>
             )}
             {err && <p className="gd-err">{err}</p>}
