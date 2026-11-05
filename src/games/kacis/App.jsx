@@ -16,6 +16,9 @@ export default function App() {
   const [paused, setPaused] = useState(false);
   const [done, setDone] = useState(false);
   const [err, setErr] = useState('');
+  const [cine, setCine] = useState(null);
+  const [zcard, setZcard] = useState(null);
+  const [invY, setInvY] = useState(() => { try { return localStorage.getItem('kc-invy') !== '0'; } catch { return true; } });
   const joy = useRef(null);
   const lookId = useRef(null);
 
@@ -27,7 +30,7 @@ export default function App() {
     if (screen !== 'play' || !cv.current) return;
     let g = null;
     let off = false;
-    KGame.create(cv.current, { manual: QS.has('manual'), cb: { onHud: setHud, onSub: (s) => setSub(s ? { ...s } : null), onPause: () => setPaused(true), onDone: () => setDone(true) } })
+    KGame.create(cv.current, { manual: QS.has('manual'), skipIntro: QS.has('skipintro'), invertY: invY, cb: { onCine: (c) => setCine(c ? { ...c } : null), onZoneCard: (z) => setZcard(z ? { ...z } : null), onHud: setHud, onSub: (s) => setSub(s ? { ...s } : null), onPause: () => setPaused(true), onDone: () => setDone(true) } })
       .then((x) => {
         if (off) return x.dispose();
         g = x;
@@ -59,6 +62,15 @@ export default function App() {
     setDone(false);
     setHud(null);
     setSub(null);
+    setCine(null);
+    setZcard(null);
+  };
+
+  const toggleInv = () => {
+    const v = !invY;
+    setInvY(v);
+    if (game.current) game.current.invertY = v;
+    try { localStorage.setItem('kc-invy', v ? '1' : '0'); } catch {}
   };
 
   const onJoy = (e) => {
@@ -138,8 +150,24 @@ export default function App() {
             <b style={{ color: COLS[sub.s] }}>{NAMES[sub.s]}</b> {sub.t}
           </div>
         )}
+        {hud && hud.fade > 0.01 && <div className="kc-fade" style={{ opacity: hud.fade }} />}
+        {cine && (
+          <div className="kc-cine" onPointerDown={() => game.current?.tapAdvance()}>
+            <div className="kc-bar top" />
+            <div className="kc-bar bot" />
+            <p className={cine.big ? 'big' : ''} key={cine.t}>{cine.t}</p>
+            <small>Devam: E / dokun · Atla: Esc</small>
+          </div>
+        )}
+        {zcard && (
+          <div className="kc-zone" key={zcard.title}>
+            <span>{zcard.time}</span>
+            <h2>{zcard.title}</h2>
+            <p>{zcard.t}</p>
+          </div>
+        )}
         <button className="kc-pause" onClick={() => { setPaused(true); document.exitPointerLock?.(); }} aria-label="Duraklat">❚❚</button>
-        {IS_TOUCH && hud && (
+        {IS_TOUCH && hud && !cine && (
           <>
             <div className="kc-lookpad" onPointerDown={lookDown} onPointerMove={lookMove} onPointerUp={() => (lookId.current = null)} onPointerCancel={() => (lookId.current = null)} />
             <div className="kc-joy" onPointerDown={(e) => { e.currentTarget.setPointerCapture?.(e.pointerId); onJoy(e); }} onPointerMove={(e) => e.buttons && onJoy(e)} onPointerUp={endJoy} onPointerCancel={endJoy}>
@@ -152,12 +180,13 @@ export default function App() {
             </div>
           </>
         )}
-        {!IS_TOUCH && hud && !paused && <div className="kc-keys">WASD yürü · fare bak · Shift koş (ses çıkarır) · C çömel · E etkileşim · Esc duraklat</div>}
+        {!IS_TOUCH && hud && !paused && !cine && <div className="kc-keys">WASD yürü · fare bak · Shift koş (ses çıkarır) · C çömel · E etkileşim · Esc duraklat</div>}
         {paused && (
           <div className="kc-modal">
             <div className="kc-card">
               <h2>Duraklatıldı</h2>
               <button className="kc-btn primary" onClick={resume}>Devam et</button>
+              <button className="kc-btn" onClick={toggleInv}>Dikey bakış: {invY ? 'ters' : 'normal'}</button>
               <button className="kc-btn" onClick={toMenu}>Ana menü</button>
             </div>
           </div>
@@ -165,9 +194,9 @@ export default function App() {
         {done && (
           <div className="kc-modal">
             <div className="kc-card">
-              <small>Bölüm 1</small>
-              <h2>Hücreden çıktın!</h2>
-              <p>Sıradaki bölüm: Revir (yakında). Anahtar kartı orada.</p>
+              <small>Taşkale Kaçış</small>
+              <h2>Sürecek…</h2>
+              <p>Kerem defteri aldı ve Deniz’i yalnız bıraktı. Hikâyenin devamı yeni kademelerle gelecek.</p>
               <button className="kc-btn primary" onClick={toMenu}>Ana menü</button>
             </div>
           </div>
@@ -180,7 +209,7 @@ export default function App() {
       <div className="kc-menu">
         <a className="kc-back" href="/">← Oyun Salonu</a>
         <h1>Taşkale<em>Kaçış</em></h1>
-        <p className="kc-lead">Elektrikler kesildi, kilitler boşta. Deniz hücresinden sessizce çıkıp gardiyana yakalanmadan kaçış yoluna ulaşmalı. Birinci şahıs gizlilik. Bölüm 1: Hücre.</p>
+        <p className="kc-lead">Elektrikler kesildi, kilitler boşta. Deniz hücresinden sessizce çıkıp gardiyana yakalanmadan kaçış yoluna ulaşmalı. Birinci şahıs gizlilik: hücre, revir, mutfak, avlu ve minibüs.</p>
         <button className="kc-btn primary" onClick={() => setScreen('play')}>Başla</button>
         <small className="kc-note">Bilgisayarda en iyi çalışır (klavye + fare). Telefonda ağır olabilir. Arkadaşla oynama sonraki bölümlerle gelecek.</small>
       </div>

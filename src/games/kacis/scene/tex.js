@@ -141,3 +141,5 @@ export function makeCellTextures() {
   }, 1);
   return T;
 }
+
+export const mat = (t, o = {}) => new THREE.MeshStandardMaterial({ map: t.map, bumpMap: t.bump, bumpScale: 2.2, roughness: 0.92, metalness: 0, ...o });

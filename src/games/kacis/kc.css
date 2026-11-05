@@ -36,3 +36,17 @@
 .kc-btns{position:absolute;right:16px;bottom:24px;display:flex;gap:10px;align-items:flex-end;z-index:2}
 .kc-btns button{font:inherit;font-weight:800;font-size:14px;color:#fff;background:rgba(40,52,64,.8);border:2px solid #0b0f14;border-radius:50%;width:62px;height:62px}
 .kc-btns button.a{background:rgba(214,60,42,.9);width:76px;height:76px;font-size:20px}
+
+.kc-fade{position:absolute;inset:0;background:#000;pointer-events:none;z-index:4}
+.kc-cine{position:absolute;inset:0;z-index:6;display:flex;align-items:flex-end;justify-content:center;padding-bottom:12%}
+.kc-bar{position:absolute;left:0;right:0;height:12%;background:#000}
+.kc-bar.top{top:0}.kc-bar.bot{bottom:0}
+.kc-cine p{position:relative;max-width:min(760px,88vw);margin:0;text-align:center;font-size:20px;line-height:1.55;color:#e9eef2;text-shadow:0 2px 10px #000;animation:kcin .9s ease both}
+.kc-cine p.big{font-family:'Lilita One',sans-serif;font-size:44px;letter-spacing:.06em}
+.kc-cine small{position:absolute;right:16px;bottom:calc(12% - 22px);font-size:11px;color:#8aa0b4}
+.kc-zone{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none;animation:kczone 2.6s ease both}
+.kc-zone span{font-size:13px;letter-spacing:.3em;color:#ff7a68}
+.kc-zone h2{font-size:56px;margin:4px 0 6px;letter-spacing:.12em}
+.kc-zone p{margin:0;color:#b8c6d4;font-size:15px}
+@keyframes kcin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes kczone{0%{opacity:0}18%{opacity:1}80%{opacity:1}100%{opacity:0}}

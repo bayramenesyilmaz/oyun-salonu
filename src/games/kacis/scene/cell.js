@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { makeCellTextures, rng } from './tex.js';
+import { makeCellTextures, rng, mat } from './tex.js';
+import { buildWorld } from './world.js';
 import { createPost } from './postfx.js';
 
 // Taşkale Cezaevi, 1. bölüm: hücre + koridor (görsel prototip).
 // Oda: x -2..2, z -1.6..1.6, yükseklik 2.9. Kapı (parmaklık) +z yüzünde; koridor z 1.6..6.
-const mat = (t, o = {}) => new THREE.MeshStandardMaterial({ map: t.map, bumpMap: t.bump, bumpScale: 2.2, roughness: 0.92, metalness: 0, ...o });
 
 export class CellScene {
   constructor(canvas, { manual = false } = {}) {
@@ -19,6 +19,7 @@ export class CellScene {
     this.scene.fog = new THREE.FogExp2('#0e151c', 0.07);
     this.cam = new THREE.PerspectiveCamera(68, 16 / 9, 0.05, 60);
     this.T = makeCellTextures();
+    this.solids = [];
     this.t = 0;
     this.flash = 0;
     this.auto = true;
@@ -56,6 +57,11 @@ export class CellScene {
     this.cam.aspect = w / h;
     this.cam.updateProjectionMatrix();
   }
+  // görünür kutu + aynı boyutta çarpışma
+  solidBox(w, h, d, m, x, y, z, shadow = true) {
+    this.solids.push([x, y, z, w / 2, h / 2, d / 2]);
+    return this.box(w, h, d, m, x, y, z, shadow);
+  }
   box(w, h, d, m, x, y, z, shadow = true) {
     const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
     b.position.set(x, y, z);
@@ -81,7 +87,10 @@ export class CellScene {
     this.box(4.2, 3.1, 0.2, wall, 0, 1.45, -1.7); // arka duvar
     // koridor: sağ duvar + karşı hücre duvarı
     this.box(0.2, 3.1, 4.6, wall, 2.1, 1.45, 4.1);
-    this.box(4.2, 3.1, 0.2, wall, 0, 1.45, 6.8); // koridor sonu
+    // koridor sonu: ortada kapı boşluğu, revire açılır
+    this.box(3.05, 3.1, 0.2, wall, -2.175, 1.45, 6.8);
+    this.box(3.05, 3.1, 0.2, wall, 2.175, 1.45, 6.8);
+    this.box(1.3, 0.8, 0.2, wall, 0, 2.6, 6.8);
     // parmaklıklı kapı çerçevesi (z=1.6)
     this.box(4, 0.35, 0.18, metal, 0, 2.8, 1.6);
     this.box(0.35, 2.9, 0.18, metal, -1.9, 1.45, 1.6);
@@ -186,7 +195,7 @@ export class CellScene {
     this.pillars = [[-1.2, 4.3], [1.25, 5.5]];
     for (const [x, z] of this.pillars) this.box(0.55, 3.0, 0.55, wall, x, 1.5, z);
     // çıkış kapısı + kol
-    this.box(1.3, 2.3, 0.1, metal, 0, 1.15, 6.66);
+    this.exitDoor = this.box(1.3, 2.3, 0.1, metal, 0, 1.15, 6.7);
     this.box(0.08, 0.5, 0.08, mat(T.metal, { color: '#a02820', metalness: 0.2 }), 0.75, 1.2, 6.6, false);
     // kaşık (masada)
     const sp = new THREE.Group();
@@ -203,10 +212,11 @@ export class CellScene {
     this.spoonGlow = new THREE.PointLight('#ffe9b0', 0.5, 1.2, 2);
     this.spoonGlow.position.set(1.5, 0.95, 0.28);
     this.scene.add(this.spoonGlow);
+    buildWorld(this);
   }
-  makeGuard() {
+  makeGuard(color = '#14181c') {
     const g = new THREE.Group();
-    const m = new THREE.MeshStandardMaterial({ color: '#14181c', roughness: 0.9 });
+    const m = new THREE.MeshStandardMaterial({ color, roughness: 0.9 });
     const add = (geo, x, y, z, mm = m) => {
       const o = new THREE.Mesh(geo, mm);
       o.position.set(x, y, z);
