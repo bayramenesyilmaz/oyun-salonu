@@ -154,7 +154,7 @@ export function buildWorld(S) {
   S.scene.add(van);
   S.solids.push([-3.5, 1.1, 42.4, 1.1, 1.1, 2.4]);
   S.van = van;
-  S.kerem = S.makeGuard('#3a4658');
+  S.kerem = S.makeGuard('#3a4658', 'kaan');
   S.kerem.position.set(-1.7, 0, 42.2);
   S.kerem.rotation.y = -Math.PI / 2;
   S.scene.add(S.kerem);
@@ -171,9 +171,9 @@ export function buildWorld(S) {
   };
   S.torch2 = mkTorch(false);
   S.torch3 = mkTorch(false);
-  S.guard2 = S.makeGuard();
-  S.guard3 = S.makeGuard();
-  S.doctor = S.makeGuard('#cfd6d8');
+  S.guard2 = S.makeGuard('#14181c', 'polis');
+  S.guard3 = S.makeGuard('#14181c', 'bekci');
+  S.doctor = S.makeGuard('#cfd6d8', 'mert');
   S.guard2.position.set(-0.6, 0, 15.5);
   S.guard3.position.set(-4, 0, 36);
   S.doctor.position.set(-2.3, 0, 13.0);

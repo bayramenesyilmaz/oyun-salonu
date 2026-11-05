@@ -2,6 +2,17 @@ import * as THREE from 'three';
 import { makeCellTextures, rng, mat } from './tex.js';
 import { buildWorld } from './world.js';
 import { createPost } from './postfx.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
+
+const glbLoader = new GLTFLoader();
+glbLoader.setMeshoptDecoder(MeshoptDecoder);
+const glbCache = new Map();
+const loadChar = (id) => {
+  if (!glbCache.has(id)) glbCache.set(id, glbLoader.loadAsync(`/kusyolu/chars/${id}.glb`));
+  return glbCache.get(id);
+};
 
 // Taşkale Cezaevi, 1. bölüm: hücre + koridor (görsel prototip).
 // Oda: x -2..2, z -1.6..1.6, yükseklik 2.9. Kapı (parmaklık) +z yüzünde; koridor z 1.6..6.
@@ -161,7 +172,7 @@ export class CellScene {
     this.lamp.position.set(-0.6, 2.7, 3.2);
     this.scene.add(this.lamp);
     // gardiyan (siluet) + fener
-    this.guard = this.makeGuard();
+    this.guard = this.makeGuard('#14181c', 'bekci');
     this.guard.position.set(0.5, 0, 5.2);
     this.scene.add(this.guard);
     this.torch = new THREE.SpotLight('#fff1cf', 7, 14, 0.38, 0.55, 1.2);
@@ -214,14 +225,16 @@ export class CellScene {
     this.scene.add(this.spoonGlow);
     buildWorld(this);
   }
-  makeGuard(color = '#14181c') {
+  makeGuard(color = '#14181c', model = null) {
     const g = new THREE.Group();
+    const procParts = [];
     const m = new THREE.MeshStandardMaterial({ color, roughness: 0.9 });
     const add = (geo, x, y, z, mm = m) => {
       const o = new THREE.Mesh(geo, mm);
       o.position.set(x, y, z);
       o.castShadow = true;
       g.add(o);
+      procParts.push(o);
       return o;
     };
     add(new THREE.CapsuleGeometry(0.2, 0.62, 6, 12), 0, 1.22, 0); // gövde
@@ -232,10 +245,62 @@ export class CellScene {
     add(new THREE.CapsuleGeometry(0.055, 0.5, 6, 8), -0.29, 1.15, 0.0);
     const arm = add(new THREE.CapsuleGeometry(0.055, 0.5, 6, 8), 0.28, 1.28, 0.2);
     arm.rotation.x = -1.2;
+    if (model && !(typeof location !== 'undefined' && location.protocol === 'file:')) this.attachHuman(g, procParts, model);
     return g;
+  }
+  // gerçek insan modeli (Rocketbox, MIT): yüklenince kapsül gövdenin yerini alır
+  attachHuman(g, procParts, id) {
+    this.humans = this.humans || [];
+    loadChar(id)
+      .then((gltf) => {
+        const model = cloneSkinned(gltf.scene);
+        model.traverse((o) => {
+          if (!o.isMesh) return;
+          o.castShadow = true;
+          o.receiveShadow = true;
+          o.frustumCulled = false;
+          const m = o.material;
+          if (m && /opacity/.test(m.name)) {
+            m.transparent = false;
+            m.alphaTest = 0.45;
+            m.side = THREE.DoubleSide;
+          }
+        });
+        g.add(model);
+        for (const p of procParts) p.visible = false;
+        const mixer = new THREE.AnimationMixer(model);
+        const clips = {};
+        for (const c of gltf.animations) clips[c.name] = c;
+        const h = { g, mixer, clips, cur: null, last: g.position.clone(), sp: 0 };
+        this.humanPlay(h, 'idle');
+        this.humans.push(h);
+      })
+      .catch((e) => console.warn('insan modeli yüklenemedi', id, e && e.message));
+  }
+  humanPlay(h, name) {
+    const c = h.clips[name] || h.clips.idle;
+    if (!c || h.cur === name) return;
+    const a = h.mixer.clipAction(c);
+    a.reset().play();
+    if (/walk|run/.test(name)) a.setLoop(THREE.LoopRepeat, Infinity);
+    else a.setLoop(THREE.LoopPingPong, Infinity), (a.timeScale = 0.6);
+    if (h.act) h.act.crossFadeTo(a, 0.3, false);
+    h.act = a;
+    h.cur = name;
+  }
+  updateHumans(dt) {
+    for (const h of this.humans || []) {
+      const p = h.g.position;
+      const sp = Math.hypot(p.x - h.last.x, p.z - h.last.z) / Math.max(dt, 1e-4);
+      h.last.copy(p);
+      h.sp += (sp - h.sp) * Math.min(1, dt * 6);
+      this.humanPlay(h, h.sp > 0.25 ? (h.sp > 2.2 ? 'run' : 'walk') : h.name || 'idle');
+      h.mixer.update(dt);
+    }
   }
   update(dt) {
     this.t += dt;
+    this.updateHumans(dt);
     const t = this.t;
     // şimşek
     this.nextFlash -= dt;
