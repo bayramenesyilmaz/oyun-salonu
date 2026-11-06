@@ -77,6 +77,8 @@ export class Race {
     this._onResize = () => this.resize();
     window.addEventListener('resize', this._onResize);
     this.spawn(CAR_COLORS[0]);
+    this.renderer.setPixelRatio(1);
+    try { this.renderer.compile(this.scene, this.cam); } catch { /* yok say */ }
     this.raf = requestAnimationFrame(() => this.loop());
   }
   dispose() {
@@ -119,7 +121,7 @@ export class Race {
     sc.add(floor);
     // bulut kümeleri (instanced)
     const N = 420;
-    const cg = new THREE.IcosahedronGeometry(1, 1);
+    const cg = new THREE.IcosahedronGeometry(1, 0);
     const cm = new THREE.InstancedMesh(cg, new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, emissive: 0x9ab4d0, emissiveIntensity: 0.55 }), N * 4);
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), ps = new THREE.Vector3(), s3 = new THREE.Vector3();
     let k = 0;
@@ -224,6 +226,8 @@ export class Race {
     this.toastT = 0;
     this.state = 'grid';
     this.mode = 'play';
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.touch ? 1.6 : 2));
+    this.resize();
     this.gridT = 3.4;
     this.lastBeep = 4;
     this.elapsed = 0;
@@ -234,6 +238,8 @@ export class Race {
   }
   toMenu() {
     this.mode = 'menu';
+    this.renderer.setPixelRatio(1);
+    this.resize();
     this.state = 'menu';
     S.engine(0, false, false);
     this.spawn(CAR_COLORS[0]);
