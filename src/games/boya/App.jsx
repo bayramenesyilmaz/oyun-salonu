@@ -176,6 +176,7 @@ export default function App() {
               {TEAM[h.team].name} takım
             </div>
             <div className="by-ammo">
+              <div className="wn">{h.wname}</div>
               {h.reload >= 0 ? <span className="rl">Dolduruluyor…</span> : <><b>{h.ammo}</b> / {h.mag}</>}
               <div className="bar">
                 <i style={{ width: (h.reload >= 0 ? h.reload : h.ammo / h.mag) * 100 + '%' }} />
@@ -188,11 +189,12 @@ export default function App() {
               </div>
             )}
             {h.ph === 0 && <div className="by-count">{h.t > 0.9 ? Math.ceil(h.t - 0.5) : 'Başla!'}</div>}
-            {!IS_TOUCH && !locked && h.ph !== 2 && <div className="by-hint">Oynamak için ekrana tıkla · WASD yürü · Boşluk zıpla · R doldur · Esc duraklat</div>}
+            {!IS_TOUCH && !locked && h.ph !== 2 && <div className="by-hint">Oynamak için ekrana tıkla · WASD yürü · Boşluk zıpla · R doldur · 1-4 / tekerlek silah · Esc duraklat</div>}
             {IS_TOUCH && h.ph !== 2 && (
               <div className="by-touch">
                 <Stick onMove={(x, y) => game.current?.setMove(x, y)} />
                 <div className="by-btns">
+                  <button className="wp" {...hold((v) => v && game.current?.nextWeapon(1))}>Silah</button>
                   <button className="rl" {...hold((v) => v && game.current?.doReload())}>R</button>
                   <button className="jp" {...hold((v) => v && game.current?.jump())}>Zıpla</button>
                   <button className="fr" {...hold((v) => game.current?.setFire(v))}>Ateş</button>

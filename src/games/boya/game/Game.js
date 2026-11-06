@@ -8,8 +8,14 @@ export const TEAM = [
   { name: 'Mavi', c: 0x3fa3ff, css: '#3fa3ff' },
 ];
 const R = 0.38, H = 1.75, EYE = 1.55, SPEED = 6.4, JUMP = 6.8, G = 20;
-const FIRE_DT = 0.14, MAG = 30, RELOAD = 1.3, MATCH = 150, COUNT = 3.5, OUT = 2.5, PROT = 1.2, SENS = 0.0022;
+const MATCH = 150, COUNT = 3.5, OUT = 2.5, PROT = 1.2, SENS = 0.0022;
 
+export const WEAPONS = [
+  { name: 'Boya Tabancası', mag: 30, rate: 0.14, reload: 1.3, spread: 0.012, pellets: 1, range: 70, snd: [220, 90] },
+  { name: 'Saçmalı', mag: 6, rate: 0.8, reload: 2.0, spread: 0.075, pellets: 7, range: 24, snd: [150, 50] },
+  { name: 'Keskin Nişancı', mag: 5, rate: 1.0, reload: 2.1, spread: 0.0, pellets: 1, range: 110, snd: [520, 120] },
+  { name: 'Hızlı Mini', mag: 60, rate: 0.07, reload: 2.4, spread: 0.04, pellets: 1, range: 55, snd: [300, 160] },
+];
 const TAU = Math.PI * 2;
 const angDiff = (a, b) => ((((b - a + Math.PI) % TAU) + TAU) % TAU) - Math.PI;
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -117,6 +123,12 @@ function makeAvatar(team, name) {
   box(0.1, 0.12, 0.7, mD, 0, -0.5, -0.1, armR);
   box(0.1, 0.1, 0.1, mT, 0, -0.38, 0, armR);
   g.add(armL, armR);
+  box(0.3, 0.5, 0.2, mD, 0, 1.12, 0.3);
+  box(0.16, 0.2, 0.16, mP, 0, 1.5, 0.3);
+  box(0.78, 0.1, 0.44, mD, 0, 0.74, 0);
+  box(0.28, 0.12, 0.34, mP, -0.18, 0.06, -0.03);
+  box(0.28, 0.12, 0.34, mP, 0.18, 0.06, -0.03);
+  box(0.5, 0.05, 0.3, mP, 0, 1.96, -0.05);
   const splat = box(0.5, 0.42, 0.03, L(0xffffff), 0, 1.1, -0.22);
   splat.visible = false;
   const tag = nameSprite(name, TEAM[team].css);
@@ -145,7 +157,8 @@ export class Game {
     this.feed = [];
     this.hits = 0;
     this.outs = 0;
-    this.ammo = MAG;
+    this.wi = 0;
+    this.ammos = WEAPONS.map((w) => w.mag);
     this.reload = 0;
     this.fireCd = 0;
     this.kick = 0;
@@ -166,8 +179,8 @@ export class Game {
     this.cam = new THREE.PerspectiveCamera(78, 16 / 9, 0.05, 200);
     this.cam.rotation.order = 'YXZ';
     this.scene.add(this.cam);
-    this.scene.add(new THREE.HemisphereLight(0xffffff, 0x9fb59a, 1.15));
-    const sun = new THREE.DirectionalLight(0xffffff, 1.35);
+    this.scene.add(new THREE.HemisphereLight(0xffffff, 0xb5c9b0, 1.5));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.0);
     sun.position.set(14, 30, 8);
     this.scene.add(sun);
     this.makeViewmodel();
@@ -222,6 +235,7 @@ export class Game {
       if (e.repeat) return;
       this.keys[e.code] = true;
       if (e.code === 'KeyR') this.doReload();
+      if (/^Digit[1-4]$/.test(e.code)) this.setWeapon(+e.code.slice(5) - 1);
       if (e.code === 'Space') e.preventDefault();
     };
     this.onKeyUp = (e) => (this.keys[e.code] = false);
@@ -243,6 +257,8 @@ export class Game {
       if (!this.locked) this.fireHeld = false;
       this.cb.onLock?.(this.locked);
     };
+    this.onWheel = (e) => this.nextWeapon(e.deltaY > 0 ? 1 : -1);
+    window.addEventListener('wheel', this.onWheel);
     this.onResize = () => this.resize();
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
@@ -285,7 +301,7 @@ export class Game {
     const tex = new THREE.CanvasTexture(cv);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.magFilter = THREE.NearestFilter;
-    const size = M.half * 2 + 60;
+    const size = 320;
     tex.repeat.set(size / 4, size / 4);
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(size, size), new THREE.MeshLambertMaterial({ map: tex }));
     ground.rotation.x = -Math.PI / 2;
@@ -307,6 +323,36 @@ export class Game {
     add(-hf - wt / 2, 0, wt, hf * 2, wh, M.wall);
     add(hf + wt / 2, 0, wt, hf * 2, wh, M.wall);
     this.colliders.length -= 4; // duvarları sınır kutusu olarak değil, alan sınırı olarak kullan
+    // süsler: ağaçlar (ya da şehir blokları), doğuş platformları, bayraklar
+    const hf2 = M.half;
+    const mat = (c) => new THREE.MeshLambertMaterial({ color: c, flatShading: true });
+    const prop = (bw, bh, bd, c, x, y, z) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), mat(c));
+      m.position.set(x, y + bh / 2, z);
+      w.add(m);
+    };
+    const city = M.id === 'cati';
+    for (let i = 0; i < 26; i++) {
+      const a = (i / 26) * TAU, rr = hf2 * 1.45 + rnd(4, 14);
+      const x = Math.cos(a) * rr * (0.9 + Math.random() * 0.2), z = Math.sin(a) * rr * (0.9 + Math.random() * 0.2);
+      if (city) {
+        const bh = rnd(8, 26);
+        prop(rnd(5, 9), bh, rnd(5, 9), ['#cfd8e3', '#aebccb', '#e6d3b9', '#9fb3c8'][i % 4], x, 0, z);
+      } else {
+        const sc = rnd(0.9, 1.5);
+        prop(0.7 * sc, 2 * sc, 0.7 * sc, '#8a5a34', x, 0, z);
+        prop(3.2 * sc, 1.8 * sc, 3.2 * sc, '#3da55a', x, 2 * sc, z);
+        prop(2 * sc, 1.5 * sc, 2 * sc, '#56c273', x, 3.7 * sc, z);
+      }
+    }
+    for (let ti = 0; ti < 2; ti++) {
+      for (const [sx, sz] of M.spawns[ti]) {
+        prop(2.4, 0.05, 2.4, ti ? '#3fa3ff' : '#ff4d5e', sx, 0, sz);
+      }
+      const fz = (ti ? 1 : -1) * (hf2 - 1.6);
+      prop(0.12, 3.6, 0.12, '#f4f1e8', 0, 0, fz);
+      prop(1.3, 0.8, 0.06, ti ? '#3fa3ff' : '#ff4d5e', 0.7, 2.8, fz);
+    }
     // bulutlar
     const cm = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
     for (let i = 0; i < 10; i++) {
@@ -424,7 +470,7 @@ export class Game {
     p.av.userData.splat.visible = false;
     p.av.rotation.x = 0;
     if (p.id === this.me) {
-      this.ammo = MAG;
+      this.ammos = WEAPONS.map((w) => w.mag);
       this.reload = 0;
     }
   }
@@ -486,15 +532,20 @@ export class Game {
     }
     return true;
   }
-  shoot(p, spread = 0.012) {
+  shoot(p, spread = 0.012, pellets = 1, range = 70) {
+    let hit;
+    for (let i = 0; i < pellets; i++) hit = this.shootOne(p, spread, range);
+    return hit;
+  }
+  shootOne(p, spread, range) {
     const eye = [p.pos.x, p.pos.y + EYE, p.pos.z];
     const d = this.dirOf(p.yaw + rnd(-spread, spread), p.pitch + rnd(-spread, spread));
-    const hit = this.trace(p, eye[0], eye[1], eye[2], d);
+    const hit = this.trace(p, eye[0], eye[1], eye[2], d, range);
     const f = this.dirOf(p.yaw, 0);
     const rx = Math.cos(p.yaw), rz = -Math.sin(p.yaw);
     const muzzle = [eye[0] + f[0] * 0.55 + rx * 0.22, eye[1] - 0.2, eye[2] + f[2] * 0.55 + rz * 0.22];
     const pt = [eye[0] + d[0] * hit.t, eye[1] + d[1] * hit.t, eye[2] + d[2] * hit.t];
-    const ev = { k: 's', i: p.id, m: muzzle.map((v) => +v.toFixed(2)), q: pt.map((v) => +v.toFixed(2)), n: hit.n, h: hit.kind === 'player' ? 1 : 0 };
+    const ev = { k: 's', i: p.id, m: muzzle.map((v) => +v.toFixed(2)), q: pt.map((v) => +v.toFixed(2)), n: hit.n, h: hit.kind === 'player' ? 1 : 0, a: hit.kind === 'air' ? 1 : 0 };
     this.spawnShot(ev);
     this.net?.sendEvent(ev);
     if (hit.kind === 'player') {
@@ -513,7 +564,7 @@ export class Game {
     m.position.set(...e.m);
     this.scene.add(m);
     const dist = Math.hypot(e.q[0] - e.m[0], e.q[1] - e.m[1], e.q[2] - e.m[2]);
-    this.balls.push({ m, from: e.m, to: e.q, t: 0, dur: Math.max(0.03, dist / 90), team: p.team, n: e.n, h: e.h });
+    this.balls.push({ m, from: e.m, to: e.q, t: 0, dur: Math.max(0.03, dist / 90), team: p.team, n: e.n, h: e.h, a: e.a });
     if (e.i !== this.me) beep(320, 120, 0.08, 'square', 0.025);
   }
   tag(target, shooter) {
@@ -545,10 +596,24 @@ export class Game {
       beep(300, 70, 0.4, 'sawtooth', 0.06);
     }
   }
+  get W() {
+    return WEAPONS[this.wi];
+  }
   doReload() {
-    if (this.reload > 0 || this.ammo >= MAG || this.P[this.me].out) return;
-    this.reload = RELOAD;
+    if (this.reload > 0 || this.ammos[this.wi] >= this.W.mag || this.P[this.me].out) return;
+    this.reload = this.W.reload;
     beep(200, 380, 0.15, 'triangle', 0.04);
+  }
+  setWeapon(i) {
+    if (i === this.wi || i < 0 || i >= WEAPONS.length || this.P[this.me].out) return;
+    this.wi = i;
+    this.reload = 0;
+    this.fireCd = 0.25;
+    this.vms.forEach((v, k) => (v.visible = k === i));
+    beep(420, 620, 0.06, 'triangle', 0.04);
+  }
+  nextWeapon(d = 1) {
+    this.setWeapon((this.wi + d + WEAPONS.length) % WEAPONS.length);
   }
 
   // ---------- giriş ----------
@@ -762,22 +827,23 @@ export class Game {
     p.sp = Math.hypot(p.pos.x - before[0], p.pos.z - before[1]) / dt;
     this.fireCd -= dt;
     this.kick = Math.max(0, this.kick - dt * 6);
+    const W = this.W;
     if (this.reload > 0) {
       this.reload -= dt;
       if (this.reload <= 0) {
         this.reload = 0;
-        this.ammo = MAG;
+        this.ammos[this.wi] = W.mag;
       }
     }
     if (this.fireHeld && this.ph === 1 && this.fireCd <= 0 && this.reload <= 0) {
-      if (this.ammo > 0) {
-        this.fireCd = FIRE_DT;
-        this.ammo--;
+      if (this.ammos[this.wi] > 0) {
+        this.fireCd = W.rate;
+        this.ammos[this.wi]--;
         this.kick = 1;
-        p.pitch += 0.006;
-        this.shoot(p);
-        beep(220, 90, 0.07, 'square', 0.05);
-        if (this.ammo === 0) this.doReload();
+        p.pitch += this.wi === 1 ? 0.03 : this.wi === 2 ? 0.045 : 0.006;
+        this.shoot(p, W.spread, W.pellets, W.range);
+        beep(W.snd[0], W.snd[1], 0.08, 'square', 0.05);
+        if (this.ammos[this.wi] === 0) this.doReload();
       } else this.doReload();
     }
   }
@@ -841,7 +907,7 @@ export class Game {
         b.m.geometry.dispose();
         b.m.material.dispose();
         this.balls.splice(i, 1);
-        if (!b.h) this.splatAt(b.team, b.to, b.n);
+        if (!b.h && !b.a) this.splatAt(b.team, b.to, b.n);
         this.burst(b.to, b.team, b.h ? 9 : 5);
       }
     }
@@ -867,8 +933,8 @@ export class Game {
     const eyeY = me.out ? 0.5 : EYE;
     this.cam.position.set(me.pos.x, me.pos.y + eyeY, me.pos.z);
     this.cam.rotation.set(me.out ? -0.2 : me.pitch, me.yaw, me.out ? 0.35 : 0);
-    const vm = this.vm;
-    vm.visible = !me.out;
+    const vm = this.vms[this.wi];
+    this.vms.forEach((v, k) => (v.visible = k === this.wi && !me.out));
     vm.position.set(0.24, -0.24 + this.kick * 0.015, -0.46 + this.kick * 0.07);
     vm.rotation.x = this.kick * 0.1 - (this.reload > 0 ? 0.6 : 0);
   }
@@ -886,19 +952,25 @@ export class Game {
   }
 
   makeViewmodel() {
-    const g = new THREE.Group();
     const L = (c) => new THREE.MeshLambertMaterial({ color: c, flatShading: true });
-    const add = (w, h, d, m, x, y, z) => {
-      const me = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
-      me.position.set(x, y, z);
-      g.add(me);
-    };
-    add(0.08, 0.1, 0.42, L(0x2b3445), 0, 0, -0.2);
-    add(0.045, 0.045, 0.34, L(0x59647a), 0, 0.012, -0.55);
-    add(0.08, 0.11, 0.1, L(TEAM[this.me < 2 ? 0 : 1].c), 0, 0.1, -0.1);
-    add(0.1, 0.1, 0.14, L(0xffd0a6), 0, -0.08, -0.1);
-    this.vm = g;
-    this.cam.add(g);
+    const tc = TEAM[this.me < 2 ? 0 : 1].c;
+    const defs = [
+      [[0.08, 0.1, 0.42, 0x2b3445, 0, 0, -0.2], [0.045, 0.045, 0.34, 0x59647a, 0, 0.012, -0.55], [0.08, 0.11, 0.1, tc, 0, 0.1, -0.1], [0.1, 0.1, 0.14, 0xffd0a6, 0, -0.08, -0.1]],
+      [[0.12, 0.12, 0.5, 0x6b4a2b, 0, 0, -0.25], [0.09, 0.09, 0.5, 0x59647a, 0, 0.02, -0.7], [0.1, 0.06, 0.2, tc, 0, 0.09, -0.3], [0.11, 0.1, 0.16, 0xffd0a6, 0, -0.09, -0.2]],
+      [[0.07, 0.1, 0.55, 0x2b3445, 0, 0, -0.25], [0.03, 0.03, 0.62, 0x59647a, 0, 0.015, -0.86], [0.05, 0.07, 0.16, tc, 0, 0.09, -0.2], [0.09, 0.09, 0.14, 0xffd0a6, 0, -0.08, -0.15]],
+      [[0.1, 0.13, 0.36, 0x3a3f4f, 0, 0, -0.18], [0.07, 0.07, 0.26, 0x59647a, 0, 0.01, -0.48], [0.14, 0.16, 0.14, tc, 0, 0.12, -0.12], [0.1, 0.1, 0.14, 0xffd0a6, 0, -0.09, -0.12]],
+    ];
+    this.vms = defs.map((parts, k) => {
+      const g = new THREE.Group();
+      for (const [w, h, d, c, x, y, z] of parts) {
+        const me = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), L(c));
+        me.position.set(x, y, z);
+        g.add(me);
+      }
+      g.visible = k === 0;
+      this.cam.add(g);
+      return g;
+    });
   }
 
   hud() {
@@ -910,9 +982,11 @@ export class Game {
       sc: this.sc.slice(),
       ps: this.P.map((p) => ({ n: p.name, team: p.team, s: p.score, me: p.id === this.me })),
       team: me.team,
-      ammo: this.ammo,
-      mag: MAG,
-      reload: this.reload > 0 ? 1 - this.reload / RELOAD : -1,
+      ammo: this.ammos[this.wi],
+      mag: this.W.mag,
+      wname: this.W.name,
+      wi: this.wi,
+      reload: this.reload > 0 ? 1 - this.reload / this.W.reload : -1,
       out: me.out ? Math.max(0, me.outT) : 0,
       feed: this.feed.filter((f) => now - f.at < 5000),
       hits: this.hits,
@@ -959,6 +1033,7 @@ export class Game {
     window.removeEventListener('mousemove', this.onMouseMove);
     window.removeEventListener('mouseup', this.onMouseUp);
     window.removeEventListener('resize', this.onResize);
+    window.removeEventListener('wheel', this.onWheel);
     document.removeEventListener('pointerlockchange', this.onLock);
     this.cv.removeEventListener('mousedown', this.onMouseDown);
     if (document.pointerLockElement === this.cv) document.exitPointerLock?.();
