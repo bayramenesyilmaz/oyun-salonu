@@ -64,3 +64,16 @@ html,body{margin:0;background:#6db8f0}
   .by-order li{font-size:15px;padding:3px 10px}
   .by-stats{font-size:15px}
 }
+.by-tracks{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:6px;width:min(560px,100%)}
+.by-tracks button{background:rgba(24,34,70,.72);color:#fff;border:2px solid transparent;border-radius:12px;padding:6px 8px;font:700 15px var(--by-f);cursor:pointer;display:grid;gap:0;text-align:center}
+.by-tracks button small{font:600 11px var(--by-f);opacity:.8}
+.by-tracks button.on{border-color:#ffd84a;background:rgba(255,216,74,.22)}
+.by-err{margin:0;background:#c0392b;border-radius:10px;padding:4px 14px;font:700 16px var(--by-f)}
+.by-pill.item{background:#7a3cff;gap:6px}.by-pill.item b{font-size:20px;color:#fff}
+.by-btn.fire{right:122px;width:76px;height:76px;background:radial-gradient(circle at 35% 30%,#ff9a4a,#d2551a);box-shadow:0 5px 0 #92370f;font-size:14px}
+.by-btn.brake.flip{background:radial-gradient(circle at 35% 30%,#c58bff,#6b2fd1);box-shadow:0 5px 0 #43198f}
+.by-dot{display:inline-block;width:18px;height:18px;border-radius:50%;border:2px solid #fff}
+.by-order li small{margin-left:auto;font:600 14px var(--by-f);opacity:.8}
+.rl-in.small{font-size:18px;letter-spacing:.05em;padding:6px;text-transform:none}
+.rl{--rl-font:var(--by-f)}
+@media (max-height:520px){.by-tracks{grid-template-columns:repeat(5,1fr)}.by-tracks button small{display:none}}

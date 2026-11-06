@@ -8,11 +8,31 @@ export const RAMP_H = 2.6;
 const TAU = Math.PI * 2;
 export const angDiff = (a, b) => ((((b - a + Math.PI) % TAU) + TAU) % TAU) - Math.PI;
 
-// Kapalı pist: kontrol noktaları (x, z)
-const CTRL = [[0, 0], [130, 0], [230, -50], [270, -150], [210, -240], [100, -265], [10, -215], [-70, -265], [-180, -250], [-260, -160], [-225, -50], [-125, 20]];
+const clampN = (v, a, b) => Math.max(a, Math.min(b, v));
+const smooth = (a, b, x) => { const t = clampN((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 
-export function buildTrack() {
-  const curve = new THREE.CatmullRomCurve3(CTRL.map(([x, z]) => new THREE.Vector3(x, 0, z)), true, 'centripetal');
+// Pist tanımları: kontrol noktaları (x, z), dalga (amp metre, per tepe sayısı), uçurumlar [merkez, derinlik, uzunluk, yumuşaklık] (tur oranı)
+export const TRACKS = [
+  { id: 'bulut', name: 'Bulut ovası', theme: 'cloud', desc: 'Klasik: hafif tepeler, 4 rampa',
+    ctrl: [[0, 0], [130, 0], [230, -50], [270, -150], [210, -240], [100, -265], [10, -215], [-70, -265], [-180, -250], [-260, -160], [-225, -50], [-125, 20]],
+    amp: 3, per: 7, ph: 0.6, cliffs: [[0.5, 9, 0.05, 0.026]], road: '#4d5270', curb: '#e8527a', laps: 3 },
+  { id: 'sehir', name: 'Şehir üstü', theme: 'city', desc: 'Altında devasa şehir, dik inişler',
+    ctrl: [[0, 0], [150, -10], [280, -70], [340, -180], [300, -300], [180, -350], [60, -300], [40, -200], [-60, -150], [-180, -190], [-250, -290], [-340, -230], [-320, -100], [-200, -20]],
+    amp: 5, per: 9, ph: 1.2, cliffs: [[0.3, 12, 0.06, 0.026], [0.72, 10, 0.05, 0.026]], road: '#3a3f5c', curb: '#ffb02e', laps: 2 },
+  { id: 'okyanus', name: 'Okyanus kıyısı', theme: 'ocean', desc: 'Uçsuz okyanus, çok dalgalı yol',
+    ctrl: [[0, 0], [160, 0], [300, -40], [360, -140], [300, -230], [180, -250], [120, -170], [40, -120], [-60, -170], [-80, -280], [-190, -320], [-300, -250], [-320, -120], [-230, -30], [-110, 10]],
+    amp: 7, per: 11, ph: 2.1, cliffs: [[0.45, 11, 0.05, 0.026]], road: '#4a5870', curb: '#ffffff', laps: 2 },
+  { id: 'orman', name: 'Amazon ormanı', theme: 'forest', desc: 'Orman çatısı üstünde virajlı yol',
+    ctrl: [[0, 0], [110, 10], [190, -40], [200, -120], [140, -170], [150, -250], [80, -300], [0, -250], [-20, -170], [-100, -140], [-160, -200], [-230, -160], [-220, -70], [-140, -20]],
+    amp: 6, per: 10, ph: 0.2, cliffs: [[0.2, 10, 0.05, 0.026], [0.62, 12, 0.06, 0.026]], road: '#5b5240', curb: '#f2c230', laps: 3 },
+  { id: 'uzay', name: 'Uzay boşluğu', theme: 'space', desc: 'Yıldızlar arasında, dev tepeler',
+    ctrl: [[0, 0], [150, -10], [280, -70], [340, -180], [300, -300], [180, -350], [60, -300], [40, -200], [-60, -150], [-180, -190], [-250, -290], [-340, -230], [-320, -100], [-200, -20]].map(([x, z]) => [x * 1.1, z * 1.1]),
+    amp: 8, per: 8, ph: 3.0, cliffs: [[0.38, 14, 0.06, 0.026], [0.8, 12, 0.05, 0.026]], road: '#232850', curb: '#6de0ff', laps: 2 },
+];
+export const trackById = (id) => TRACKS.find((t) => t.id === id) || TRACKS[0];
+
+export function buildTrack(def = TRACKS[0]) {
+  const curve = new THREE.CatmullRomCurve3(def.ctrl.map(([x, z]) => new THREE.Vector3(x, 0, z)), true, 'centripetal');
   const len = curve.getLength();
   const N = Math.round(len / STEP);
   const P = [], T = [], R = [], Y = [];
@@ -45,13 +65,39 @@ export function buildTrack() {
     ramps.push(w(best));
   }
   ramps.sort((a, b) => a - b);
+  // dalgalı zemin: rampa ve start çevresinde düz
+  const flat = [...ramps.map((s) => [s - 14, s + total + 14]), [-16, 16]];
+  const cd = (i, a, b) => { // i'nin [a,b] penceresine döngüsel uzaklığı
+    let best = 1e9;
+    for (const sh of [-N, 0, N]) { const x = i + sh; best = Math.min(best, x < a ? a - x : x > b ? x - b : 0); }
+    return best;
+  };
+  const flatD = Array.from({ length: N }, (_, i) => Math.min(...flat.map(([a, b]) => cd(i, a, b))));
+  const cliffs = (def.cliffs || []).map(([c0, depth, ln, wd]) => {
+    const span = Math.round((ln + 2 * wd) * N) + 50, c0i = Math.round((c0 - wd) * N);
+    let best = c0i, bs = 1e18;
+    for (let s = c0i - Math.round(0.1 * N); s <= c0i + Math.round(0.1 * N); s += 3) {
+      let sum = 0;
+      for (let k = 0; k < span; k += 2) { const j = w(s + k); sum += cur[j] * 100 + (flatD[j] < 18 ? 5 : 0); }
+      if (sum < bs) { bs = sum; best = s; }
+    }
+    return [(best + Math.round(wd * N)) / N, depth, ln, wd];
+  });
+  for (let i = 0; i < N; i++) {
+    const u = i / N;
+    let y = def.amp * Math.sin(TAU * def.per * u + def.ph) * (0.65 + 0.35 * Math.sin(TAU * u * 3 + 1));
+    for (const [c, depth, ln, wd] of cliffs) { const uu = u < c - 0.5 ? u + 1 : u > c + 0.5 ? u - 1 : u; y -= depth * (smooth(c - wd, c, uu) - smooth(c + ln, c + ln + wd, uu)); }
+    let d = 1e9;
+    for (const [a, b] of flat) d = Math.min(d, cd(i, a, b));
+    H[i] = y * smooth(0, 16, d);
+  }
   for (const s of ramps) {
     for (let k = 0; k < RAMP_N; k++) {
       const i = w(s + k);
       kind[i] = 1;
       H[i] = RAMP_H * Math.pow((k + 1) / RAMP_N, 1.7);
     }
-    for (let k = 0; k < GAP_N; k++) kind[w(s + RAMP_N + k)] = 2;
+    for (let k = 0; k < GAP_N; k++) { kind[w(s + RAMP_N + k)] = 2; H[w(s + RAMP_N + k)] = 0; }
     for (let k = -4; k < total + 4; k++) noRail[w(s + k)] = 1;
   }
   // hızlanma plakaları: rampalar arasının ortasında
@@ -60,7 +106,16 @@ export function buildTrack() {
     const mid = Math.floor((a + b) / 2);
     for (let k = -3; k < 3; k++) pad[w(mid + k)] = 1;
   }
-  return { N, P, T, R, Y, cur, kind, H, noRail, pad, ramps, len, w };
+  // eşya kutuları: 3 şeritli sıralar
+  const items = [];
+  const rows = 9;
+  for (let k = 0; k < rows; k++) {
+    let i = Math.floor(((k + 0.5) * N) / rows);
+    for (let t = 0; t < 40 && (kind[w(i)] !== 0 || noRail[w(i)] || pad[w(i)]); t++) i++;
+    i = w(i);
+    for (const lane of [-4, 0, 4]) items.push({ i, lane, x: P[i].x + R[i].x * lane, z: P[i].z + R[i].z * lane, y: H[i] + 1.5 });
+  }
+  return { N, P, T, R, Y, cur, kind, H, noRail, pad, ramps, len, w, items, def, laps: def.laps || 3 };
 }
 
 function canvasTex(w, h, draw, rx = 1, ry = 1) {
@@ -75,16 +130,16 @@ function canvasTex(w, h, draw, rx = 1, ry = 1) {
   return t;
 }
 
-export function trackTextures() {
+export function trackTextures(def = {}) {
   const road = canvasTex(128, 128, (g, w, h) => {
-    g.fillStyle = '#4d5270'; g.fillRect(0, 0, w, h);
+    g.fillStyle = def.road || '#4d5270'; g.fillRect(0, 0, w, h);
     for (let i = 0; i < 700; i++) { g.fillStyle = `rgba(${Math.random() < 0.5 ? '255,255,255' : '0,0,0'},${Math.random() * 0.06})`; g.fillRect(Math.random() * w, Math.random() * h, 2, 2); }
     g.fillStyle = '#ffffff'; g.fillRect(w / 2 - 3, 8, 6, h * 0.5);
     g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(w * 0.06, 0, 3, h); g.fillRect(w * 0.94 - 3, 0, 3, h);
   });
   const curb = canvasTex(32, 64, (g, w, h) => {
     g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h);
-    g.fillStyle = '#e8527a'; g.fillRect(0, 0, w, h / 2);
+    g.fillStyle = def.curb || '#e8527a'; g.fillRect(0, 0, w, h / 2);
   });
   const hazard = canvasTex(64, 64, (g, w, h) => {
     g.fillStyle = '#f2c230'; g.fillRect(0, 0, w, h);

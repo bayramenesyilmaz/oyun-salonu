@@ -1,0 +1,18 @@
+.rl{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;align-items:center;padding:14px 16px 24px;color:var(--rl-fg,#fff);font-family:var(--rl-font,inherit);background:var(--rl-bg,rgba(16,26,60,.82));z-index:8;touch-action:pan-y}
+.rl-link{align-self:flex-start;background:none;border:0;color:inherit;font:700 16px var(--rl-font,inherit);opacity:.85;padding:6px 0;cursor:pointer}
+.rl-title{margin:4px 0 10px;font:800 22px var(--rl-font,inherit);letter-spacing:.1em}
+.rl-box{display:grid;gap:12px;width:100%;max-width:480px}
+.rl-tabs{display:flex;gap:8px}
+.rl-tabs button{flex:1;padding:9px;border-radius:10px;border:2px solid rgba(255,255,255,.25);background:rgba(0,0,0,.25);color:inherit;font:700 16px var(--rl-font,inherit);cursor:pointer}
+.rl-tabs button.on{background:var(--rl-acc,#ffd84a);color:#222;border-color:transparent}
+.rl-fine{margin:0;font:600 15px/1.4 var(--rl-font,inherit);opacity:.9;display:grid;gap:6px}
+.rl-in{padding:10px;border-radius:10px;border:2px solid rgba(255,255,255,.3);background:rgba(0,0,0,.3);color:inherit;font:800 28px var(--rl-font,inherit);letter-spacing:.3em;text-align:center;text-transform:uppercase}
+.rl-err{margin:0;color:#ff9b8f;font:700 15px var(--rl-font,inherit)}
+.rl-btn{border:0;border-radius:30px;padding:12px 24px;font:800 20px var(--rl-font,inherit);letter-spacing:.05em;background:var(--rl-acc,#ffd84a);color:#222;cursor:pointer}
+.rl-btn.ghost{background:rgba(255,255,255,.14);color:inherit;font-size:16px;padding:8px 16px}
+.rl-btn:disabled{opacity:.5}
+.rl-code{font:800 56px var(--rl-font,inherit);letter-spacing:.3em;text-align:center;color:var(--rl-acc,#ffd84a)}
+.rl-list{display:grid;gap:6px}
+.rl-row{display:flex;justify-content:space-between;align-items:center;gap:10px;background:rgba(0,0,0,.28);border-radius:10px;padding:8px 12px;font:700 17px var(--rl-font,inherit)}
+.rl-row small{font:600 13px var(--rl-font,inherit);opacity:.8}
+.rl-row.empty{justify-content:center;opacity:.5;border:1px dashed rgba(255,255,255,.3);background:none;font-weight:600;font-size:14px}

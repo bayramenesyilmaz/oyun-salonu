@@ -40,3 +40,7 @@ export const pad = () => tone(500, 0.3, 'sawtooth', 0.1, 1100);
 export const fall = () => tone(500, 0.8, 'sine', 0.15, 80);
 export const bump = () => tone(110, 0.1, 'square', 0.1, 70);
 export const done = () => { tone(520, 0.2, 'triangle'); setTimeout(() => tone(660, 0.2, 'triangle'), 160); setTimeout(() => tone(880, 0.4, 'triangle'), 320); };
+export const boom = () => { tone(160, 0.35, 'sawtooth', 0.28, 35); tone(900, 0.12, 'square', 0.08, 200); };
+export const pick = () => { tone(660, 0.1, 'triangle', 0.14); setTimeout(() => tone(990, 0.14, 'triangle', 0.14), 90); };
+export const fire = () => tone(300, 0.3, 'sawtooth', 0.12, 1100);
+export const trick = () => { tone(520, 0.1, 'triangle', 0.14); setTimeout(() => tone(780, 0.1, 'triangle', 0.14), 80); setTimeout(() => tone(1040, 0.2, 'triangle', 0.14), 160); };
