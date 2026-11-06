@@ -1,0 +1,53 @@
+.hk-root{position:fixed;inset:0;font-family:'Onest',system-ui,sans-serif;color:#fff;user-select:none;-webkit-user-select:none;touch-action:none;overflow:hidden}
+.hk-root.menu{background:linear-gradient(#2a3350,#3c4a74 60%,#9aa4b5 60%);overflow:auto;touch-action:auto}
+.hk-menu{max-width:560px;margin:0 auto;padding:18px 16px 40px}
+.hk-back{color:#fff;text-decoration:none;font-weight:600;font-size:14px}
+.hk-menu h1{font-family:'Lilita One',sans-serif;font-weight:400;font-size:50px;margin:8px 0 6px;letter-spacing:1px;text-shadow:0 3px 0 #0006}
+.hk-menu h1 em{font-style:normal;color:#ffd23f}
+.hk-lead{font-size:15px;line-height:1.5;margin:0 0 14px}
+.hk-field{display:block;font-weight:600;font-size:13px;margin-bottom:12px}
+.hk-field input{display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:12px;border:3px solid #17223a;border-radius:6px;font:600 17px 'Onest',sans-serif;background:#fff;color:#17223a}
+.hk-chaps{display:grid;gap:8px;margin-bottom:14px}
+.hk-chap{text-align:left;padding:10px 12px;border:3px solid #17223a;border-radius:8px;background:#fff;color:#17223a;font-family:inherit;cursor:pointer;display:grid;gap:2px}
+.hk-chap b{font-size:16px}.hk-chap small{font-size:12.5px;opacity:.75}
+.hk-chap.on{background:#ffe27a;box-shadow:0 4px 0 #17223a}
+.hk-actions{display:grid;gap:10px}
+.hk-btn{padding:14px;border:3px solid #17223a;border-radius:8px;background:#fff;color:#17223a;font:700 17px 'Onest',sans-serif;cursor:pointer}
+.hk-btn.primary{background:#ff9f43;color:#fff;box-shadow:0 4px 0 #17223a}
+.hk-btn:active{transform:translateY(2px)}
+.hk-note{font-size:12.5px;opacity:.85;margin-top:12px}
+.hk-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;background:#2a3350}
+.hk-exit{position:absolute;top:10px;left:10px;width:34px;height:34px;border-radius:6px;border:2px solid #fff8;background:rgba(20,30,50,.6);color:#fff;font-size:16px;cursor:pointer;z-index:5}
+.hk-top{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(20,30,50,.82);padding:5px 14px;border-radius:6px;display:flex;gap:14px;align-items:center;font-size:14px;pointer-events:none;white-space:nowrap}
+.hk-top span{font-family:'Lilita One',sans-serif;font-size:20px;color:#ffd23f}
+.hk-goal{position:absolute;top:50px;left:50%;transform:translateX(-50%);max-width:min(560px,86vw);background:rgba(20,30,50,.6);padding:4px 10px;border-radius:5px;font-size:12.5px;text-align:center;pointer-events:none}
+.hk-keys{position:absolute;top:50px;right:10px;display:grid;gap:4px;justify-items:end;pointer-events:none}
+.hk-keys span{font-size:12px;font-weight:700;padding:3px 8px;border-radius:4px;background:rgba(20,30,50,.7);border-left:5px solid var(--c);opacity:.6}
+.hk-keys span.on{opacity:1;background:var(--c);color:#17223a}
+.hk-alert{position:absolute;inset:0;box-shadow:inset 0 0 90px 10px rgba(255,77,94,.55);pointer-events:none;animation:hkpulse .8s infinite alternate}
+@keyframes hkpulse{from{opacity:.5}to{opacity:1}}
+.hk-toast{position:absolute;left:50%;top:22%;transform:translateX(-50%);background:rgba(20,30,50,.85);padding:8px 16px;border-radius:6px;font-weight:700;font-size:15px;pointer-events:none;text-align:center;max-width:86vw}
+.hk-caught{position:absolute;inset:0;background:rgba(255,77,94,.25);display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;text-align:center;padding:0 16px}
+.hk-caught h2{font-family:'Lilita One',sans-serif;font-weight:400;font-size:44px;margin:0;text-shadow:0 3px 0 #0006}
+.hk-caught p{margin:4px 0 0;font-weight:600;text-shadow:0 1px 3px #000}
+.hk-pc{position:absolute;left:50%;bottom:18%;transform:translateX(-50%);background:rgba(255,77,94,.9);padding:6px 14px;border-radius:6px;font-weight:700;font-size:14px;pointer-events:none;text-align:center}
+.hk-hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:rgba(20,30,50,.75);padding:8px 14px;border-radius:6px;font-size:13px;font-weight:600;pointer-events:none;text-align:center;max-width:92vw}
+.hk-modal{position:absolute;inset:0;background:rgba(10,15,30,.7);display:flex;align-items:center;justify-content:center;z-index:10;padding:16px}
+.hk-card{background:#fff;color:#17223a;border:4px solid #17223a;border-radius:10px;padding:20px;width:min(440px,100%);text-align:center;display:grid;gap:10px;max-height:92vh;overflow:auto}
+.hk-card h2{font-family:'Lilita One',sans-serif;font-weight:400;font-size:30px;margin:0}
+.hk-card small{font-weight:700;opacity:.65}
+.hk-card .tx{font-size:16px;line-height:1.5;margin:0;text-align:left}
+.hk-card .dots{display:flex;gap:6px;justify-content:center}
+.hk-card .dots i{width:9px;height:9px;border-radius:50%;background:#c9d0de}.hk-card .dots i.on{background:#ff9f43}
+.hk-card .stars{font-size:34px;color:#ffb300;letter-spacing:4px}
+.hk-wait{font-size:13px;margin:0}
+.hk-lookzone{position:absolute;right:0;top:0;bottom:0;width:62%;z-index:1}
+.hk-touch{position:absolute;inset:0;pointer-events:none;z-index:3}
+.hk-stick{position:absolute;left:22px;bottom:26px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.2);border:3px solid rgba(255,255,255,.5);pointer-events:auto;touch-action:none;display:flex;align-items:center;justify-content:center}
+.hk-stick i{width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.65)}
+.hk-btns{position:absolute;right:16px;bottom:24px;display:grid;gap:12px;pointer-events:auto;justify-items:end}
+.hk-btns button{border:3px solid #fff;border-radius:50%;color:#fff;font:700 15px 'Onest',sans-serif;touch-action:none;background:rgba(20,30,50,.55)}
+.hk-btns .st{width:92px;height:92px;background:rgba(255,159,67,.85)}
+.hk-btns .jp{width:70px;height:70px}
+.touch .hk-hint{display:none}
+@media (max-height:480px){.hk-goal{display:none}}

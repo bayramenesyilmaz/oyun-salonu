@@ -1,6 +1,21 @@
 // Oyun listesi. Yeni oyun eklemek: klasörünü src/games/ altına koy, buraya bir satır ekle.
 export const GAMES = [
   {
+    id: 'hkacis',
+    title: 'Hapisten Kaçış',
+    tag: 'Co-op · Gizlilik · Online',
+    cats: ['Macera', 'Aksiyon'],
+    length: 'Bölüm 1-2 · ~15 dk · bot arkadaşla ya da online',
+    updated: '2026-11-06',
+    news: 'Yeni oyun: blok tarzı co-op hapishane kaçışı',
+    keywords: 'hapishane kaçış co-op gardiyan anahtar plaka gizlilik blok online arkadaş iki kişi hikaye taş',
+    blurb: 'İki mahkûm, gece yarısı, büyük bir hapishane. Gardiyanları atlat, anahtarları bul, plakalara aynı anda bas. Taş atıp dikkat dağıt, yakalanan arkadaşını kurtar. Bölüm 1-2.',
+    color: '#ff9f43',
+    icon: '/icons-hkacis/icon-512.png',
+    fonts: 'https://fonts.googleapis.com/css2?family=Lilita+One&family=Onest:wght@400;600;700&display=swap',
+    load: () => import('./games/hkacis/App.jsx'),
+  },
+  {
     id: 'boya',
     title: 'Boya Savaşı',
     tag: 'Aksiyon · Takım · Online',
