@@ -182,3 +182,38 @@ kbd{font:700 12px var(--f);padding:1px 6px;border:1px solid rgba(255,255,255,.45
 .touch .op-prompt{top:48%}
 @media (max-height:480px){.op-logo h1{font-size:44px}.op-chars{grid-template-columns:repeat(4,minmax(80px,120px))}.op-char img{max-width:76px}.op-wprev .big{height:50px}.op-page,.op-menu{gap:10px;padding-top:10px}}
 @media (max-width:700px){.op-chars{grid-template-columns:repeat(2,minmax(110px,150px))}.op-wsel{grid-template-columns:1fr}}
+/* sade görünüm */
+.op-mission{opacity:.92}
+.op-chip{padding:3px 10px;font-size:15px}
+.op-mate,.op-mate img{width:42px;height:42px}.op-mate .bar{width:42px}
+.op-slot{width:44px;height:48px;font-size:19px}
+.touch .op-tl .op-mission,.touch .op-compass,.touch .op-chip,.touch .op-drone{display:none}
+.touch .op-minimap{width:78px!important;height:78px!important;opacity:.9}
+.touch .op-tl{top:50px}
+.touch .op-x{width:32px;height:32px}
+.touch .op-mate,.touch .op-mate img{width:30px;height:30px}.touch .op-mate .bar{width:30px;height:4px}
+.touch .op-tr{top:6px;right:6px}
+.touch .op-banner{top:6px;font-size:13px;padding:3px 10px;max-width:46vw;background:rgba(8,14,26,.7)}
+.touch .op-br{top:auto;bottom:112px;left:auto;right:16px;transform:none;padding:3px 9px;background:rgba(9,16,30,.55);border:0}
+.touch .op-br .wic{display:none}
+.touch .ammo b{font-size:26px}.touch .ammo small{font-size:13px}.touch .op-br kbd{display:none}
+.touch .op-me{padding:3px 10px 3px 4px;background:rgba(9,16,30,.6)}
+.touch .op-me img{display:none}.touch .op-me b{display:none}
+.touch .op-bl{left:170px;bottom:10px}
+.touch .op-radio{bottom:46px}
+.touch .op-toast{font-size:14px;padding:3px 10px}
+.touch .op-tbtns button{opacity:.62;font-size:12px}
+.touch .op-tbtns .fire{width:80px;height:80px;right:14px;bottom:16px;opacity:.85}
+.touch .op-tbtns .jump{right:104px;bottom:14px;width:48px;height:48px}
+.touch .op-tbtns .ads{right:100px;bottom:68px;width:48px;height:48px}
+.touch .op-tbtns .rel{right:14px;bottom:104px;width:40px;height:40px}
+.touch .op-tbtns .swp{right:60px;bottom:120px;width:44px;height:32px}
+.touch .op-tbtns .nade,.touch .op-tbtns .med,.touch .op-tbtns .drn,.touch .op-tbtns .crh{width:38px;height:38px;font-size:10px;right:auto;left:auto}
+.touch .op-tbtns .nade{right:158px;bottom:14px}
+.touch .op-tbtns .med{right:158px;bottom:58px}
+.touch .op-tbtns .drn{right:158px;bottom:102px}
+.touch .op-tbtns .crh{right:200px;bottom:14px}
+.touch .op-tbtns .use{left:176px;bottom:78px;width:54px;height:54px}
+.touch .op-stick{width:116px;height:116px;left:18px;bottom:16px}
+.touch .op-br{left:318px;right:auto;bottom:12px;top:auto;transform:none}
+.touch .op-radio{bottom:66px}

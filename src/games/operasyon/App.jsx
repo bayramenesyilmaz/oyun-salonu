@@ -394,14 +394,14 @@ export default function App() {
             <Minimap map={h.map} rects={rects} size={IS_TOUCH ? 92 : 128} />
             <div className="op-mission op-panel">
               <div className="op-mtitle"><Emblem />Operasyon: Demir Vadi</div>
-              {h.objectives.map((o, i) => (
+              {h.objectives.filter((o) => !o.done).slice(0, 2).map((o, i) => (
                 <div key={i} className={'op-obj' + (o.done ? ' done' : '')}><b>{o.done ? '✔' : ''}</b><span>{o.text}</span></div>
               ))}
             </div>
           </div>
 
           <Compass heading={h.heading} />
-          <div className="op-banner"><i />{h.banner}</div>
+          {IS_TOUCH && <div className="op-banner"><i />{h.banner}</div>}
 
           <div className="op-tr">
             <div className="op-chip op-panel"><span>⏱ {fmt(h.time)}</span><span>👤 {h.aliveCount}/4</span></div>
