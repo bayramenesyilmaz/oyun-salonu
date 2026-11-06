@@ -4,6 +4,7 @@ import { buildVillage } from './world_village.js';
 import { makeSoldier, animSoldier, makeCivilian, setSit, animCivilian, nameSprite, enemyMarker, ROLES } from './chars.js';
 import { WEAPONS, makeViewmodel } from './weapons.js';
 import * as S from './sfx.js';
+import { coop } from './coop.js';
 
 // Operasyon Kurtarma — tek harita, tek görev: 3 rehineyi kurtar, helikoptere ulaş.
 // Dünya birimi metre. Ön yön: yaw=0 → −Z (kuzey). Bot takım arkadaşları + düşman botlar.
@@ -13,6 +14,7 @@ const TAU = Math.PI * 2;
 const rnd = (a, b) => a + Math.random() * (b - a);
 const angDiff = (a, b) => ((((b - a + Math.PI) % TAU) + TAU) % TAU) - Math.PI;
 const FRIENDS = ['Kaan', 'Bora', 'Efe'];
+const r2 = (v) => Math.round(v * 100) / 100;
 
 function rayBox(ox, oy, oz, dx, dy, dz, b, maxT) {
   let tmin = 0, tmax = maxT, ax = -1, sg = 0;
@@ -53,6 +55,7 @@ function raySphere(ox, oy, oz, dx, dy, dz, cx, cy, cz, r, maxT) {
 export class Game {
   constructor(canvas, cfg = {}) {
     this.cv = canvas;
+    this.net = null;
     this.cfg = cfg;
     this.cb = cfg.cb || {};
     this.touch = !!cfg.touch;
@@ -245,6 +248,7 @@ export class Game {
     this.crouchToggle = !this.crouchToggle;
   }
   setPaused(v) {
+    if (this.net) v = false;
     this.paused = v;
     if (v) {
       this.fireHeld = false;
@@ -271,6 +275,7 @@ export class Game {
   }
   toMenu() {
     this.mode = 'menu';
+    this.netDetach();
     this.clearEntities();
     for (const k in this.vms) this.vms[k].visible = false;
     S.silence();
@@ -278,8 +283,9 @@ export class Game {
     this.heliState = 'circle';
     this.heli.userData.lampM.visible = true;
   }
-  start({ role = 'komando', weapon = 'm4', nick = 'Enes', map } = {}) {
+  start({ role = 'komando', weapon = 'm4', nick = 'Enes', map, net } = {}) {
     if (map) this.loadMap(map);
+    this.netDetach();
     this.clearEntities();
     S.unlock();
     const L = ROLES[role] || ROLES.komando;
@@ -302,7 +308,12 @@ export class Game {
     this.crouchToggle = false;
     this.toastQ = [];
     const p = this.pl;
-    p.pos.set(this.world.spawn.x, 0, this.world.spawn.z);
+    let spawnX = this.world.spawn.x;
+    if (net) {
+      const uids = Object.keys(net.room.players).sort();
+      spawnX += (uids.indexOf(net.room.uid) - (uids.length - 1) / 2) * 1.8;
+    }
+    p.pos.set(spawnX, 0, this.world.spawn.z);
     p.vel.set(0, 0, 0);
     p.yaw = 0;
     p.pitch = 0;
@@ -325,13 +336,14 @@ export class Game {
     this.adsToggle = false;
     this.showVm();
     // takım arkadaşları: oyuncunun dışındaki 3 rol
-    const roles = Object.keys(ROLES).filter((r) => r !== role);
-    this.friends = FRIENDS.map((name, i) => {
+    const roles = net ? net.bots || [] : Object.keys(ROLES).filter((r) => r !== role);
+    this.friends = (net ? roles : FRIENDS).map((name0, i) => {
+      const name = FRIENDS[i];
       const g = makeSoldier(roles[i], false);
       const tag = nameSprite(name);
       tag.position.y = 2.55;
       g.add(tag);
-      const x = [-2.4, 2.4, 0][i], z = this.world.spawn.z + [1.5, 1.9, 3.5][i];
+      const x = [-2.4, 2.4, 0][i], z = this.world.spawn.z + [3.5, 3.9, 5.5][i];
       g.position.set(x, 0, z);
       this.scene.add(g);
       return { kind: 'friend', name, role: roles[i], g, pos: g.position, vel: new THREE.Vector3(), yaw: 0, hp: 100, maxHp: 100, dead: false, grounded: true, slot: i, cool: 0, burst: 0, react: 0, tgt: null, speed: 0, stuck: 0, strafe: 1, strafeT: 0, tag, seenT: 0 };
@@ -361,9 +373,11 @@ export class Game {
     }
     this.say(this.world.objText.start1, 1);
     this.say(this.world.objText.start2, 6);
+    if (net) this.netAttach(net);
     this.cb.onStart?.();
   }
-  say(text, delay = 0) {
+  say(text, delay = 0, bc = false) {
+    if (bc && this.net?.host) this.netSend({ k: 'say', t: text });
     this.toastQ.push({ text, at: this.t + delay });
   }
   showVm() {
@@ -555,6 +569,7 @@ export class Game {
     const pt = [ox + d[0] * hit.t, oy + d[1] * hit.t, oz + d[2] * hit.t];
     const mz = this.muzzleWorld(new THREE.Vector3());
     this.tracer([mz.x, mz.y, mz.z], pt, 0xffe0a0, 0.06);
+    if (this.net) this.netSend({ k: 'f', o: [r2(ox + d[0] * 0.8), r2(oy - 0.25), r2(oz + d[2] * 0.8)], p: [r2(pt[0]), r2(pt[1]), r2(pt[2])], w: w.snd });
     if (hit.kind === 'actor') {
       this.hits++;
       const dmg = w.dmg * (hit.head ? 2.2 : 1) * (1 - Math.min(0.4, hit.t / w.range * 0.4));
@@ -577,8 +592,17 @@ export class Game {
     if (w.id === 'awp') this.shake = Math.max(this.shake || 0, 0.25);
     if (am.mag <= 0 && am.reserve > 0) this.doReload();
   }
-  hurtEnemy(e, dmg, head, byPlayer) {
+  hurtEnemy(e, dmg, head, byPlayer, src) {
     if (e.dead) return;
+    if (this.isGuest()) {
+      // kurucu olmayan: hasarı kuruculuya bildir, geri bildirimi tahmin et
+      this.netSend({ k: 'hit', i: this.enemies.indexOf(e), d: Math.round(dmg * 10) / 10, h: head ? 1 : 0 });
+      e.hp -= dmg;
+      this.hitId++;
+      this.hitInfo = { id: this.hitId, kill: e.hp <= 0, head };
+      S.hit(e.hp <= 0);
+      return;
+    }
     e.hp -= dmg;
     this.hitId++;
     const kill = e.hp <= 0;
@@ -590,10 +614,10 @@ export class Game {
       e.dead = true;
       e.marker.visible = false;
       this.kills++;
-      if (this.kills === this.totalEnemies) this.say('Merkez: Tesis temiz. Rehinelere odaklan.', 0.5);
+      if (this.kills === this.totalEnemies) this.say('Merkez: Tesis temiz. Rehinelere odaklan.', 0.5, true);
     } else if (e.state !== 'combat') {
       e.state = 'search';
-      e.last.copy(this.pl.pos);
+      e.last.copy(src || this.pl.pos);
       e.searchT = 8;
     }
   }
@@ -609,7 +633,8 @@ export class Game {
     }
     if (p.hp <= 0) {
       p.dead = true;
-      this.endMission(false);
+      if (!this.net) this.endMission(false);
+      else this.say('Yere düştün! Takım arkadaşların görevi sürdürüyor.', 0);
     }
   }
   throwNade() {
@@ -621,7 +646,9 @@ export class Game {
     const m = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 6), new THREE.MeshLambertMaterial({ color: 0x3d4a2a, flatShading: true }));
     m.position.set(p.pos.x + d[0] * 0.6, p.pos.y + this.eyeH() - 0.2, p.pos.z + d[2] * 0.6);
     this.scene.add(m);
-    this.nades.push({ m, vel: new THREE.Vector3(d[0] * 15, d[1] * 15 + 2.5, d[2] * 15), t: 2.0 });
+    const nv = new THREE.Vector3(d[0] * 15, d[1] * 15 + 2.5, d[2] * 15);
+    this.nades.push({ m, vel: nv, t: 2.0 });
+    if (this.net) this.netSend({ k: 'n', p: [r2(m.position.x), r2(m.position.y), r2(m.position.z)], v: [r2(nv.x), r2(nv.y), r2(nv.z)] });
   }
   pointBlocked(x, y, z) {
     for (const b of this.colliders) if (x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1 && y > b.y0 && y < b.y1) return b;
@@ -649,14 +676,15 @@ export class Game {
       } else p.y = ny;
       n.m.rotation.x += dt * 8;
       if (n.t <= 0) {
-        this.explode(p);
+        this.explode(p, n.remote);
         this.scene.remove(n.m);
         this.nades.splice(i, 1);
       }
     }
   }
-  explode(pos) {
+  explode(pos, remote) {
     S.boom();
+    const simHost = !this.isGuest();
     const R2 = 7.5;
     const hitAct = (a, k, isPlayer) => {
       const c = isPlayer ? [a.pos.x, a.pos.y + 1.2, a.pos.z] : [a.pos.x, a.pos.y + 1.1, a.pos.z];
@@ -664,12 +692,14 @@ export class Game {
       if (d > R2 || !this.visible(pos.x, pos.y + 0.3, pos.z, c[0], c[1], c[2])) return;
       const dmg = 170 * (1 - d / R2) * k;
       if (isPlayer) this.hurtPlayer(dmg * 0.5, pos);
-      else if (a.kind === 'enemy') this.hurtEnemy(a, dmg, false, true);
+      else if (a.kind === 'enemy') this.hurtEnemy(a, dmg, false, !remote, pos);
       else this.hurtFriend(a, dmg * 0.4, pos);
     };
-    for (const e of this.enemies) if (!e.dead) hitAct(e, 1, false);
-    for (const f of this.friends) if (!f.dead) hitAct(f, 1, false);
-    if (!this.pl.dead) hitAct(this.pl, 1, true);
+    if (simHost) {
+      for (const e of this.enemies) if (!e.dead) hitAct(e, 1, false);
+      for (const f of this.friends) if (!f.dead) hitAct(f, 1, false);
+    }
+    if (!this.pl.dead && !remote) hitAct(this.pl, 1, true);
     const ball = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffa040, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
     ball.position.copy(pos);
     this.scene.add(ball);
@@ -702,7 +732,7 @@ export class Game {
     if (f.hp <= 0) {
       f.dead = true;
       f.tag.visible = false;
-      this.say(`${f.name} düştü!`, 0);
+      this.say(`${f.name} düştü!`, 0, true);
       S.hurt();
     }
   }
@@ -828,17 +858,25 @@ export class Game {
     }
   }
   freeHostage(h) {
+    if (this.isGuest()) {
+      this.netSend({ k: 'free', i: this.hostages.indexOf(h) });
+      h.state = 'follow';
+      h.sit = false;
+      setSit(h.g, false);
+      S.ding();
+      return;
+    }
     h.state = 'follow';
     h.prog = 1;
     setSit(h.g, false);
     this.rescued++;
     S.ding();
-    this.say(this.rescued < 3 ? `Rehine kurtarıldı (${this.rescued}/3)` : 'Tüm rehineler güvende! Helikopter yolda.', 0);
+    this.say(this.rescued < 3 ? `Rehine kurtarıldı (${this.rescued}/3)` : 'Tüm rehineler güvende! Helikopter yolda.', 0, true);
     if (this.rescued === 3) {
       this.heliState = 'inbound';
       this.heliT = 0;
       this.heliFrom = this.heli.position.clone();
-      this.say('Merkez: Tahliye helikopteri 10 saniye içinde pistte.', 1.5);
+      this.say('Merkez: Tahliye helikopteri 10 saniye içinde pistte.', 1.5, true);
     }
   }
   endMission(win) {
@@ -847,11 +885,12 @@ export class Game {
     this.fireHeld = false;
     this.interactHeld = false;
     win ? S.done() : S.fail();
+    this.netSendWorld();
     if (document.pointerLockElement === this.cv) document.exitPointerLock?.();
     setTimeout(() => this.cb.onEnd?.(this.summary()), win ? 600 : 1400);
   }
   summary() {
-    return { win: this.phase === 'won', time: this.elapsed, kills: this.kills, total: this.totalEnemies, rescued: this.rescued, alive: 1 + this.friends.filter((f) => !f.dead).length - (this.pl.dead ? 1 : 0) };
+    return { win: this.phase === 'won', time: this.elapsed, kills: this.kills, total: this.totalEnemies, rescued: this.rescued, alive: this.humans().length + this.friends.filter((f) => !f.dead).length };
   }
 
   // ---------------- yapay zekâ ----------------
@@ -881,6 +920,7 @@ export class Game {
     const hit = this.trace(ox, oy, oz, d, 110, targets);
     const pt = [ox + d[0] * hit.t, oy + d[1] * hit.t, oz + d[2] * hit.t];
     this.tracer([ox, oy, oz], pt, a.kind === 'enemy' ? 0xff8060 : 0xa0d0ff, 0.06);
+    if (this.net?.host && this.net.shots.length < 8) this.net.shots.push([r2(ox), r2(oy), r2(oz), r2(pt[0]), r2(pt[1]), r2(pt[2]), a.kind === 'enemy' ? 0 : 1]);
     const dist = Math.hypot(a.pos.x - this.pl.pos.x, a.pos.z - this.pl.pos.z);
     S.shot('m4', Math.max(0.05, 1 / (1 + dist / 16)) * 0.7);
     // namlu parlaması
@@ -911,6 +951,7 @@ export class Game {
     const cand = [];
     if (!pl.dead) cand.push(pl);
     for (const f of this.friends) if (!f.dead) cand.push(f);
+    if (this.net) for (const r of Object.values(this.net.remotes)) if (!r.dead) cand.push(r);
     let tgt = null, td = 1e9;
     const range = e.type === 'sniper' ? 50 : 32;
     e.visT -= dt;
@@ -988,7 +1029,7 @@ export class Game {
           if (e.aimT > 1.0 && e.cool <= 0) {
             e.cool = 1.9;
             e.aimT = 0.2;
-            this.aiShoot(e, e.tgt.pos === pl.pos ? pl.pos : e.tgt.pos, 0.35 + d * 0.012, 16, cand, (w, dmg) => (w === pl ? this.hurtPlayer(dmg, e.pos) : this.hurtFriend(w, dmg, e.pos)));
+            this.aiShoot(e, e.tgt.pos === pl.pos ? pl.pos : e.tgt.pos, 0.35 + d * 0.012, 16, cand, (w, dmg) => this.hurtAny(w, dmg, e.pos));
           }
         } else if (e.cool <= 0) {
           if (e.burst <= 0) {
@@ -997,7 +1038,7 @@ export class Game {
           e.burst--;
           e.cool = e.burst > 0 ? 0.13 : rnd(0.7, 1.5);
           const tp = e.tgt === pl ? { x: pl.pos.x, y: pl.pos.y - (pl.crouchK > 0.5 ? 0.35 : 0), z: pl.pos.z } : e.tgt.pos;
-          this.aiShoot(e, tp, 0.55 + d * 0.042, 7, cand, (w, dmg) => (w === pl ? this.hurtPlayer(dmg, e.pos) : this.hurtFriend(w, dmg, e.pos)));
+          this.aiShoot(e, tp, 0.55 + d * 0.042, 7, cand, (w, dmg) => this.hurtAny(w, dmg, e.pos));
         }
       }
     } else if (e.state === 'search') {
@@ -1108,7 +1149,7 @@ export class Game {
   }
   updateHostage(h, dt) {
     if (h.state === 'safe') return;
-    const pl = this.pl;
+    const pl = this.leader(h);
     if (h.state === 'follow') {
       let tx = pl.pos.x, tz = pl.pos.z, keep = 2.8, sp = 4.6;
       const P = this.world.PAD;
@@ -1143,7 +1184,17 @@ export class Game {
     u.rotor.rotation.y += dt * (this.heliState === 'landed' ? 20 : 34);
     u.tail.rotation.x += dt * 40;
     u.redL.visible = Math.sin(this.t * 6) > 0;
-    if (this.heliState === 'circle') {
+    if (this.isGuest()) {
+      const s = this.net.heliP;
+      if (s) {
+        const k = Math.min(1, dt * 6);
+        h.position.x += (s[1] - h.position.x) * k;
+        h.position.y += (s[2] - h.position.y) * k;
+        h.position.z += (s[3] - h.position.z) * k;
+        h.rotation.y += angDiff(h.rotation.y, s[4]) * k;
+        h.rotation.z = s[5];
+      }
+    } else if (this.heliState === 'circle') {
       this.heliAng += dt * 0.09;
       const a = this.heliAng, r = 66;
       const nx = Math.cos(a) * r, nz = Math.sin(a) * r - 2, ny = 36 + Math.sin(this.t * 0.4) * 2;
@@ -1165,7 +1216,7 @@ export class Game {
       if (k >= 1) {
         this.heliState = 'landed';
         this.evacReady = true;
-        this.say('Helikopter indi! Rehinelerle birlikte pistte bekle.', 0);
+        this.say('Helikopter indi! Rehinelerle birlikte pistte bekle.', 0, true);
         S.radio();
       }
     } else {
@@ -1175,10 +1226,9 @@ export class Game {
     u.lampM.visible = this.heliState !== 'landed';
     const d = Math.hypot(h.position.x - this.pl.pos.x, h.position.z - this.pl.pos.z, h.position.y);
     S.heliSet(this.mode === 'play' && !this.paused ? Math.min(1, 28 / (d + 6)) : this.mode === 'menu' ? 0.35 : 0);
-    if (this.heliState === 'landed' && this.phase === 'play') {
-      const pl = this.pl;
-      const dp = Math.hypot(pl.pos.x - P.x, pl.pos.z - P.z);
-      if (dp < P.r * 0.85 && !pl.dead) {
+    if (this.heliState === 'landed' && this.phase === 'play' && !this.isGuest()) {
+      const hum = this.humans();
+      if (hum.length && hum.every((a) => Math.hypot(a.pos.x - P.x, a.pos.z - P.z) < P.r * 0.85)) {
         const ok = this.hostages.every((hs) => hs.state === 'safe' || (hs.state === 'follow' && Math.hypot(hs.pos.x - P.x, hs.pos.z - P.z) < P.r + 2.5));
         if (ok) {
           this.evacT += dt;
@@ -1222,9 +1272,13 @@ export class Game {
     if (this.phase === 'play') this.elapsed += dt;
     S.windSet(true);
     this.updatePlayer(dt);
-    for (const e of this.enemies) this.updateEnemy(e, dt);
-    for (const f of this.friends) this.updateFriend(f, dt);
-    for (const h of this.hostages) this.updateHostage(h, dt);
+    if (this.isGuest()) this.netProxyStep(dt);
+    else {
+      for (const e of this.enemies) this.updateEnemy(e, dt);
+      for (const f of this.friends) this.updateFriend(f, dt);
+      for (const h of this.hostages) this.updateHostage(h, dt);
+    }
+    this.netStep(dt);
     this.updateNades(dt);
     this.revealT = Math.max(0, this.revealT - dt);
     // işaretçiler
@@ -1407,14 +1461,16 @@ export class Game {
       reveal: this.revealT,
       team: [
         { name: this.nick, role: this.role.id, hp: p.hp, maxHp: p.maxHp, dead: p.dead, me: true },
+        ...Object.values(this.net?.remotes || {}).map((r) => ({ name: r.name, role: r.role, hp: r.hp, maxHp: 100, dead: r.dead })),
         ...this.friends.map((f) => ({ name: f.name, role: f.role, hp: f.hp, maxHp: 100, dead: f.dead })),
       ],
-      aliveCount: (p.dead ? 0 : 1) + this.friends.filter((f) => !f.dead).length,
+      downed: !!(this.net && p.dead),
+      aliveCount: this.humans().length + this.friends.filter((f) => !f.dead).length,
       map: {
         px: p.pos.x,
         pz: p.pos.z,
         yaw: p.yaw,
-        friends: this.friends.filter((f) => !f.dead).map((f) => [f.pos.x, f.pos.z]),
+        friends: [...this.friends, ...Object.values(this.net?.remotes || {})].filter((f) => !f.dead).map((f) => [f.pos.x, f.pos.z]),
         enemies: this.enemies.filter((e) => !e.dead && (rev || e.state === 'combat')).map((e) => [e.pos.x, e.pos.z]),
         hostages: this.hostages.filter((h) => h.state !== 'safe').map((h) => [h.pos.x, h.pos.z, h.state === 'bound' ? 0 : 1]),
         pad: [P.x, P.z, this.heliState === 'landed' ? 1 : this.rescued >= 3 ? 2 : 0],
@@ -1473,3 +1529,5 @@ export class Game {
     this.r.dispose();
   }
 }
+
+Object.assign(Game.prototype, coop);

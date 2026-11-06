@@ -3,6 +3,7 @@ import { Game } from './game/Game.js';
 import { ROLES, portrait } from './game/chars.js';
 import { WEAPONS, PRIMARIES, ICON } from './game/weapons.js';
 import * as S from './game/sfx.js';
+import { createRoom, joinRoom, explain, MemHub, MAX_PLAYERS } from '../../engine/oproom.js';
 import './op.css';
 
 const QS = new URLSearchParams(location.search);
@@ -190,6 +191,12 @@ export default function App() {
   const [end, setEnd] = useState(null);
   const [how, setHow] = useState(false);
   const [ready, setReady] = useState(false);
+  const [coop, setCoop] = useState(false);
+  const [lob, setLob] = useState({ room: null, players: {}, meta: null, busy: false, err: '', code: (QS.get('oda') || '').toUpperCase(), kind: QS.get('oda') ? 'join' : 'host', copied: false });
+  const roomRef = useRef(null);
+  const startedNet = useRef(false);
+  const infoRef = useRef({});
+  infoRef.current = { n: nick.trim() || 'Enes', r: role, w: weapon };
 
   useEffect(() => {
     try {
@@ -204,6 +211,10 @@ export default function App() {
       cb: {
         onHud: setHud,
         onLock: setLocked,
+        onNetClosed: () => {
+          setEnd({ win: false, time: 0, kills: 0, total: 0, rescued: 0, alive: 0, closed: true });
+          setScreen('end');
+        },
         onToast: (text) => {
           const id = Math.random();
           setToasts((t) => [...t.slice(-2), { id, text }]);
@@ -217,7 +228,10 @@ export default function App() {
     });
     game.current = g;
     setReady(true);
-    if (TEST) window.__op = g;
+    if (TEST) {
+      window.__op = g;
+      window.__OP = { Game, MemHub, createRoom, joinRoom };
+    }
     return () => {
       g.dispose();
       game.current = null;
@@ -247,7 +261,83 @@ export default function App() {
       setScreen('play');
     }
   }, [ready]);
+  const startNet = useCallback((room, host, meta) => {
+    const g = game.current;
+    if (!g || startedNet.current) return;
+    startedNet.current = true;
+    S.unlock();
+    setEnd(null);
+    setToasts([]);
+    setUserPause(false);
+    g.start({ role, weapon, nick: nick.trim() || 'Enes', map: meta.map || 'tesis', net: { room, host, bots: meta.bots || [] } });
+    setScreen('play');
+    if (!IS_TOUCH && !TEST) g.cv.requestPointerLock?.();
+  }, [role, weapon, nick]);
+  const lobUp = (o) => setLob((l) => ({ ...l, ...o }));
+  const wireRoom = (room, host) => {
+    roomRef.current = room;
+    room.on('players', (pl) => lobUp({ players: { ...pl } }));
+    room.on('meta', (m) => {
+      lobUp({ meta: m });
+      if (!host && m.st === 'play') startNet(room, false, m);
+    });
+    room.on('closed', () => {
+      if (startedNet.current) return;
+      roomRef.current = null;
+      lobUp({ room: null, err: 'Kurucu odadan ayrıldı.', players: {}, meta: null });
+    });
+    lobUp({ room, players: { ...room.players }, meta: room.meta, busy: false, err: '' });
+  };
+  const goRoom = async () => {
+    lobUp({ busy: true, err: '' });
+    try {
+      if (lob.kind === 'host') wireRoom(await createRoom(infoRef.current, { map: mapId }), true);
+      else wireRoom(await joinRoom(lob.code, infoRef.current), false);
+    } catch (e) {
+      lobUp({ busy: false, err: explain(e) });
+    }
+  };
+  const leaveRoom = () => {
+    roomRef.current?.leave?.();
+    roomRef.current = null;
+    startedNet.current = false;
+    lobUp({ room: null, players: {}, meta: null, err: '' });
+  };
+  const hostStart = () => {
+    const room = roomRef.current;
+    if (!room) return;
+    const humans = Object.values(room.players);
+    const used = new Set(humans.map((p) => p.r));
+    const pool = [...ROLE_LIST.filter((r) => !used.has(r)), ...ROLE_LIST];
+    const bots = pool.slice(0, Math.max(0, MAX_PLAYERS - humans.length));
+    const meta = { st: 'play', map: mapId, bots };
+    room.setMeta(meta);
+    startNet(room, true, { ...room.meta, ...meta });
+  };
+  const copyLink = async () => {
+    const url = location.origin + '/operasyon?oda=' + lob.room.code;
+    try {
+      await navigator.clipboard.writeText(url);
+      lobUp({ copied: true });
+      setTimeout(() => lobUp({ copied: false }), 1800);
+    } catch {
+      window.prompt('Bağlantıyı kopyala:', url);
+    }
+  };
+  useEffect(() => {
+    // oda bilgisi (rol/silah/takma ad) değişirse odaya bildir
+    roomRef.current?.setInfo?.(infoRef.current);
+  }, [role, weapon, nick]);
+  useEffect(() => {
+    if (QS.get('oda')) {
+      setCoop(true);
+      setScreen('char');
+    }
+  }, []);
+  useEffect(() => () => roomRef.current?.leave?.(), []);
   const toMenu = () => {
+    leaveRoom();
+    setCoop(false);
     game.current?.toMenu();
     setScreen('menu');
     setHud(null);
@@ -311,12 +401,12 @@ export default function App() {
             </div>
           </div>
           <div className="op-menu-btns">
-            <button className="op-btn primary" onClick={() => setScreen('map')}>Göreve başla</button>
+            <button className="op-btn primary" onClick={() => { setCoop(false); setScreen('map'); }}>Göreve başla</button>
+            <button className="op-btn" onClick={() => { setCoop(true); setScreen('char'); }}>4 kişilik online</button>
             <button className="op-btn" onClick={() => setHow(true)}>Nasıl oynanır</button>
             <button className="op-btn" onClick={() => setSound(!sound)}>Ses: {sound ? 'açık' : 'kapalı'}</button>
-            <button className="op-btn dis" disabled>4 kişilik online · yakında</button>
           </div>
-          <p className="op-fine">Tamamen kurgusal bir görev. Takım arkadaşların botlardır; online co-op sonraki sürümde.</p>
+          <p className="op-fine">Tamamen kurgusal bir görev. Tek başına oynarsan takım arkadaşların botlardır; online odada 4 kişiye kadar birlikte oynarsınız.</p>
         </div>
       )}
 
@@ -338,7 +428,7 @@ export default function App() {
 
       {screen === 'char' && (
         <div className="op-page">
-          <button className="op-link" onClick={() => setScreen('map')}>← Geri</button>
+          <button className="op-link" onClick={() => setScreen(coop ? 'menu' : 'map')}>← Geri</button>
           <h3 className="op-ptitle">KARAKTER SEÇİMİ</h3>
           <div className="op-chars">
             {ROLE_LIST.map((r) => (
@@ -374,9 +464,64 @@ export default function App() {
                 <div key={n} className="op-stat"><span>{n}</span><div><i style={{ width: WEAPONS[weapon].stats[i] + '%' }} /></div></div>
               ))}
               <div className="op-gear">Ekipman: 3 el bombası · {ROLES[role].med} ilk yardım · {ROLES[role].drone} keşif dronu</div>
-              <button className="op-btn primary" onClick={() => setScreen('brief')}>Seç</button>
+              <button className="op-btn primary" onClick={() => setScreen(coop ? 'lobby' : 'brief')}>Seç</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {screen === 'lobby' && (
+        <div className="op-page">
+          <button className="op-link" onClick={() => { leaveRoom(); setScreen('weapon'); }}>← Geri</button>
+          <h3 className="op-ptitle">ONLİNE ODA · 4 KİŞİ</h3>
+          {!lob.room ? (
+            <div className="op-lobby">
+              <div className="op-tabs">
+                <button className={'op-ltab' + (lob.kind === 'host' ? ' on' : '')} onClick={() => lobUp({ kind: 'host' })}>Oda kur</button>
+                <button className={'op-ltab' + (lob.kind === 'join' ? ' on' : '')} onClick={() => lobUp({ kind: 'join' })}>Koda katıl</button>
+              </div>
+              {lob.kind === 'host' ? (
+                <p className="op-fine">Oda kur, 4 harfli kodu arkadaşlarına gönder. Boş kalan yerleri bot dolduracak.</p>
+              ) : (
+                <label className="op-nick">Oda kodu <input value={lob.code} maxLength={6} placeholder="ABCD" autoCapitalize="characters" autoCorrect="off" autoComplete="off" spellCheck={false} onChange={(e) => lobUp({ code: e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase() })} /></label>
+              )}
+              {lob.err && <p className="op-err">{lob.err}</p>}
+              <button className="op-btn primary wide" disabled={lob.busy || (lob.kind === 'join' && lob.code.length < 4)} onClick={goRoom}>{lob.busy ? 'Bağlanıyor…' : lob.kind === 'host' ? 'Oda kur' : 'Katıl'}</button>
+            </div>
+          ) : (
+            <div className="op-lobby">
+              <p className="op-fine">Oda kodu</p>
+              <div className="op-code">{lob.room.code}</div>
+              <button className="op-btn" onClick={copyLink}>{lob.copied ? 'Kopyalandı' : 'Bağlantıyı kopyala'}</button>
+              <div className="op-plist">
+                {Object.entries(lob.players).sort(([a], [b]) => (a === lob.room.uid ? -1 : b === lob.room.uid ? 1 : a < b ? -1 : 1)).map(([u, p]) => (
+                  <div key={u} className="op-prow">
+                    <img src={portrait(ROLES[p.r] ? p.r : 'komando', 48)} alt="" />
+                    <b>{p.n}{u === lob.room.uid ? ' (sen)' : ''}</b>
+                    <small>{ROLES[p.r]?.name} · {WEAPONS[p.w]?.name}</small>
+                  </div>
+                ))}
+                {Array.from({ length: Math.max(0, MAX_PLAYERS - Object.keys(lob.players).length) }).map((_, i) => (
+                  <div key={'e' + i} className="op-prow empty"><span>Boş yer · bot</span></div>
+                ))}
+              </div>
+              {lob.room.isHost ? (
+                <>
+                  <div className="op-chars op-maps">
+                    {MAPS.map((m) => (
+                      <button key={m.id} className={'op-char op-map' + (mapId === m.id ? ' sel' : '')} onClick={() => { setMapId(m.id); game.current?.loadMap(m.id); lob.room.setMeta({ map: m.id }); }}>
+                        <b>{m.name}</b>
+                        <small>{m.desc}</small>
+                      </button>
+                    ))}
+                  </div>
+                  <button className="op-btn primary wide" onClick={hostStart}>Görevi başlat ({Object.keys(lob.players).length} kişi)</button>
+                </>
+              ) : (
+                <p className="op-fine">Harita: {MAPS.find((m) => m.id === lob.meta?.map)?.name || '…'} · Kurucunun başlatması bekleniyor…</p>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -509,10 +654,12 @@ export default function App() {
             </>
           )}
 
+          {h.downed && <div className="op-downed">YERE DÜŞTÜN · takım görevi sürdürüyor</div>}
           {paused && (
             <div className="op-modal">
               <div className="op-card">
-                <h3>DURAKLATILDI</h3>
+                <h3>{coop ? 'MENÜ' : 'DURAKLATILDI'}</h3>
+                {coop && <p>Online oyunda görev durmaz. Hazır olunca devam et.</p>}
                 <button className="op-btn primary" onClick={resume}>Devam et</button>
                 <button className="op-btn" onClick={() => setSound(!sound)}>Ses: {sound ? 'açık' : 'kapalı'}</button>
                 <button className="op-btn" onClick={toMenu}>Ana menü</button>
@@ -534,8 +681,9 @@ export default function App() {
               <div><b>{end.kills}/{end.total}</b><span>Etkisiz</span></div>
               <div><b>{end.alive}/4</b><span>Ekip</span></div>
             </div>
-            <button className="op-btn primary" onClick={begin}>Tekrar oyna</button>
-            <button className="op-btn" onClick={() => setScreen('char')}>Karakter / silah değiştir</button>
+            {end.closed && <p>Kurucu odadan ayrıldı, görev sona erdi.</p>}
+            {!coop && <button className="op-btn primary" onClick={begin}>Tekrar oyna</button>}
+            {!coop && <button className="op-btn" onClick={() => setScreen('char')}>Karakter / silah değiştir</button>}
             <button className="op-btn" onClick={toMenu}>Ana menü</button>
           </div>
         </div>
