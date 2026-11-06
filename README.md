@@ -6,9 +6,7 @@ Tarayıcıda oynanan 3B oyunlar için tek site ve ortak motor.
 |---|---|
 | `/` | Oyun Salonu (portal) |
 | `/golgedovus` | Gölge Dövüş — yandan düello: 5 karakter (kılıç, çekiç, yay, asa, mızrak+kalkan), kombolar ve bitirişler; bota karşı, aynı ekranda 2 kişi veya Firebase ile online. Kurulum: `database.rules.json` Firebase kurallarına yapıştırılmalı; karakter kütüphanesi `src/characters` |
-| `/hirsiz` | Hırsız ve Bekçi — gece müzesinde asimetrik kovalamaca: hırsız kamera ve lazerlerden kaçıp hazineyi çalar, bekçi fener ve alarmla arar; 3 turda roller değişir; bota karşı ya da Firebase ile online (ortak oda ekranı `src/engine/OnlineLobby.jsx`) |
 | `/radyoic` | Radyonun İçinde — iki kişilik hikâyeli iş birliği macerası (Arda + Elif, iple bağlı); 1. bölüm Köy kanalı; bot arkadaş ya da Firebase ile online |
-| `/kacis` | Taşkale Kaçış — birinci şahıs hapisten kaçış (Three.js + Rapier fizik): hücre, gardiyan devriyesi, fener ve gizlilik; hücre, revir, mutfak ve avlu kademeleri, giriş sinematiği ve final; devamı planlı |
 | `/tepe` | Tepe Yarışı — fizikli hurda araba, tepeli parkur, kutulardan nitro/çivi/yağ/kaya; bota karşı ya da Firebase ile online |
 | `/karakuyu` | Karakuyu — Anadolu cin inançları üzerine korku; Bölüm 1 köy (iki son), Bölüm 2 "Gülsüm": cin tutmuş nine |
 | `/karakol` | KARAKOL — Son Tahliye — aksiyon/kurtarma, 5 bölüm |

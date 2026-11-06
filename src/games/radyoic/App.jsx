@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { drawPortrait } from '../../characters/rig.js';
 import OnlineLobby from '../../engine/OnlineLobby.jsx';
 import { Game } from './game/game.js';
-import '../hirsiz/hs.css';
+import './hs.css';
 
 const QS = new URLSearchParams(location.search);
 const TEST = QS.has('test');

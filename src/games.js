@@ -2,6 +2,7 @@
 export const GAMES = [
   {
     id: 'hkacis',
+    hidden: true,
     title: 'Hapisten Kaçış',
     tag: 'Co-op · Gizlilik · Online',
     cats: ['Macera', 'Aksiyon'],
@@ -32,6 +33,7 @@ export const GAMES = [
   },
   {
     id: 'boya',
+    hidden: true,
     title: 'Boya Savaşı',
     tag: 'Aksiyon · Takım · Online',
     cats: ['Aksiyon', 'Yarış'],
@@ -46,22 +48,8 @@ export const GAMES = [
     load: () => import('./games/boya/App.jsx'),
   },
   {
-    id: 'vardiya',
-    title: 'Gece Vardiyası',
-    tag: 'Korku · Gerilim · Duygusal',
-    cats: ['Macera', 'Korku'],
-    length: '~20 dk · 4 farklı son',
-    updated: '2026-11-06',
-    news: 'Yeni: korkutan ama yüreğe dokunan bir gece',
-    keywords: 'korku hastane gece bekçi hayalet gerilim duygusal seçimli hikaye müzik kutusu ninni karakter',
-    blurb: 'Yıkılacak eski bir hastanede yeni gece bekçisisin. Kuralları bil: üçüncü kata çıkma. Bir kadın bir şey sorarsa…',
-    color: '#7ae0c0',
-    icon: '/icons-vardiya/icon-512.png',
-    fonts: 'https://fonts.googleapis.com/css2?family=Lilita+One&family=Onest:wght@400;500;600;700&display=swap',
-    load: () => import('./games/vardiya/App.jsx'),
-  },
-  {
     id: 'muzakere',
+    hidden: true,
     title: 'Müzakereci',
     tag: 'Gerilim · Aksiyon · Duygusal',
     cats: ['Aksiyon', 'Macera'],
@@ -74,21 +62,6 @@ export const GAMES = [
     icon: '/icons-muzakere/icon-512.png',
     fonts: 'https://fonts.googleapis.com/css2?family=Lilita+One&family=Onest:wght@400;500;600;700&display=swap',
     load: () => import('./games/muzakere/App.jsx'),
-  },
-  {
-    id: 'pasta',
-    title: 'Kayıp Pasta Vakası',
-    tag: 'Komedi · Gizem · Duygusal',
-    cats: ['Macera', 'Bulmaca'],
-    length: '~25 dk · 4 farklı son',
-    updated: '2026-11-06',
-    news: 'Yeni: komik ve içli bir dedektif hikâyesi',
-    keywords: 'pasta düğün dedektif komedi gizem sorgu şüpheli hikaye karakter duygusal',
-    blurb: 'Düğüne iki saat var, dört katlı pasta kayboldu. Şüphelileri sorgula, ipuçlarını birleştir, suçluyu bul. Güldürür, sonunda bir de ağlatır.',
-    color: '#ff8fb1',
-    icon: '/icons-pasta/icon-512.png',
-    fonts: 'https://fonts.googleapis.com/css2?family=Lilita+One&family=Onest:wght@400;500;600;700&display=swap',
-    load: () => import('./games/pasta/App.jsx'),
   },
   {
     id: 'golgedovus',
@@ -107,6 +80,7 @@ export const GAMES = [
   },
   {
     id: 'tepe',
+    hidden: true,
     title: 'Tepe Yarışı',
     tag: 'Yarış · Online',
     cats: ['Yarış', 'Aksiyon'],
@@ -121,37 +95,8 @@ export const GAMES = [
     load: () => import('./games/tepe/App.jsx'),
   },
   {
-    id: 'hirsiz',
-    title: 'Hırsız ve Bekçi',
-    tag: 'Gizlilik · Online',
-    cats: ['Aksiyon', 'Strateji'],
-    length: '3 tur · ~6 dk · online ya da bota karşı',
-    updated: '2026-11-06',
-    news: 'Yeni oyun: gece müzesinde kovalamaca',
-    keywords: 'hırsız bekçi müze gizlilik kovalamaca kamera lazer saklambaç iki kişi online arkadaş',
-    blurb: 'Gece müzesinde biri hırsız, biri bekçi. Hırsız kameralara ve lazerlere yakalanmadan hazineyi çalıp kaçar, bekçi fener ve alarmla onu arar. 3 turda roller değişir.',
-    color: '#4fe0a0',
-    icon: '/icons-hirsiz/icon-512.png',
-    fonts: 'https://fonts.googleapis.com/css2?family=Lilita+One&family=Onest:wght@400;600;700&display=swap',
-    load: () => import('./games/hirsiz/App.jsx'),
-  },
-  {
-    id: 'kacis',
-    title: 'Taşkale Kaçış',
-    tag: 'FPS · Gizlilik · Hikâye',
-    cats: ['Aksiyon', 'Macera'],
-    length: '~15 dk · hücre, revir, mutfak, avlu',
-    updated: '2026-11-06',
-    news: 'Yeni: hapisten kaçış, hikâyeli ve uzun',
-    keywords: 'hapishane kaçış hücre gardiyan fps birinci şahıs gizlilik hikaye sahne geçişi bilgisayar',
-    blurb: 'Haksız yere hapse düşen Deniz, fırtınalı bir gecede kaçıyor: hücre, revir, mutfak, avlu ve minibüs. Fener, projektör ve doktordan saklan. Birinci şahıs gizlilik, en iyi bilgisayarda.',
-    color: '#d63c2a',
-    icon: '/icons-kacis/icon-512.png',
-    fonts: 'https://fonts.googleapis.com/css2?family=Lilita+One&family=Onest:wght@400;600;700&display=swap',
-    load: () => import('./games/kacis/App.jsx'),
-  },
-  {
     id: 'radyoic',
+    hidden: true,
     title: 'Radyonun İçinde',
     tag: 'İki kişilik macera · Online',
     cats: ['Macera', 'Bulmaca'],
@@ -167,6 +112,7 @@ export const GAMES = [
   },
   {
     id: 'kusyolu2d',
+    hidden: true,
     title: 'Kuşyolu 2B',
     tag: 'Macera · Bilimkurgu',
     cats: ['Macera', 'Bilimkurgu'],
@@ -197,6 +143,7 @@ export const GAMES = [
   },
   {
     id: 'karacam',
+    hidden: true,
     cats: ['Gizem', 'Korku'],
     length: '2 vaka · ~40 dk',
     updated: '2026-11-03',
@@ -213,6 +160,7 @@ export const GAMES = [
   },
   {
     id: 'karakuyu',
+    hidden: true,
     cats: ['Korku'],
     length: '2 bölüm · ~35 dk',
     updated: '2026-11-03',
@@ -228,6 +176,7 @@ export const GAMES = [
   },
   {
     id: 'karakol',
+    hidden: true,
     cats: ['Aksiyon'],
     length: '5 bölüm',
     updated: '2026-11-06',
@@ -285,6 +234,7 @@ export const GAMES = [
   },
   {
     id: 'kusyolu',
+    hidden: true,
     cats: ['Macera', 'Bilimkurgu'],
     length: '7 bölüm · ~60 dk',
     updated: '2026-11-03',
@@ -299,3 +249,6 @@ export const GAMES = [
     load: () => import('./games/kusyolu/App.jsx'),
   },
 ];
+
+// Portalda görünenler (gizlenenler adresle hâlâ açılır)
+export const VISIBLE = GAMES.filter((g) => !g.hidden);

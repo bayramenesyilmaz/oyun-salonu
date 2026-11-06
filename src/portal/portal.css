@@ -130,3 +130,10 @@ h1 { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: c
 @media (prefers-reduced-motion: reduce) {
   .p-card, .p-btn.hot, .p-ico.spin { animation: none; }
 }
+
+/* reklam yer tutucuları (?reklam ile görünür) */
+.ad-slot{display:grid;place-content:center;gap:2px;text-align:center;margin:14px 0;border:1px dashed rgba(150,160,190,.45);border-radius:10px;color:rgba(150,160,190,.8);font:600 13px system-ui,sans-serif;padding:8px}
+.ad-slot small{font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.ad-slot span{font-weight:700;color:inherit}
+.ad-slot em{font-style:normal;font-size:12px;opacity:.8}
+.ad-slot.feed{grid-column:1/-1;margin:4px 0}

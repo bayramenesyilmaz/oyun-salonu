@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { GAMES } from '../games.js';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { VISIBLE as GAMES } from '../games.js';
+import AdSlot from './AdSlot.jsx';
 import { BUILT_AT, checkUpdate, fmtBuild, hardRefresh } from '../update.js';
 import './portal.css';
 
@@ -122,7 +123,7 @@ export default function Portal() {
     return out;
   }, [q, cat, sort, last]);
 
-  const news = GAMES.filter((g) => g.news && isNew(g)).sort((a, b) => (b.updated || '').localeCompare(a.updated || ''));
+  const news = GAMES.filter((g) => g.news && isNew(g)).sort((a, b) => (b.updated || '').localeCompare(a.updated || '')).slice(0, 3);
   const lastId = Object.entries(last).sort((a, b) => b[1] - a[1])[0]?.[0];
   const lastGame = GAMES.find((g) => g.id === lastId);
   const remember = (id) => {
@@ -223,6 +224,7 @@ export default function Portal() {
           })}
         </nav>
 
+        <AdSlot slot="portal-top" />
         {list.length === 0 ? (
           <div className="p-empty">
             <p>“{q}” için oyun bulunamadı.</p>
@@ -230,8 +232,10 @@ export default function Portal() {
           </div>
         ) : (
           <div className="p-grid">
-            {list.map((g) => (
-              <a key={g.id} className="p-card" href={'/' + g.id} style={{ '--c': g.color }} onClick={() => remember(g.id)}>
+            {list.map((g, i) => (
+              <Fragment key={g.id}>
+              {i === 6 && <AdSlot slot="portal-feed" feed />}
+              <a className="p-card" href={'/' + g.id} style={{ '--c': g.color }} onClick={() => remember(g.id)}>
                 <div className="p-cover">
                   <img src={g.cover || g.icon} alt="" loading="lazy" />
                   {isNew(g) && <span className="p-badge">Yeni</span>}
@@ -249,11 +253,13 @@ export default function Portal() {
                   <span className="p-play">Oyna <b>→</b></span>
                 </div>
               </a>
+              </Fragment>
             ))}
           </div>
         )}
       </main>
 
+      <AdSlot slot="portal-bottom" />
       <footer className="p-foot">
         <span>Tüm oyunlar ücretsiz ve açık kaynak araçlarla yapıldı. İlerlemen bu cihazda saklanır.</span>
         <span>Yeni bir şey görünmüyorsa üstteki “Güncelle” düğmesine bas.</span>
