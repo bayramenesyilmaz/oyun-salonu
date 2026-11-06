@@ -1,6 +1,21 @@
 // Oyun listesi. Yeni oyun eklemek: klasörünü src/games/ altına koy, buraya bir satır ekle.
 export const GAMES = [
   {
+    id: 'bulutyaris',
+    title: 'Bulut Üstü Yarış',
+    tag: 'Yarış · Rampa · Nitro',
+    cats: ['Yarış', 'Aksiyon'],
+    length: '3 tur · ~2 dk · 5 bota karşı',
+    updated: '2026-11-07',
+    news: 'Yeni oyun: bulutların üstünde rampalı 3B araba yarışı',
+    keywords: 'bulut yarış araba rampa nitro uçuş havada hız gökyüzü 3b',
+    blurb: 'Bulutların üzerinde yüzen yolda 5 rakibe karşı yarış. Rampalardan uç, boşlukları aş, havada kal, nitroyu doldur. Telefonda ekranın sol-sağına dokunarak sür.',
+    color: '#2f7fd8',
+    icon: '/icons-bulutyaris/icon-512.png',
+    fonts: 'https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap',
+    load: () => import('./games/bulutyaris/App.jsx'),
+  },
+  {
     id: 'hkacis',
     hidden: true,
     title: 'Hapisten Kaçış',
@@ -33,7 +48,6 @@ export const GAMES = [
   },
   {
     id: 'boya',
-    hidden: true,
     title: 'Boya Savaşı',
     tag: 'Aksiyon · Takım · Online',
     cats: ['Aksiyon', 'Yarış'],
