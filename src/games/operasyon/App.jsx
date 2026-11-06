@@ -80,6 +80,7 @@ function Minimap({ map, rects, size }) {
         c.stroke();
       }
     };
+    poly(-4, 28, 4, 182, '#222c40', null);
     poly(-36, -28, 36, 28, '#18233a', '#2c3c5c');
     for (const r of rects) poly(r[0], r[1], r[2], r[3], '#56627a', '#8493b0');
     const dot = (x, z, col, r = 3.2) => {

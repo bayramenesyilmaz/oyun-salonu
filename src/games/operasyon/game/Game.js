@@ -279,7 +279,7 @@ export class Game {
     this.crouchToggle = false;
     this.toastQ = [];
     const p = this.pl;
-    p.pos.set(0, 0, 35.5);
+    p.pos.set(this.world.spawn.x, 0, this.world.spawn.z);
     p.vel.set(0, 0, 0);
     p.yaw = 0;
     p.pitch = 0;
@@ -308,7 +308,7 @@ export class Game {
       const tag = nameSprite(name);
       tag.position.y = 2.55;
       g.add(tag);
-      const x = [-2.4, 2.4, 0][i], z = [37, 37.4, 39][i];
+      const x = [-2.4, 2.4, 0][i], z = this.world.spawn.z + [1.5, 1.9, 3.5][i];
       g.position.set(x, 0, z);
       this.scene.add(g);
       return { kind: 'friend', name, role: roles[i], g, pos: g.position, vel: new THREE.Vector3(), yaw: 0, hp: 100, maxHp: 100, dead: false, grounded: true, slot: i, cool: 0, burst: 0, react: 0, tgt: null, speed: 0, stuck: 0, strafe: 1, strafeT: 0, tag, seenT: 0 };
@@ -332,8 +332,12 @@ export class Game {
       this.scene.add(g);
       return { g, pos: g.position, yaw: s.yaw, state: 'bound', prog: 0, vel: new THREE.Vector3(), grounded: true, speed: 0, stuck: 0 };
     });
-    this.say('Merkez: Tesise sızın. Rehineler depo ve ofis binasında.', 1);
-    this.say('Kapıdan gir, siper al. Silah sesi herkesi uyandırır.', 5);
+    for (const pk of this.world.pickups) {
+      pk.taken = false;
+      pk.mesh.visible = true;
+    }
+    this.say('Merkez: Köy yolundan tesise ilerleyin. Rehineler depo ve ofis binasında.', 1);
+    this.say('Kontrol noktası ve devriyeler var. Sessiz ilerle, silah sesi herkesi uyandırır.', 6);
     this.cb.onStart?.();
   }
   say(text, delay = 0) {
@@ -379,7 +383,7 @@ export class Game {
 
   // ---------------- fizik / görüş ----------------
   blocked(x, y, z) {
-    if (Math.abs(x) > BOUND.x - R || Math.abs(z) > BOUND.z - R) return true;
+    if (Math.abs(x) > BOUND.x - R || z < BOUND.z0 + R || z > BOUND.z1 - R) return true;
     for (const b of this.colliders) {
       if (x > b.x0 - R && x < b.x1 + R && z > b.z0 - R && z < b.z1 + R && y + H > b.y0 && y < b.y1 - 0.32) return true;
     }
@@ -609,7 +613,7 @@ export class Game {
       if (this.pointBlocked(nx, p.y, p.z) || Math.abs(nx) > BOUND.x) v.x *= -0.45;
       else p.x = nx;
       const nz = p.z + v.z * dt;
-      if (this.pointBlocked(p.x, p.y, nz) || Math.abs(nz) > BOUND.z) v.z *= -0.45;
+      if (this.pointBlocked(p.x, p.y, nz) || nz < BOUND.z0 || nz > BOUND.z1) v.z *= -0.45;
       else p.z = nz;
       const ny = p.y + v.y * dt;
       const top = this.pointBlocked(p.x, ny, p.z);
@@ -753,6 +757,29 @@ export class Game {
       S.ding();
       this.say('Merkez: İçerdesin. Rehineleri bul.', 0.4);
     }
+    // toplanabilir malzemeler
+    for (const pk of this.world.pickups) {
+      if (pk.taken) continue;
+      pk.mesh.rotation.y += dt * 1.5;
+      pk.mesh.position.y = 0.6 + Math.sin(this.t * 2 + pk.x) * 0.08;
+      if (!p.dead && Math.hypot(pk.x - p.pos.x, pk.z - p.pos.z) < 1.3 && Math.abs(p.pos.y - 0) < 2.5) {
+        if (pk.kind === 'med') {
+          if (this.gear.med >= 6) continue;
+          this.gear.med++;
+          this.say('İlk yardım çantası alındı', 0);
+        } else {
+          const w0 = this.slots[0], a0 = this.ammo[0];
+          if (a0.reserve >= w0.reserve * 1.5) continue;
+          a0.reserve += w0.mag * 2;
+          this.ammo[1].reserve += 15;
+          this.gear.nade = Math.min(5, this.gear.nade + 1);
+          this.say('Cephane ve el bombası alındı', 0);
+        }
+        pk.taken = true;
+        pk.mesh.visible = false;
+        S.ding();
+      }
+    }
     // arayüz/etkileşim
     this.prompt = null;
     this.progress = -1;
@@ -862,7 +889,7 @@ export class Game {
     if (!pl.dead) cand.push(pl);
     for (const f of this.friends) if (!f.dead) cand.push(f);
     let tgt = null, td = 1e9;
-    const range = e.type === 'sniper' ? 78 : 44;
+    const range = e.type === 'sniper' ? 50 : 32;
     e.visT -= dt;
     if (e.visT <= 0) {
       e.visT = 0.12;
@@ -881,6 +908,14 @@ export class Game {
     }
     tgt = e.seeNow;
     if (tgt && (tgt.dead || (tgt === pl && pl.dead))) tgt = e.seeNow = null;
+    // şüphe: uzaktan görünce hemen ateş etmez, bir süre izler; çömelmek şüpheyi yavaşlatır
+    if (tgt && e.state !== 'combat') {
+      const dd = Math.hypot(tgt.pos.x - e.pos.x, tgt.pos.z - e.pos.z);
+      const crouch = tgt === pl && pl.crouchK > 0.5 ? 0.55 : 1;
+      e.sus = (e.sus || 0) + dt * (dd < 10 ? 4 : dd < 20 ? 1.3 : 0.7) * crouch;
+      if (e.sus < 1) tgt = null;
+      else e.sus = 1;
+    } else if (!tgt) e.sus = Math.max(0, (e.sus || 0) - dt * 0.5);
     if (tgt) {
       e.seen = 3.5;
       e.tgt = tgt;

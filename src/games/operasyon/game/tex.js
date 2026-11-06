@@ -49,7 +49,7 @@ export const T = {
     c.fillRect(s / 2, 0, 2, s / 2);
   }, 5)),
   dirt: () => once('dirt', () => mk(64, (c, s, r) => speckle(c, s, r, 0x6b5a48, 4, 0.2), 7)),
-  asphalt: () => once('asphalt', () => mk(64, (c, s, r) => speckle(c, s, r, 0x4a4a52, 4, 0.1), 9)),
+  asphalt: () => once('asphalt', () => mk(64, (c, s, r) => speckle(c, s, r, 0x6b6b76, 4, 0.1), 9)),
   brick: () => once('brick', () => mk(64, (c, s, r) => {
     c.fillStyle = '#6a5a4c';
     c.fillRect(0, 0, s, s);

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { T, tiledBox } from './tex.js';
 
 // "Terk edilmiş sanayi tesisi": alacakaranlık, sıcak lambalar, dağ ve köy silüeti.
-export const BOUND = { x: 46, z: 42 };
+export const BOUND = { x: 62, z0: -42, z1: 182 };
 const rnd = (a, b) => a + Math.random() * (b - a);
 const L = (c, o) => new THREE.MeshLambertMaterial({ color: c, flatShading: true, ...o });
 
@@ -67,7 +67,7 @@ export function buildWorld(scene, { touch = false } = {}) {
     const a = (i / 22) * 6.283 + rnd(-0.1, 0.1), r = rnd(210, 260), h = rnd(60, 120), rad = rnd(55, 95);
     const m = new THREE.Mesh(new THREE.ConeGeometry(rad, h, 6), mm.clone());
     m.material.color.offsetHSL(rnd(-0.03, 0.03), 0, rnd(-0.06, 0.04));
-    m.position.set(Math.cos(a) * r, h / 2 - 4, Math.sin(a) * r);
+    m.position.set(Math.cos(a) * r, h / 2 - 4, 70 + Math.sin(a) * r);
     m.rotation.y = rnd(0, 3);
     w.add(m);
     if (h > 85) {
@@ -96,10 +96,10 @@ export function buildWorld(scene, { touch = false } = {}) {
   floor.receiveShadow = true;
   w.add(floor);
   floor.material.map.repeat.set(18, 14);
-  const road = new THREE.Mesh(new THREE.PlaneGeometry(10, 30), new THREE.MeshLambertMaterial({ map: gtex(T.asphalt(), 5) }));
-  road.material.map.repeat.set(3, 10);
+  const road = new THREE.Mesh(new THREE.PlaneGeometry(8, 156), new THREE.MeshLambertMaterial({ map: gtex(T.asphalt(), 5) }));
+  road.material.map.repeat.set(2, 39);
   road.rotation.x = -Math.PI / 2;
-  road.position.set(0, 0.01, 43);
+  road.position.set(0, 0.01, 106);
   road.receiveShadow = true;
   w.add(road);
 
@@ -342,12 +342,114 @@ export function buildWorld(scene, { touch = false } = {}) {
   padLight.position.set(PAD.x, 4, PAD.z);
   w.add(padLight);
 
+  // ---- yol köyü: girilebilir evler, kontrol noktası, arabalar ----
+  const floorM = new THREE.MeshLambertMaterial({ map: T.concrete(), color: 0x9a9088 });
+  const house = (cx, cz, w, d, o = {}) => {
+    const { h = 3.2, door = 'w', hex = 0xc9b79c, lit = 2, mid = false } = o;
+    const m = wallMats(hex, lit, 1, 1);
+    const t = 0.5, dw = 2.2, dh = 2.6;
+    const wallX = (zz, gap) => {
+      if (!gap) return B(cx, zz, w, t, h, m, { tx: 3.2, ty: h });
+      const seg = (w - dw) / 2;
+      B(cx - (dw + seg) / 2, zz, seg, t, h, m, { tx: 3.2, ty: h });
+      B(cx + (dw + seg) / 2, zz, seg, t, h, m, { tx: 3.2, ty: h });
+      B(cx, zz, dw, t, h - dh, m, { y0: dh, tx: 3.2, ty: h - dh });
+    };
+    const wallZ = (xx, gap) => {
+      if (!gap) return B(xx, cz, t, d, h, m, { tx: 3.2, ty: h });
+      const seg = (d - dw) / 2;
+      B(xx, cz - (dw + seg) / 2, t, seg, h, m, { tx: 3.2, ty: h });
+      B(xx, cz + (dw + seg) / 2, t, seg, h, m, { tx: 3.2, ty: h });
+      B(xx, cz, t, dw, h - dh, m, { y0: dh, tx: 3.2, ty: h - dh });
+    };
+    wallX(cz - d / 2, door === 'n');
+    wallX(cz + d / 2, door === 's');
+    wallZ(cx - w / 2, door === 'w');
+    wallZ(cx + w / 2, door === 'e');
+    B(cx, cz, w + 0.5, d + 0.5, 0.4, concreteM, { y0: h, tx: 4 });
+    B(cx, cz, w - 0.6, d - 0.6, 0.05, floorM, { collide: false, recv: true });
+    if (mid) {
+      B(cx - w / 4 - 0.55, cz, w / 2 - 1.1, t, 2.9, m, { tx: 3.2, ty: 2.9 });
+      B(cx + w / 4 + 1.1, cz, w / 2 - 2.2, t, 2.9, m, { tx: 3.2, ty: 2.9 });
+    }
+    // iç eşya + tavan lambası
+    B(cx + (door === 'w' ? w / 2 - 1.2 : -w / 2 + 1.2), cz + d / 2 - 1.2, 1.3, 0.8, 0.8, crateM, { tx: 1 });
+    B(cx - (door === 'w' ? w / 2 - 1.0 : -w / 2 + 1.0), cz - d / 2 + 1.0, 0.9, 0.9, 1.0, crateM, { tx: 1 });
+    lampHead(cx, h - 0.2, cz, 0xffcc88, 5);
+  };
+  const car = (x, z, c) => {
+    B(x, z, 1.9, 4.2, 0.85, L(c), { y0: 0.4 });
+    B(x, z - 0.2, 1.7, 2.2, 0.75, L(0x2a3446), { y0: 1.25, cast: true });
+    for (const [dx, dz] of [[-0.95, -1.4], [0.95, -1.4], [-0.95, 1.4], [0.95, 1.4]]) B(x + dx, z + dz, 0.25, 0.7, 0.7, L(0x15171a), { y0: 0, collide: false });
+  };
+  // kontrol noktası (z ≈ 54)
+  barrier(-4.6, 54, 2.4, 0.7);
+  barrier(4.6, 54, 2.4, 0.7);
+  barrier(0, 51, 2.4, 0.7);
+  sandbags(-7, 56, 3, 0.9);
+  sandbags(7, 57, 3, 0.9);
+  house(-11, 55, 3.6, 3.6, { h: 2.8, door: 'e', hex: 0xa8a39a, lit: 1, });
+  lampHead(-5.8, 3.4, 52, 0xffe0a0, 9);
+  lampHead(5.8, 3.4, 52, 0xffe0a0, 9);
+  B(-5.8, 52, 0.15, 0.15, 3.4, L(0x2b2d33), { collide: false });
+  B(5.8, 52, 0.15, 0.15, 3.4, L(0x2b2d33), { collide: false });
+  barrel(9, 53, 0x4a5538, true);
+  // köy evleri (sağ: kapı batıya, sol: kapı doğuya)
+  house(17, 74, 8, 7, { door: 'w', hex: 0xc9b79c });
+  house(16.5, 92, 9, 8, { door: 'w', hex: 0xb8a08a, mid: true });
+  house(18, 110, 7, 7, { door: 'w', hex: 0xd0c0a4 });
+  house(16, 130, 9, 7, { door: 'w', hex: 0xbfae94, mid: true });
+  house(-17, 72, 8, 8, { door: 'e', hex: 0xb8a58e });
+  house(-16.5, 90, 7, 9, { door: 'e', hex: 0xc9b79c, mid: true });
+  house(-18, 108, 9, 7, { door: 'e', hex: 0xb0a090 });
+  house(-15, 128, 8, 8, { door: 'e', hex: 0xc4b298 });
+  car(2.4, 100, 0x8a3b2e);
+  car(-2.6, 118, 0x3a5a7a);
+  car(2.6, 140, 0x6a6a52);
+  car(-2.4, 82, 0x7a7266);
+  car(2.5, 64, 0x2f3b30);
+  crate(7, 96, 1.3);
+  crate(8.2, 96.6, 1.1);
+  crate(-8, 112, 1.4);
+  barrel(8, 120, 0x5a2a22);
+  barrel(-8.6, 78, 0x27303a);
+  barrier(-6, 132, 0.7, 2.4);
+  for (let z = 66; z <= 160; z += 18) {
+    const x = z % 36 ? 5.2 : -5.2;
+    B(x, z, 0.16, 0.16, 4.2, L(0x2b2d33), { collide: false });
+    lampHead(x, 4.3, z, 0xffc068, 8);
+  }
+
+  // ---- toplanabilir malzemeler ----
+  const pickups = [];
+  const pickup = (x, z, kind) => {
+    const g = new THREE.Group();
+    const col = kind === 'med' ? 0xf4f4f0 : 0x6a7a3a;
+    g.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.4, 0.4), L(col)), { castShadow: true }));
+    const mark = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.12, 0.12), new THREE.MeshBasicMaterial({ color: kind === 'med' ? 0xe5483a : 0xf2c230 }));
+    g.add(mark);
+    if (kind === 'med') g.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.42), new THREE.MeshBasicMaterial({ color: 0xe5483a })), {}));
+    g.add(glowSp(kind === 'med' ? 0x80ff9a : 0xffe070, 2.4, 0, 0.2, 0, 0.55));
+    g.position.set(x, 0.6, z);
+    w.add(g);
+    pickups.push({ x, z, kind, mesh: g, taken: false });
+  };
+  pickup(16.5, 92, 'med');
+  pickup(-16.5, 89, 'ammo');
+  pickup(-18, 108, 'med');
+  pickup(16, 129, 'ammo');
+  pickup(17, 74, 'ammo');
+  pickup(-11, 55, 'med');
+  pickup(0, 3.2, 'ammo');
+  pickup(-20, -13, 'med');
+  pickup(12, -13, 'ammo');
+
   // ---- uzak köy (instanced): pencereli evler + kiremit çatılar ----
   const houses = [];
-  for (let i = 0; i < 70; i++) {
-    const a = (i / 70) * 6.283 + rnd(-0.05, 0.05), r = rnd(66, 118);
-    const x = Math.cos(a) * r * 1.0, z = Math.sin(a) * r * 0.85;
-    if (Math.abs(x) < 52 && Math.abs(z) < 48) continue;
+  for (let i = 0; i < 90; i++) {
+    const a = (i / 90) * 6.283 + rnd(-0.05, 0.05), r = rnd(95, 175);
+    const x = Math.cos(a) * r * 1.05, z = 70 + Math.sin(a) * r * 0.95;
+    if (Math.abs(x) < 78 && z > -55 && z < 195) continue;
     houses.push({ x, z, w: rnd(5, 10), h: rnd(4, 9), d: rnd(5, 10), c: [0xd9b99a, 0xc9a98e, 0xb89a86, 0xe0c8a8, 0xa88e80][i % 5], ry: rnd(0, 3) });
   }
   const hm = new THREE.MeshLambertMaterial({ map: T.facade(0xffffff, 2, 3, 2), emissiveMap: T.facadeEmit(2, 3, 2), emissive: 0xffffff, flatShading: true });
@@ -364,20 +466,28 @@ export function buildWorld(scene, { touch = false } = {}) {
     ri.setMatrixAt(i, m4);
   });
   w.add(hi, ri);
-  // çam ağaçları (duvar dışı)
+  // çam ağaçları: yol boyunca ve çevrede
   const pineM = L(0x2a4a3a), trunkM = L(0x4a3424);
-  for (let i = 0; i < 46; i++) {
-    const a = Math.random() * 6.283, r = rnd(52, 90);
-    const x = Math.cos(a) * r * 1.1, z = Math.sin(a) * r * 0.9;
-    if (Math.abs(x) < 48 && Math.abs(z) < 44) continue;
-    const s = rnd(0.9, 1.7);
+  const tree = (x, z) => {
+    const s = rnd(0.9, 1.8);
     const t = new THREE.Mesh(new THREE.BoxGeometry(0.4 * s, 1.4 * s, 0.4 * s), trunkM);
     t.position.set(x, 0.7 * s, z);
     const c1 = new THREE.Mesh(new THREE.ConeGeometry(1.9 * s, 3 * s, 6), pineM);
     c1.position.set(x, 2.6 * s, z);
     const c2 = new THREE.Mesh(new THREE.ConeGeometry(1.4 * s, 2.4 * s, 6), pineM);
     c2.position.set(x, 4.2 * s, z);
+    c1.castShadow = true;
     w.add(t, c1, c2);
+  };
+  for (let i = 0; i < 70; i++) {
+    const side = i % 2 ? 1 : -1;
+    tree(side * rnd(28, 58), rnd(42, 182));
+  }
+  for (let i = 0; i < 40; i++) {
+    const a = Math.random() * 6.283, r = rnd(66, 120);
+    const x = Math.cos(a) * r * 1.1, z = Math.sin(a) * r * 0.9;
+    if (Math.abs(x) < 64 && z > -48 && z < 190) continue;
+    tree(x, z);
   }
 
   const rects = colliders.filter((c) => c.y1 - c.y0 > 0.85 && c.y0 < 1 && (c.x1 - c.x0) * (c.z1 - c.z0) > 0.8);
@@ -390,7 +500,8 @@ export function buildWorld(scene, { touch = false } = {}) {
     padLight,
     lights,
     SUN,
-    spawn: { x: 0, z: 34 },
+    spawn: { x: 0, z: 172 },
+    pickups,
     hostageSpots: [
       { x: 23.5, z: -20.5, yaw: 0.2 },
       { x: 26, z: -18.6, yaw: 0.5 },
@@ -404,6 +515,12 @@ export function buildWorld(scene, { touch = false } = {}) {
       { id: 's2', type: 'sniper', x: -32, z: -24, y: 6.3 },
       { id: 'p1', type: 'patrol', x: -10, z: -2, y: 0, patrol: [[-10, -2], [8, -2], [8, 9], [-10, 9]] },
       { id: 'p2', type: 'patrol', x: -30, z: 0, y: 0, patrol: [[-30, 0], [-30, 18], [-16, 18], [-16, 2]] },
+      { id: 'r1', type: 'guard', x: 3, z: 58, y: 0, patrol: [[3, 58], [-3, 59]] },
+      { id: 'r2', type: 'guard', x: -9, z: 56, y: 0 },
+      { id: 'v1', type: 'patrol', x: -5, z: 82, y: 0, patrol: [[-5, 82], [5, 84], [5, 70], [-5, 68]] },
+      { id: 'v2', type: 'guard', x: 15, z: 93, y: 0, patrol: [[15, 93], [18, 90]] },
+      { id: 'v3', type: 'sniper', x: -16.5, z: 90, y: 3.6 },
+      { id: 'v4', type: 'patrol', x: 6, z: 104, y: 0, patrol: [[6, 104], [-6, 108], [-6, 97]] },
     ],
     update(t, dt) {
       for (const f of fires) {
