@@ -352,10 +352,21 @@ class GltfHumanoid {
     this.kind = kind;
     this.root = new THREE.Group();
     this.model = cloneModel(gltf);
-    const box = new THREE.Box3().setFromObject(this.model);
-    const h = box.max.y - box.min.y || 1.8;
-    this.model.scale.setScalar(1.78 / h);
-    this.model.position.y = -box.min.y * (1.78 / h);
+    // Skinned modelde Box3 güvenilmez (cm/m karışıklığı) → boyu iskeletten ölç: baş kemiği ≈ boyun %91'i.
+    this.model.updateMatrixWorld(true);
+    let headY = 0, footY = Infinity;
+    const v = new THREE.Vector3();
+    this.model.traverse((o) => {
+      if (!o.isBone) return;
+      o.getWorldPosition(v);
+      if (/head/i.test(o.name) && !/headnub|top/i.test(o.name)) headY = Math.max(headY, v.y);
+      if (/toe|foot/i.test(o.name)) footY = Math.min(footY, v.y);
+    });
+    if (!isFinite(footY)) footY = 0;
+    const h = (headY - footY) / 0.91 || 1.78;
+    const k = 1.78 / h;
+    this.model.scale.setScalar(k);
+    this.model.position.y = -footY * k;
     this.model.traverse((o) => {
       if (o.isMesh) o.castShadow = true;
     });
