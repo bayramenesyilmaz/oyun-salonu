@@ -300,6 +300,7 @@ export class Game {
     this.entered = false;
     this.evacReady = false;
     this.evacT = 0;
+    this.evacHold = 0;
     this.hits = 0;
     this.shots = 0;
     this.heliState = 'circle';
@@ -1450,7 +1451,7 @@ export class Game {
       scoped: !!w.scope && p.ads > 0.88,
       prompt: this.prompt,
       progress: this.progress,
-      evacHold: this.evacHold || 0,
+      evacHold: this.phase === 'play' && this.heliState === 'landed' ? this.evacHold || 0 : 0,
       objectives,
       banner,
       wp,
