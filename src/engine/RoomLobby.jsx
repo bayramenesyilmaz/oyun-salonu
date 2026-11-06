@@ -114,7 +114,7 @@ export default function RoomLobby({ path, title = 'ONLİNE ODA', info, hostMeta 
             {list.map(([u, p]) => (
               <div key={u} className="rl-row">
                 <b>{p.n || 'Oyuncu'}{u === room.uid ? ' (sen)' : ''}{u === meta?.host ? ' · kurucu' : ''}</b>
-                <small>{rowExtra ? rowExtra(p, u) : ''}</small>
+                <small>{rowExtra ? rowExtra(p, u, Object.keys(players).sort().indexOf(u)) : ''}</small>
               </div>
             ))}
             {Array.from({ length: Math.max(0, MAX_PLAYERS - n) }).map((_, i) => <div key={'e' + i} className="rl-row empty">Boş yer</div>)}

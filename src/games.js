@@ -1,6 +1,21 @@
 // Oyun listesi. Yeni oyun eklemek: klasörünü src/games/ altına koy, buraya bir satır ekle.
 export const GAMES = [
   {
+    id: 'zirve',
+    title: 'Zirve',
+    tag: 'Online · Tırmanış · 4 kişi',
+    cats: ['Aksiyon', 'Macera'],
+    length: 'Uzun dağ yolu · 5-10 dk · 4 kişi online',
+    updated: '2026-11-07',
+    news: 'Yeni oyun: Zirve, 4 kişilik online dağ tırmanışı',
+    keywords: 'zirve tırmanış dağ ip kaya online arkadaş 4 kişi takım 3b dağcı',
+    blurb: 'Spiral bir dağ yolunu ve kopabilen ipleri tırman. Rakiplerine kaya at, ipi kes, düşür. Herkes tek ya da 2\'ye 2 takım, 4 kişiye kadar online. Tek başına da denenebilir.',
+    color: '#2a9d3a',
+    icon: '/icons-zirve/icon-512.png',
+    fonts: 'https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap',
+    load: () => import('./games/zirve/App.jsx'),
+  },
+  {
     id: 'bulutyaris',
     title: 'Bulut Üstü Yarış',
     tag: 'Yarış · Rampa · Nitro',
