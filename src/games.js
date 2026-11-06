@@ -1,6 +1,21 @@
 // Oyun listesi. Yeni oyun eklemek: klasörünü src/games/ altına koy, buraya bir satır ekle.
 export const GAMES = [
   {
+    id: 'boya',
+    title: 'Boya Savaşı',
+    tag: 'Aksiyon · Takım · Online',
+    cats: ['Aksiyon', 'Yarış'],
+    length: '2,5 dk maç · bota karşı ya da online arkadaşınla',
+    updated: '2026-11-06',
+    news: 'Yeni oyun: blok tarzı paintball, her isabet puan',
+    keywords: 'boya paintball savaş krunker fps takım kırmızı mavi online arkadaş bot harita süre puan blok',
+    blurb: 'Kırmızı ve mavi takım, 2\'ye 2. Her boya isabeti takımına 1 puan, 2,5 dakika sonra kazanan takım çıkar. 3 harita, bota karşı ya da online arkadaşınla.',
+    color: '#ff4d5e',
+    icon: '/icons-boya/icon-512.png',
+    fonts: 'https://fonts.googleapis.com/css2?family=Lilita+One&family=Onest:wght@400;600;700&display=swap',
+    load: () => import('./games/boya/App.jsx'),
+  },
+  {
     id: 'vardiya',
     title: 'Gece Vardiyası',
     tag: 'Korku · Gerilim · Duygusal',
