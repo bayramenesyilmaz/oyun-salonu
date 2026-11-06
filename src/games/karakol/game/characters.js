@@ -44,7 +44,133 @@ export function makeNpcRifle() {
 }
 
 export function createHumanoid(kind, T, gltf = null, opts = {}) {
-  return gltf ? new GltfHumanoid(kind, gltf, opts) : new ProcHumanoid(kind, T, opts);
+  if (opts.real) return gltf ? new GltfHumanoid(kind, gltf, opts) : new ProcHumanoid(kind, T, opts);
+  return new BlockHumanoid(kind, opts);
+}
+
+// Blok (Boya Savaşı tarzı) karakter: aynı arayüz, düz renkli kutular. İleri yön +Z, ayak tabanı y=0.
+const BL = new Map();
+const bmat = (c) => {
+  if (!BL.has(c)) BL.set(c, new THREE.MeshLambertMaterial({ color: c, flatShading: true, emissive: new THREE.Color(c).multiplyScalar(0.22) }));
+  return BL.get(c);
+};
+const LOOKS = {
+  soldier: { body: 0x5f8a3d, legs: 0x3f5a2a, head: 0x2e4a22, skin: 0xf0c49a, gear: 0x2b3445 },
+  enemy: { body: 0x8a4a3a, legs: 0x3b2f2a, head: 0x7a2f2f, skin: 0xd9a77e, gear: 0x2b2b2b },
+  civilian: { body: 0xf2a65a, legs: 0x4a6fa5, head: 0xe0b44a, skin: 0xf3cfa8, gear: 0x6b4a2b },
+};
+class BlockHumanoid {
+  constructor(kind, opts = {}) {
+    this.kind = kind;
+    this.root = new THREE.Group();
+    const L = LOOKS[kind] || LOOKS.civilian;
+    const pick = (a) => a[Math.floor(Math.random() * a.length)];
+    const body = kind === 'civilian' ? pick([0xf2a65a, 0x6fb7e9, 0xe86a8a, 0x8bd46e, 0xb48be8]) : L.body;
+    const g = (this.model = new THREE.Group());
+    g.scale.setScalar(0.8);
+    this.root.add(g);
+    const box = (w, h, d, c, x, y, z, p = g) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), bmat(c));
+      m.position.set(x, y, z);
+      m.castShadow = true;
+      p.add(m);
+      return m;
+    };
+    this.legL = new THREE.Group();
+    this.legR = new THREE.Group();
+    this.legL.position.set(-0.19, 0.78, 0);
+    this.legR.position.set(0.19, 0.78, 0);
+    for (const l of [this.legL, this.legR]) {
+      box(0.3, 0.78, 0.32, L.legs, 0, -0.39, 0, l);
+      box(0.32, 0.12, 0.4, L.gear, 0, -0.72, 0.04, l);
+      g.add(l);
+    }
+    this.torso = new THREE.Group();
+    this.torso.position.set(0, 0.78, 0);
+    g.add(this.torso);
+    box(0.84, 0.82, 0.46, body, 0, 0.41, 0, this.torso);
+    box(0.88, 0.1, 0.5, L.gear, 0, 0.02, 0, this.torso);
+    if (kind === 'soldier') box(0.5, 0.36, 0.14, L.gear, 0, 0.5, 0.28, this.torso);
+    box(0.34, 0.46, 0.2, L.gear, 0, 0.5, -0.33, this.torso);
+    box(0.5, 0.5, 0.5, L.skin, 0, 1.08, 0, this.torso);
+    box(0.56, 0.2, 0.56, L.head, 0, 1.4, 0, this.torso);
+    box(0.56, 0.32, 0.12, L.head, 0, 1.3, -0.26, this.torso);
+    if (kind !== 'civilian') box(0.54, 0.14, 0.06, 0x1c1f26, 0, 1.12, 0.26, this.torso);
+    else {
+      box(0.1, 0.1, 0.05, 0x1c1f26, -0.12, 1.12, 0.26, this.torso);
+      box(0.1, 0.1, 0.05, 0x1c1f26, 0.12, 1.12, 0.26, this.torso);
+    }
+    this.armL = new THREE.Group();
+    this.armR = new THREE.Group();
+    this.armL.position.set(-0.55, 0.78, 0);
+    this.armR.position.set(0.55, 0.78, 0);
+    for (const a of [this.armL, this.armR]) {
+      box(0.24, 0.72, 0.24, body, 0, -0.32, 0, a);
+      box(0.22, 0.2, 0.22, L.skin, 0, -0.72, 0, a);
+      this.torso.add(a);
+    }
+    this.armed = (kind === 'soldier' || kind === 'enemy') && !opts.unarmed;
+    if (this.armed) {
+      box(0.12, 0.16, 0.9, 0x23272f, 0, -0.72, 0.4, this.armR);
+      box(0.1, 0.1, 0.3, 0x59647a, 0, -0.7, 0.95, this.armR);
+    }
+    this.muzzle = new THREE.Object3D();
+    this.muzzle.position.set(0.16, 1.12, 0.8);
+    this.root.add(this.muzzle);
+    this.phase = Math.random() * 10;
+    this.deadT = -1;
+    this.downK = 0;
+    this.crouchK = 0;
+    this.aimK = 0;
+    this.lookPitch = 0;
+    this.speed = 0;
+    this.hips = { position: { y: 0.95 } };
+    this.spine = { rotation: { x: 0 } };
+  }
+  update(dt, { speed = 0, aim = false, crouch = false, down = false } = {}) {
+    const k = (v, t, r) => v + (t - v) * Math.min(1, dt * r);
+    this.downK = k(this.downK, down || this.deadT >= 0 ? 1 : 0, 4);
+    this.crouchK = k(this.crouchK, crouch ? 1 : 0, 8);
+    this.aimK = k(this.aimK, aim && this.armed ? 1 : 0, 10);
+    this.speed = speed;
+    const sp = Math.min(1, speed / 3.2);
+    this.phase += dt * (3 + sp * 7);
+    const sw = Math.sin(this.phase) * 0.8 * sp;
+    this.legL.rotation.x = sw;
+    this.legR.rotation.x = -sw;
+    const aimR = -1.45, aimL = -1.15;
+    this.armR.rotation.x = -sw * 0.8 * (1 - this.aimK) + aimR * this.aimK + (this.armed ? -0.5 * (1 - this.aimK) : 0);
+    this.armL.rotation.x = sw * 0.8 * (1 - this.aimK) + aimL * this.aimK;
+    this.model.position.y = -this.crouchK * 0.3 + Math.abs(Math.sin(this.phase)) * 0.04 * sp;
+    this.legL.rotation.x += this.crouchK * -0.9;
+    this.legR.rotation.x += this.crouchK * -0.9;
+    this.model.rotation.x = -this.downK * 1.5;
+  }
+  die() {
+    if (this.deadT >= 0) return;
+    this.deadT = 0;
+  }
+  get dead() {
+    return this.deadT >= 0;
+  }
+  hitSpheres(out = []) {
+    out.length = 0;
+    if (this.dead) return out;
+    const p = this.root.position, c = this.crouchK * 0.3;
+    out.push({ x: p.x, y: p.y + 1.5 - c, z: p.z, r: 0.25, part: 'head' });
+    out.push({ x: p.x, y: p.y + 1.0 - c, z: p.z, r: 0.33, part: 'body' });
+    out.push({ x: p.x, y: p.y + 0.65 - c, z: p.z, r: 0.27, part: 'body' });
+    out.push({ x: p.x, y: p.y + 0.32, z: p.z, r: 0.22, part: 'leg' });
+    return out;
+  }
+  eyePos(out = new THREE.Vector3()) {
+    const p = this.root.position;
+    return out.set(p.x, p.y + 1.5 - this.crouchK * 0.3, p.z);
+  }
+  muzzleWorld(out = new THREE.Vector3()) {
+    this.root.updateMatrixWorld(true);
+    return this.muzzle.getWorldPosition(out);
+  }
 }
 
 class ProcHumanoid {
