@@ -9,7 +9,7 @@ export const COLORS = [0xe5483a, 0x2f7fd8, 0x2fbf71, 0xf2c230];
 export const TEAM_COLORS = [0xe5483a, 0x2f7fd8];
 const GRAV = 26, WALK = 7, JUMP = 9.4, ROCK_G = 16, STUN = 1.0;
 
-function makeClimber(color) {
+export function makeClimber(color) {
   const g = new THREE.Group();
   const M = (c) => new THREE.MeshLambertMaterial({ color: c, flatShading: true });
   const body = new THREE.Mesh(new THREE.BoxGeometry(0.85, 1.0, 0.5), M(color));
@@ -27,7 +27,7 @@ function makeClimber(color) {
   g.userData = { legL, legR, armL, armR, body };
   return g;
 }
-function nameTag(text, color) {
+export function nameTag(text, color) {
   const c = document.createElement('canvas');
   c.width = 256; c.height = 64;
   const x = c.getContext('2d');

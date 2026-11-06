@@ -1,6 +1,21 @@
 // Oyun listesi. Yeni oyun eklemek: klasörünü src/games/ altına koy, buraya bir satır ekle.
 export const GAMES = [
   {
+    id: 'survivor',
+    title: 'Survivor',
+    tag: 'Online · Mini oyunlar · 4 kişi',
+    cats: ['Aksiyon', 'Parti'],
+    length: '5 tur · ~6 dk · 4 kişi online',
+    updated: '2026-11-07',
+    news: 'Yeni oyun: Survivor, 4 kişilik online mini oyun yarışması',
+    keywords: 'survivor mini oyun parti suya it hedef halka delik engel parkuru online arkadaş 4 kişi takım yarışma',
+    blurb: 'Beş turluk çılgın yarışma: suya it, hedefleri devir, halka at, deliğe sok, engel parkuru. Herkes tek ya da 2\'ye 2 takım, 4 kişiye kadar online. Tek başına da denenebilir.',
+    color: '#e0701a',
+    icon: '/icons-survivor/icon-512.png',
+    fonts: 'https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap',
+    load: () => import('./games/survivor/App.jsx'),
+  },
+  {
     id: 'zirve',
     title: 'Zirve',
     tag: 'Online · Tırmanış · 4 kişi',
