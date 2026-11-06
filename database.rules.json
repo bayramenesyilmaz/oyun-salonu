@@ -40,7 +40,7 @@
         },
         "pl": {
           "$uid": {
-            ".write": "auth != null && $uid === auth.uid && root.child('ops').child($code).child('meta').exists() && (data.exists() || !newData.exists() || root.child('ops').child($code).child('pl').numChildren() < 4)"
+            ".write": "auth != null && $uid === auth.uid && root.child('ops').child($code).child('meta').exists()"
           }
         },
         "pos": {
