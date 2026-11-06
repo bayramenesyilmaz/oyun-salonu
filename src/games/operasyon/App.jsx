@@ -50,7 +50,12 @@ function Compass({ heading }) {
   return <div className="op-compass">{items}<i /></div>;
 }
 
-function Minimap({ map, rects, size }) {
+const MAPS = [
+  { id: 'tesis', name: 'Sanayi tesisi', desc: 'Alacakaranlık · depo, ofis, kontrol noktası', title: '1. OPERASYON — SANAYİ TESİSİ', enter: 'Tesise sız', brief: 'Terk edilmiş bir sanayi bölgesinde silahlı bir grup rehine tutuyor. Tesise sız, rehineleri kurtar ve tahliye helikopterine ulaş. Silah sesi tüm tesisi uyandırır; siper al, ekibinle hareket et.' },
+  { id: 'koy', name: 'Dağ köyü', desc: 'Gece · taş evler, meydan, kilise, konak', title: '2. OPERASYON — DAĞ KÖYÜ', enter: 'Köye sız', brief: 'Dağ köyünde silahlı bir grup rehine tutuyor. Yol kapanını geç, dar sokaklardan köye sız, konak ve kiliseden rehineleri çıkar, kuzeydeki alandan helikopterle ayrıl. Çatılarda keskin nişancılar var.' },
+];
+
+function Minimap({ map, rects, ground = [], size }) {
   const ref = useRef(null);
   useEffect(() => {
     const cv = ref.current;
@@ -80,8 +85,7 @@ function Minimap({ map, rects, size }) {
         c.stroke();
       }
     };
-    poly(-4, 28, 4, 182, '#222c40', null);
-    poly(-36, -28, 36, 28, '#18233a', '#2c3c5c');
+    for (const gr of ground) poly(gr.r[0], gr.r[1], gr.r[2], gr.r[3], gr.fill, gr.stroke || null);
     for (const r of rects) poly(r[0], r[1], r[2], r[3], '#56627a', '#8493b0');
     const dot = (x, z, col, r = 3.2) => {
       const [X, Y] = tr(x, z);
@@ -177,6 +181,7 @@ export default function App() {
   const [role, setRole] = useState(ROLE_LIST.includes(prefs.role) ? prefs.role : 'komando');
   const [weapon, setWeapon] = useState(PRIMARIES.includes(prefs.weapon) ? prefs.weapon : 'm4');
   const [nick, setNick] = useState(prefs.nick || 'Enes');
+  const [mapId, setMapId] = useState(MAPS.some((m) => m.id === prefs.map) ? prefs.map : 'tesis');
   const [sound, setSound] = useState(prefs.sound !== false);
   const [hud, setHud] = useState(null);
   const [locked, setLocked] = useState(false);
@@ -188,9 +193,9 @@ export default function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('op-prefs', JSON.stringify({ role, weapon, nick, sound }));
+      localStorage.setItem('op-prefs', JSON.stringify({ role, weapon, nick, sound, map: mapId }));
     } catch {}
-  }, [role, weapon, nick, sound]);
+  }, [role, weapon, nick, sound, mapId]);
   useEffect(() => S.setSound(sound), [sound]);
 
   useEffect(() => {
@@ -231,14 +236,14 @@ export default function App() {
     setEnd(null);
     setToasts([]);
     setUserPause(false);
-    g.start({ role, weapon, nick: nick.trim() || 'Enes' });
+    g.start({ role, weapon, nick: nick.trim() || 'Enes', map: mapId });
     setScreen('play');
     if (!IS_TOUCH && !TEST) g.cv.requestPointerLock?.();
-  }, [role, weapon, nick]);
+  }, [role, weapon, nick, mapId]);
   useEffect(() => {
     if (ready && QS.has('quick')) {
       const g = game.current;
-      g.start({ role: QS.get('role') || 'komando', weapon: QS.get('w') || 'm4', nick: 'Enes' });
+      g.start({ role: QS.get('role') || 'komando', weapon: QS.get('w') || 'm4', nick: 'Enes', map: QS.get('map') || 'tesis' });
       setScreen('play');
     }
   }, [ready]);
@@ -306,7 +311,7 @@ export default function App() {
             </div>
           </div>
           <div className="op-menu-btns">
-            <button className="op-btn primary" onClick={() => setScreen('char')}>Göreve başla</button>
+            <button className="op-btn primary" onClick={() => setScreen('map')}>Göreve başla</button>
             <button className="op-btn" onClick={() => setHow(true)}>Nasıl oynanır</button>
             <button className="op-btn" onClick={() => setSound(!sound)}>Ses: {sound ? 'açık' : 'kapalı'}</button>
             <button className="op-btn dis" disabled>4 kişilik online · yakında</button>
@@ -315,9 +320,25 @@ export default function App() {
         </div>
       )}
 
-      {screen === 'char' && (
+      {screen === 'map' && (
         <div className="op-page">
           <button className="op-link" onClick={() => setScreen('menu')}>← Geri</button>
+          <h3 className="op-ptitle">HARİTA SEÇİMİ</h3>
+          <div className="op-chars op-maps">
+            {MAPS.map((m) => (
+              <button key={m.id} className={'op-char op-map' + (mapId === m.id ? ' sel' : '')} onClick={() => { setMapId(m.id); game.current?.loadMap(m.id); }}>
+                <b>{m.name}</b>
+                <small>{m.desc}</small>
+              </button>
+            ))}
+          </div>
+          <button className="op-btn primary wide" onClick={() => setScreen('char')}>Devam</button>
+        </div>
+      )}
+
+      {screen === 'char' && (
+        <div className="op-page">
+          <button className="op-link" onClick={() => setScreen('map')}>← Geri</button>
           <h3 className="op-ptitle">KARAKTER SEÇİMİ</h3>
           <div className="op-chars">
             {ROLE_LIST.map((r) => (
@@ -363,10 +384,10 @@ export default function App() {
         <div className="op-page">
           <button className="op-link" onClick={() => setScreen('weapon')}>← Geri</button>
           <div className="op-brief">
-            <h3>1. OPERASYON — SANAYİ TESİSİ</h3>
-            <p>Terk edilmiş bir sanayi bölgesinde silahlı bir grup rehine tutuyor. Tesise sız, rehineleri kurtar ve tahliye helikopterine ulaş. Silah sesi tüm tesisi uyandırır; siper al, ekibinle hareket et.</p>
+            <h3>{MAPS.find((m) => m.id === mapId).title}</h3>
+            <p>{MAPS.find((m) => m.id === mapId).brief}</p>
             <ul>
-              <li>Tesise sız</li>
+              <li>{MAPS.find((m) => m.id === mapId).enter}</li>
               <li>Rehineleri kurtar (0/3)</li>
               <li>Tahliye noktasına ulaş</li>
             </ul>
@@ -392,7 +413,7 @@ export default function App() {
           <button className="op-x" onClick={openPause} aria-label="Duraklat">✕</button>
 
           <div className="op-tl">
-            <Minimap map={h.map} rects={rects} size={IS_TOUCH ? 92 : 128} />
+            <Minimap map={h.map} rects={rects} ground={g?.world?.ground} size={IS_TOUCH ? 92 : 128} />
             <div className="op-mission op-panel">
               <div className="op-mtitle"><Emblem />Operasyon: Demir Vadi</div>
               {h.objectives.filter((o) => !o.done).slice(0, 2).map((o, i) => (

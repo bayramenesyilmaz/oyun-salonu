@@ -493,9 +493,20 @@ export function buildWorld(scene, { touch = false } = {}) {
   const rects = colliders.filter((c) => c.y1 - c.y0 > 0.85 && c.y0 < 1 && (c.x1 - c.x0) * (c.z1 - c.z0) > 0.8);
 
   return {
+    id: 'tesis',
     group: w,
     colliders,
     rects,
+    bound: BOUND,
+    ground: [
+      { r: [-4, 28, 4, 182], fill: '#222c40' },
+      { r: [-36, -28, 36, 28], fill: '#18233a', stroke: '#2c3c5c' },
+    ],
+    fog: { color: 0xa07a92, near: 38, far: 250 },
+    hemi: { sky: 0x9a96e0, ground: 0x5a4636, k: 1.55 },
+    sunCfg: { color: 0xff9a58, k: 1.9 },
+    gate: { x: 0, z: 27, test: (p) => p.z < 26 },
+    objText: { enter: 'Tesise sız', brief: 'Terk edilmiş bir sanayi bölgesinde silahlı bir grup rehine tutuyor. Tesise sız, rehineleri kurtar ve tahliye helikopterine ulaş. Silah sesi tüm tesisi uyandırır; siper al, ekibinle hareket et.', start1: 'Merkez: Köy yolundan tesise ilerleyin. Rehineler depo ve ofis binasında.', start2: 'Kontrol noktası ve devriyeler var. Sessiz ilerle, silah sesi herkesi uyandırır.' },
     PAD,
     padLight,
     lights,

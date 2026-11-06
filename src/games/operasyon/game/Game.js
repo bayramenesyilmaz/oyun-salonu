@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { buildWorld, makeHeli, BOUND } from './world.js';
+import { buildWorld, makeHeli } from './world.js';
+import { buildVillage } from './world_village.js';
 import { makeSoldier, animSoldier, makeCivilian, setSit, animCivilian, nameSprite, enemyMarker, ROLES } from './chars.js';
 import { WEAPONS, makeViewmodel } from './weapons.js';
 import * as S from './sfx.js';
@@ -91,7 +92,8 @@ export class Game {
     this.cam = new THREE.PerspectiveCamera(78, 16 / 9, 0.08, 700);
     this.cam.rotation.order = 'YXZ';
     this.scene.add(this.cam);
-    this.scene.add(new THREE.HemisphereLight(0x9a96e0, 0x5a4636, 1.55));
+    this.hemi = new THREE.HemisphereLight(0x9a96e0, 0x5a4636, 1.55);
+    this.scene.add(this.hemi);
     const sun = (this.sun = new THREE.DirectionalLight(0xff9a58, 1.9));
     sun.castShadow = !this.touch;
     sun.shadow.mapSize.set(2048, 2048);
@@ -106,10 +108,7 @@ export class Game {
     this.muzzleLight = new THREE.PointLight(0xffc070, 0, 14, 2);
     this.scene.add(this.muzzleLight);
 
-    this.world = buildWorld(this.scene, { touch: this.touch });
-    this.colliders = this.world.colliders;
-    this.mapRects = this.world.rects.map((c) => [c.x0, c.z0, c.x1, c.z1]);
-    this.sunDir = this.world.SUN.clone();
+    this.loadMap('tesis');
     this.heli = makeHeli();
     this.scene.add(this.heli);
     this.heliState = 'circle';
@@ -132,6 +131,29 @@ export class Game {
     this.resize();
     this.world.update(0, 0);
     this.raf = requestAnimationFrame(() => this.loop());
+  }
+
+  loadMap(id) {
+    if (this.world && this.world.id === id) return;
+    if (this.world) {
+      this.scene.remove(this.world.group);
+      this.world.group.traverse((o) => o.geometry && o.geometry.dispose());
+    }
+    this.world = id === 'koy' ? buildVillage(this.scene) : buildWorld(this.scene, { touch: this.touch });
+    const W = this.world;
+    this.colliders = W.colliders;
+    this.mapRects = W.rects.map((c) => [c.x0, c.z0, c.x1, c.z1]);
+    this.sunDir = W.SUN.clone();
+    this.scene.fog.color.setHex(W.fog.color);
+    this.scene.fog.near = W.fog.near;
+    this.scene.fog.far = W.fog.far;
+    this.hemi.color.setHex(W.hemi.sky);
+    this.hemi.groundColor.setHex(W.hemi.ground);
+    this.hemi.intensity = W.hemi.k;
+    this.sun.color.setHex(W.sunCfg.color);
+    this.sun.intensity = W.sunCfg.k;
+    this.heliAng = 1.2;
+    W.update(0, 0);
   }
 
   // ---------------- giriş ----------------
@@ -256,7 +278,8 @@ export class Game {
     this.heliState = 'circle';
     this.heli.userData.lampM.visible = true;
   }
-  start({ role = 'komando', weapon = 'm4', nick = 'Enes' } = {}) {
+  start({ role = 'komando', weapon = 'm4', nick = 'Enes', map } = {}) {
+    if (map) this.loadMap(map);
     this.clearEntities();
     S.unlock();
     const L = ROLES[role] || ROLES.komando;
@@ -336,8 +359,8 @@ export class Game {
       pk.taken = false;
       pk.mesh.visible = true;
     }
-    this.say('Merkez: Köy yolundan tesise ilerleyin. Rehineler depo ve ofis binasında.', 1);
-    this.say('Kontrol noktası ve devriyeler var. Sessiz ilerle, silah sesi herkesi uyandırır.', 6);
+    this.say(this.world.objText.start1, 1);
+    this.say(this.world.objText.start2, 6);
     this.cb.onStart?.();
   }
   say(text, delay = 0) {
@@ -383,7 +406,7 @@ export class Game {
 
   // ---------------- fizik / görüş ----------------
   blocked(x, y, z) {
-    if (Math.abs(x) > BOUND.x - R || z < BOUND.z0 + R || z > BOUND.z1 - R) return true;
+    if (Math.abs(x) > this.world.bound.x - R || z < this.world.bound.z0 + R || z > this.world.bound.z1 - R) return true;
     for (const b of this.colliders) {
       if (x > b.x0 - R && x < b.x1 + R && z > b.z0 - R && z < b.z1 + R && y + H > b.y0 && y < b.y1 - 0.32) return true;
     }
@@ -610,10 +633,10 @@ export class Game {
       n.t -= dt;
       v.y -= G * dt;
       const nx = p.x + v.x * dt;
-      if (this.pointBlocked(nx, p.y, p.z) || Math.abs(nx) > BOUND.x) v.x *= -0.45;
+      if (this.pointBlocked(nx, p.y, p.z) || Math.abs(nx) > this.world.bound.x) v.x *= -0.45;
       else p.x = nx;
       const nz = p.z + v.z * dt;
-      if (this.pointBlocked(p.x, p.y, nz) || nz < BOUND.z0 || nz > BOUND.z1) v.z *= -0.45;
+      if (this.pointBlocked(p.x, p.y, nz) || nz < this.world.bound.z0 || nz > this.world.bound.z1) v.z *= -0.45;
       else p.z = nz;
       const ny = p.y + v.y * dt;
       const top = this.pointBlocked(p.x, ny, p.z);
@@ -752,7 +775,7 @@ export class Game {
       } else this.doReload();
     }
     // sınır ve sızma
-    if (!this.entered && p.pos.z < 26) {
+    if (!this.entered && this.world.gate.test(p.pos)) {
       this.entered = true;
       S.ding();
       this.say('Merkez: İçerdesin. Rehineleri bul.', 0.4);
@@ -1330,17 +1353,17 @@ export class Game {
     const w = this.slots[this.slot], am = this.ammo[this.slot];
     const total = this.totalEnemies;
     const objectives = [
-      { text: 'Tesise sız', done: this.entered },
+      { text: this.world.objText.enter, done: this.entered },
       { text: `Rehineleri kurtar (${this.rescued}/3)`, done: this.rescued >= 3 },
       { text: `Silahlıları etkisiz hale getir (${this.kills}/${total})`, done: this.kills >= total },
       { text: 'Tahliye noktasına ulaş', done: this.phase === 'won' },
     ];
-    let banner = 'Tesise sız';
+    let banner = this.world.objText.enter;
     if (this.entered) banner = this.rescued < 3 ? 'Rehineleri kurtar ve tahliye noktasına ulaş' : this.heliState === 'landed' ? 'Tahliye helikopterine ulaş' : 'Helikopter geliyor, rehineleri koru';
     // yön işareti
     let wp = null;
     const P = this.world.PAD;
-    if (!this.entered) wp = { ...this.project(0, 3.2, 27), dist: Math.round(Math.hypot(p.pos.x, p.pos.z - 27)), kind: 'gate' };
+    if (!this.entered) wp = { ...this.project(this.world.gate.x, 3.2, this.world.gate.z), dist: Math.round(Math.hypot(p.pos.x - this.world.gate.x, p.pos.z - this.world.gate.z)), kind: 'gate' };
     else if (this.rescued < 3) {
       let best = null, bd = 1e9;
       for (const h of this.hostages) {

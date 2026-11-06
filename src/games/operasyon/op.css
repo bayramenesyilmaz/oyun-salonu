@@ -217,3 +217,6 @@ kbd{font:700 12px var(--f);padding:1px 6px;border:1px solid rgba(255,255,255,.45
 .touch .op-stick{width:116px;height:116px;left:18px;bottom:16px}
 .touch .op-br{left:318px;right:auto;bottom:12px;top:auto;transform:none}
 .touch .op-radio{bottom:66px}
+.op-maps{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.op-map{min-height:110px;display:grid;gap:6px;align-content:center;text-align:left;padding:16px}
+.op-map b{font:700 24px var(--f);letter-spacing:.1em}
