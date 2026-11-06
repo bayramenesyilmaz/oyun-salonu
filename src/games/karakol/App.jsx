@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import '@engine/opui/opui.css';
 import './ui.css';
 import { Game } from './game/Game.js';
 import { preloadAll } from '@engine/assets.js';

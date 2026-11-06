@@ -44,8 +44,7 @@ export function makeNpcRifle() {
 }
 
 export function createHumanoid(kind, T, gltf = null, opts = {}) {
-  if (opts.real) return gltf ? new GltfHumanoid(kind, gltf, opts) : new ProcHumanoid(kind, T, opts);
-  return new BlockHumanoid(kind, opts);
+  return gltf ? new GltfHumanoid(kind, gltf, opts) : new ProcHumanoid(kind, T, opts);
 }
 
 // Blok (Boya Savaşı tarzı) karakter: aynı arayüz, düz renkli kutular. İleri yön +Z, ayak tabanı y=0.
@@ -494,7 +493,14 @@ class GltfHumanoid {
     this.model.scale.setScalar(k);
     this.model.position.y = -footY * k;
     this.model.traverse((o) => {
-      if (o.isMesh) o.castShadow = true;
+      if (o.isMesh) {
+        o.castShadow = true;
+        // Rol rengi (Komando/Özel Harekât/İstihbarat/Destek): malzemeyi kopyalayıp renk çarpanı uygula
+        if (opts.tint != null && o.material) {
+          o.material = o.material.clone();
+          o.material.color.multiply(new THREE.Color(opts.tint));
+        }
+      }
     });
     this.root.add(this.model);
     if ((kind === 'soldier' || kind === 'enemy') && !opts.unarmed) {

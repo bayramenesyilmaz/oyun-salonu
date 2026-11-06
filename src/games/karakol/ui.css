@@ -278,3 +278,15 @@ html, body { touch-action: none; overscroll-behavior: none; -webkit-tap-highligh
   .level-card .sum { display: none; }
 }
 a.btn { text-decoration: none; display: block; }
+
+/* ---------- Operasyon teması (lacivert paneller, sarı vurgu) ---------- */
+:root { --accent: #f2c230; --accent-hi: #ffd54d; }
+.objectives { background: var(--op-bg); border: 1px solid var(--op-line); border-radius: 6px; padding: 8px 12px; backdrop-filter: blur(3px); max-width: min(300px, 55vw); }
+.objectives::before { content: 'GÖREV'; font-family: var(--cond); font-weight: 700; font-size: 13px; letter-spacing: .18em; color: var(--op-yellow); border-bottom: 1px solid var(--op-line); padding-bottom: 4px; margin-bottom: 2px; }
+.obj i { border-radius: 2px; transform: none; }
+.left-bottom .hp, .right-bottom .weapon, .left-bottom .unit { background: var(--op-bg); border: 1px solid var(--op-line); border-radius: 6px; padding: 6px 12px; }
+.btn { background: var(--op-bg2); border-color: var(--op-line); border-left-color: var(--op-blue); border-radius: 4px; }
+.btn.primary { background: var(--op-yellow); border-color: var(--op-yellow); color: #0a1220; }
+.screen.menu { background: linear-gradient(90deg, rgba(6, 12, 24, 0.94) 0%, rgba(6, 12, 24, 0.6) 45%, rgba(6, 12, 24, 0) 75%); }
+.screen.panel, .screen.levels, .screen.pause, .screen.briefing, .screen.results, .screen.dead { background: rgba(6, 12, 24, 0.9); }
+.settings { background: var(--op-bg); border-radius: 6px; }
