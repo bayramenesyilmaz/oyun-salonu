@@ -61,6 +61,7 @@ export default function App() {
   return (
     <div className="ky">
       <canvas ref={cv} className="ky-cv" />
+      <div className="ky-rot">Telefonu yan çevir ↻</div>
       {playing && (
         <>
           <div className="ky-hud">

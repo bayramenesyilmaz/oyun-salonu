@@ -57,3 +57,5 @@ html,body{margin:0;background:#02030a}
 .ky-card h3{margin:0 0 6px;font:800 24px var(--ky-f)}
 .ky-card ul{margin:0 0 10px;padding-left:20px;font:600 16px/1.35 var(--ky-f)}
 @media (max-height:520px){.ky-menu{gap:6px}.ky-logo b{font-size:46px}.ky-sub{font-size:14px}.ky-dlg p{font-size:16px}}
+.ky-rot{display:none}
+@media (orientation:portrait){.ky-rot{display:block;position:absolute;z-index:40;left:50%;top:10px;transform:translateX(-50%);background:rgba(255,216,74,.95);color:#10203a;border-radius:14px;padding:5px 16px;font:800 15px var(--ky-f);pointer-events:none;white-space:nowrap}}

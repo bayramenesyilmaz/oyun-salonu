@@ -160,7 +160,7 @@ export function makeMilkyWay() {
 // ---------- kokpit ----------
 export function makeCockpit() {
   const g = new THREE.Group();
-  const dark = M(0x1a2030), mid = M(0x2a3350);
+  const dark = M(0x2a3550), mid = M(0x44507a);
   const dash = mesh(new THREE.BoxGeometry(4.6, 0.6, 1.4), dark, 0, -1.15, -1.3); dash.rotation.x = -0.28; g.add(dash);
   const sc = [[-1.4, 0x5affc8], [-0.55, 0x5ab4ff], [0.4, 0xffb24a], [1.3, 0xff6a8a]];
   g.userData.screens = sc.map(([x, c]) => { const m = mesh(new THREE.PlaneGeometry(0.55, 0.32), B(c), x, -0.88, -1.66); m.rotation.x = -0.7; g.add(m); return m; });
