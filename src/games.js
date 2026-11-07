@@ -1,6 +1,21 @@
 // Oyun listesi. Yeni oyun eklemek: klasörünü src/games/ altına koy, buraya bir satır ekle.
 export const GAMES = [
   {
+    id: 'kit',
+    hidden: true,
+    title: 'Oyun Kiti',
+    tag: 'Geliştirici katalog',
+    cats: [],
+    length: '',
+    updated: '2026-11-08',
+    news: '',
+    keywords: 'kit katalog',
+    blurb: 'Ortak blok obje kütüphanesi.',
+    color: '#e8a020',
+    icon: '/icons-corba/icon-512.png',
+    load: () => import('./games/kit/App.jsx'),
+  },
+  {
     id: 'corba',
     title: 'Çorba Savaşı',
     tag: 'Hızlı · Botlara karşı · 2B',

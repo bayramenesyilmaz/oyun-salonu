@@ -1,0 +1,7 @@
+.kit{position:fixed;inset:0;display:flex;flex-direction:column;background:#10151c;color:#fff;font-family:system-ui,sans-serif}
+.kit-top{display:flex;gap:10px;align-items:center;padding:10px 12px;background:#18202b}.kit-top a{color:#fff;text-decoration:none;font-size:20px}.kit-top span{margin-left:auto;opacity:.6;font-size:13px}
+.kit-cats,.kit-list{display:flex;gap:6px;overflow-x:auto;padding:8px;flex-shrink:0}
+.kit-cats button,.kit-list button{flex:none;border:0;border-radius:14px;padding:7px 12px;background:#26303d;color:#fff;font-size:13px}
+.kit-cats button.on,.kit-list button.on{background:#e8a020;color:#111;font-weight:700}
+.kit-view{position:relative;flex:1;min-height:0;touch-action:none}.kit-view canvas{width:100%;height:100%;display:block}
+.kit-info{position:absolute;left:10px;top:8px;display:flex;flex-direction:column;text-shadow:0 1px 3px #000}.kit-info small{opacity:.85}
