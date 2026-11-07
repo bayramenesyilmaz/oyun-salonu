@@ -1,6 +1,21 @@
 // Oyun listesi. Yeni oyun eklemek: klasörünü src/games/ altına koy, buraya bir satır ekle.
 export const GAMES = [
   {
+    id: 'boyabaskin',
+    title: 'Boya Baskını',
+    tag: 'Online · 3B · Takım',
+    cats: ['Aksiyon', 'Takım'],
+    length: '4-5 dk · 2-4 kişi online veya botlarla',
+    updated: '2026-11-07',
+    news: 'Yeni oyun: Boya Baskını, 3B paintball ve rehine kurtarma',
+    keywords: 'paintball boya baskın rehine kurtarma ördek bey 3b takım online arkadaş bot fps silah harita rekabet',
+    blurb: 'Boyalı toplarla iki takım karşı karşıya: sahanın ortasındaki kafesten maskot Ördek Bey\'i kurtar, üssüne ilk götüren puan alır. Büyük 3B harita, güç artışları, sinematik giriş. 4 kişiye kadar online ya da botlara karşı.',
+    color: '#e5483a',
+    icon: '/icons-boyabaskin/icon-512.png',
+    fonts: 'https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap',
+    load: () => import('./games/boyabaskin/App.jsx'),
+  },
+  {
     id: 'samanyolu',
     title: 'Samanyolu: Kayıp Işık',
     tag: 'Hikaye · Uzay · Keşif',
