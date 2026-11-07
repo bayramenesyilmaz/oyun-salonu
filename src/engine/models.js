@@ -7,7 +7,7 @@ import { clone as skClone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
 const cache = new Map(), done = new Map();
 export function loadModel(name) {
-  if (!cache.has(name)) cache.set(name, new Promise((res) => loader.load(`/assets/models/${name}.glb`, (g) => res(g), undefined, () => res(null))));
+  if (!cache.has(name)) cache.set(name, new Promise((res) => loader.load(`/lib/models/${name}.glb`, (g) => res(g), undefined, () => res(null))));
   return cache.get(name);
 }
 export async function preload(names) { const r = await Promise.all(names.map(loadModel)); return r.every(Boolean); }
@@ -36,7 +36,7 @@ export const setSamples = (v) => { on = v; };
 function ac() { if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch { ctx = null; } } return ctx; }
 export async function preloadSfx(names) {
   const c = ac(); if (!c) return;
-  await Promise.all(names.map(async (n) => { if (bufs.has(n)) return; try { const r = await fetch(`/assets/sfx/${n}.ogg`); bufs.set(n, await c.decodeAudioData(await r.arrayBuffer())); } catch { /* yok say */ } }));
+  await Promise.all(names.map(async (n) => { if (bufs.has(n)) return; try { const r = await fetch(`/lib/sfx/${n}.ogg`); bufs.set(n, await c.decodeAudioData(await r.arrayBuffer())); } catch { /* yok say */ } }));
 }
 export function play(n, vol = 0.6, rate = 1) {
   if (!on || !ctx || !bufs.has(n)) return false;
