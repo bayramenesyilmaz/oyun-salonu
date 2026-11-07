@@ -4,9 +4,9 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import { finish } from './core.js';
 const gc = new Map(), mc = new Map();
 const M = (c, o) => { const k = c + JSON.stringify(o || {}); if (!mc.has(k)) mc.set(k, new THREE.MeshStandardMaterial({ color: c, roughness: 0.65, metalness: 0.05, ...o })); return mc.get(k); };
-const rb = (w, h, d, r = 0.08) => { const k = [w, h, d, r].join(); if (!gc.has(k)) gc.set(k, new RoundedBoxGeometry(w, h, d, 3, Math.min(r, w / 2.1, h / 2.1, d / 2.1))); return gc.get(k); };
+const rb = (w, h, d, r = 0.04) => { const k = [w, h, d, r].join(); if (!gc.has(k)) gc.set(k, new RoundedBoxGeometry(w, h, d, 3, Math.min(r, w / 2.1, h / 2.1, d / 2.1))); return gc.get(k); };
 const add = (p, geo, mt, x = 0, y = 0, z = 0, rot) => { const m = new THREE.Mesh(geo, typeof mt === 'number' ? M(mt) : mt); m.position.set(x, y, z); if (rot) m.rotation.set(...rot); m.castShadow = true; p.add(m); return m; };
-const R = (p, w, h, d, c, x, y, z, r = 0.08, rot) => add(p, rb(w, h, d, r), c, x, y, z, rot);
+const R = (p, w, h, d, c, x, y, z, r = 0.04, rot) => add(p, rb(w, h, d, r), c, x, y, z, rot);
 const cap = (p, rad, len, c, x, y, z, rot) => add(p, new THREE.CapsuleGeometry(rad, len, 4, 10), c, x, y, z, rot);
 const cyl = (p, r1, r2, h, c, x, y, z, rot, seg = 14) => add(p, new THREE.CylinderGeometry(r1, r2, h, seg), c, x, y, z, rot);
 const ball = (p, r, c, x, y, z) => add(p, new THREE.SphereGeometry(r, 14, 10), c, x, y, z);
@@ -14,7 +14,9 @@ const gl = () => M(0x7fb7e0, { transparent: true, opacity: 0.6, roughness: 0.1, 
 
 export function softCar({ color = 0x2f6fd0 } = {}) {
   const g = new THREE.Group(), body = M(color, { roughness: 0.35, metalness: 0.5 }), dark = M(0x15171a);
-  R(g, 1.9, 0.55, 4.3, body, 0, 0.7, 0, 0.22); R(g, 1.7, 0.6, 2.3, body, 0, 1.2, 0.35, 0.3); R(g, 1.62, 0.46, 2.15, gl(), 0, 1.22, 0.35, 0.2);
+  R(g, 1.9, 0.55, 4.3, body, 0, 0.7, 0, 0.1); R(g, 1.84, 0.2, 1.2, body, 0, 0.98, -1.55, 0.08);
+  R(g, 1.74, 0.55, 2.3, gl(), 0, 1.25, 0.4, 0.07); R(g, 1.68, 0.1, 2.2, body, 0, 1.56, 0.4, 0.05);
+  for (const s of [-1, 1]) { R(g, 0.06, 0.62, 0.06, body, s * 0.85, 1.25, -0.72, 0.02, [-0.4, 0, 0]); R(g, 0.06, 0.62, 0.06, body, s * 0.85, 1.25, 1.5, 0.02, [0.3, 0, 0]); }
   R(g, 1.5, 0.12, 0.2, dark, 0, 0.5, -2.15, 0.05);
   for (const s of [-1, 1]) { for (const z of [-1.4, 1.4]) { const w = new THREE.Group(); w.position.set(s * 0.95, 0.38, z); const t = cyl(w, 0.38, 0.38, 0.3, dark, 0, 0, 0, [0, 0, Math.PI / 2], 18); cyl(w, 0.22, 0.22, 0.32, 0xc9ced4, 0, 0, 0, [0, 0, Math.PI / 2], 8); g.add(w); }
     R(g, 0.34, 0.18, 0.08, M(0xfff4c8, { emissive: 0xffe9a0, emissiveIntensity: 0.9 }), s * 0.65, 0.78, -2.17, 0.06); R(g, 0.34, 0.14, 0.08, M(0xff2a1a, { emissive: 0xff2a1a, emissiveIntensity: 0.8 }), s * 0.65, 0.78, 2.17, 0.06); }
