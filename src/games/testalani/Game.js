@@ -262,9 +262,9 @@ export class World {
 
   // ---------- ana güncelleme ----------
   update(dt) {
-    this.time += dt; const p = this.p, i = this.in;
+    this.time += dt; const p = this.p, i = this.in; const wantUse = i.useP, wasCar = !!p.car; i.useP = false;
     if (!p.dead) {
-      if (p.car) { const c = p.car; p.x = c.x; p.z = c.z; p.y = 0; this.updCar(c, dt); if (i.useP) { this.exitCar(); } }
+      if (p.car) { const c = p.car; p.x = c.x; p.z = c.z; p.y = 0; this.updCar(c, dt); if (wantUse) this.exitCar(); }
       else {
         const sp = 6.4, f = -i.mz, s = i.mx, sn = Math.sin(p.yaw), cs = Math.cos(p.yaw);
         const dx = (-sn * f + cs * s) * sp * dt, dz = (-cs * f - sn * s) * sp * dt;
@@ -276,9 +276,8 @@ export class World {
         if (p.y <= g) { if (p.vy < -13) this.hurtPlayer((-p.vy - 13) * 6); p.y = g; p.vy = 0; p.onGround = true; } else p.onGround = p.y - g < 0.05;
         if (i.fire) this.fire(); if (i.reload) this.reload(); if (i.nade) { this.throwNade(); i.nade = false; }
       }
-      if (i.useP) { i.useP = false; if (!p.car) this.use(); }
-      i.useP = false;
-    } else { i.useP = false; }
+      if (wantUse && !p.car && !wasCar) this.use();
+    }
     for (const c of this.cars) if (!(p.car === c)) this.updCar(c, dt);
     p.cd -= dt; p.ng = (p.ng || 0) - dt; p.dmgT = Math.max(0, p.dmgT - dt); p.hitT = Math.max(0, p.hitT - dt); p.shake = Math.max(0, p.shake - dt * 1.5); p.kick = Math.max(0, p.kick - dt * 9);
     if (p.rl > 0) { p.rl -= dt; if (p.rl <= 0) { const n = Math.min(30 - p.ammo, p.res); p.ammo += n; p.res -= n; } }
