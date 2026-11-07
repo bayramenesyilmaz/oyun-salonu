@@ -128,7 +128,7 @@ export default function App() {
           <NickBox />
           <button className="zv-go" onClick={() => { setMsg(''); setScreen('lobby'); }}>ARKADAŞLARLA TIRMAN</button>
           <div className="zv-row">
-            <button onClick={solo}>Tek başına dene</button>
+            <button onClick={solo}>Botlara karşı dene</button>
             <button onClick={() => setHow(true)}>Nasıl oynanır</button>
             <button onClick={() => setSound(!sound)}>Ses: {sound ? 'açık' : 'kapalı'}</button>
             <a href="/">Ana sayfa</a>

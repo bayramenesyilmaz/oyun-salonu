@@ -184,7 +184,13 @@ export class Climb {
     } else {
       this.me = this.mkPlayer({ name: nick, color: COLORS[color % 4], team: -1 }, 'me', false, 1);
       this.players.push(this.me);
+      this.botPath = this.buildBotPath();
+      [['Tilki', 0, 0.9], ['Kartal', 2, 1.0], ['Ayı', 3, 1.12]].forEach(([nm, ix, spd], i) => {
+        const b = this.mkPlayer({ name: nm, color: COLORS[(color + 1 + i) % 4], team: -1 }, 'bot' + i, true, ix);
+        b.bot = true; b.spd = spd; b.tau = 0; b.pause = 0; this.players.push(b);
+      });
     }
+    this.hasBots = !online;
     this.mode = 'play';
     this.elapsed = 0; this.countT = 3.4; this.state = 'count';
     this.ended = false; this.endT = 0;
@@ -422,7 +428,7 @@ export class Climb {
     if (this.ended) return;
     const ps = this.players.filter((p) => !p.gone);
     let win = null;
-    if (!this.online) { if (this.me.finished) win = { solo: true }; }
+    if (!this.online && !this.hasBots) { if (this.me.finished) win = { solo: true }; }
     else if (this.gameMode === 'team') {
       for (const t of [0, 1]) { const m = ps.filter((p) => p.team === t); if (m.length && m.every((p) => p.finished)) { win = { team: t }; break; } }
     } else { const f = ps.filter((p) => p.finished).sort((a, b) => a.finT - b.finT)[0]; if (f) win = { uid: f.uid }; }
@@ -438,6 +444,45 @@ export class Climb {
     return { mine, solo: !!w.solo, time: this.elapsed, mode: this.gameMode, team: w.team, winner: wp?.name, rows: this.players.filter((p) => !p.gone).map((p) => ({ name: p.name, me: p === me, team: p.team, h: Math.round(Math.max(0, p.y)), fin: p.finished ? p.finT : 0, color: p.color })).sort((a, b) => (b.fin > 0) - (a.fin > 0) || (a.fin && b.fin ? a.fin - b.fin : b.h - a.h)) };
   }
 
+  buildBotPath() {
+    // rotanın nirengi noktaları: çıkıntı merkezleri + ip alt/üst uçları. Her parçanın süresi mesafeye ve türüne göre.
+    const M = this.M, pts = [], put = (x, y, z, kind, t0) => pts.push({ x, y, z, kind, t0 });
+    for (const L of M.ledges) {
+      const r = M.ropes.find((q) => q.ledge === L.i);
+      if (r) { put(r.x, r.bottom, r.z, 'walk', 0); put(r.x, r.top, r.z, 'rope', 0); }
+      put(L.cx, topAt(L, 0), L.cz, L.kind === 'gap' ? 'jump' : L.kind === 'step' ? 'jump' : 'walk', 0);
+    }
+    let T = 0;
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i - 1] || pts[0], b = pts[i], d = Math.hypot(b.x - a.x, b.z - a.z), dy = Math.abs(b.y - a.y);
+      const dur = b.kind === 'rope' ? dy / 3.6 + 0.2 : b.kind === 'jump' ? d / 5.5 + dy * 0.2 + 0.6 : d / 6.2 + dy * 0.1;
+      b.t0 = T; b.dur = i ? dur : 0; T += b.dur; b.t1 = T;
+    }
+    return { pts, T };
+  }
+  botStep(p, dt) {
+    if (this.state !== 'play' || p.finished || !this.botPath) return;
+    const P = this.botPath, me = this.me;
+    // lastik: oyuncudan çok öndeyse yavaşla, gerideyse hızlan
+    const myH = me.y, bh = p.y, diff = bh - myH;
+    const rubber = diff > 50 ? 0.7 : diff > 20 ? 0.88 : diff < -60 ? 1.18 : diff < -25 ? 1.08 : 1;
+    const target = 250 / (p.spd * rubber);   // sn cinsinden hedef toplam süre ölçeği
+    p.tau += dt * (P.T / target);
+    if (p.pause > 0) { p.pause -= dt; return; }
+    if (Math.random() < dt * 0.012) { p.pause = 1.2 + Math.random() * 1.4; p.state = 3; return; } // ara sıra duraksar/kayar
+    const t = p.tau;
+    if (t >= P.T) { p.finished = true; p.finT = this.elapsed; p.y = this.M.summit.cy; return; }
+    let i = 1; while (i < P.pts.length - 1 && P.pts[i].t1 < t) i++;
+    const a = P.pts[i - 1], b = P.pts[i], f = clamp((t - b.t0) / Math.max(0.001, b.dur), 0, 1);
+    const nx = a.x + (b.x - a.x) * f, nz = a.z + (b.z - a.z) * f; let ny = a.y + (b.y - a.y) * f;
+    if (b.kind === 'jump') ny += Math.sin(Math.PI * f) * 1.3;
+    const mv = Math.hypot(nx - p.x, nz - p.z);
+    if (mv > 0.003) p.yaw += angDiff(p.yaw, Math.atan2(nx - p.x, nz - p.z)) * Math.min(1, dt * 8);
+    p.vx = Math.sin(p.yaw) * (mv / dt); p.vz = Math.cos(p.yaw) * (mv / dt);
+    p.x = nx; p.y = ny; p.z = nz;
+    p.state = b.kind === 'rope' ? 2 : b.kind === 'jump' && f > 0.1 && f < 0.9 ? 1 : 0;
+    p.anim += dt * Math.max(2, Math.min(9, mv / dt)) * 1.1 + (p.state === 2 ? dt * 3 : 0);
+  }
   stepRemote(p, dt) {
     const n = p.net;
     if (!n || p.gone) return;
@@ -538,7 +583,7 @@ export class Climb {
     if (this.state === 'count') { this.countT -= dt; if (this.countT <= 0.4) { this.state = 'play'; this.elapsed = 0; S.beep(true); } }
     else this.elapsed += dt;
     this.stepMe(dt);
-    for (const p of this.players) if (p.remote) this.stepRemote(p, dt);
+    for (const p of this.players) if (p.remote) { if (p.bot) this.botStep(p, dt); else this.stepRemote(p, dt); }
     this.updateProjs(dt);
     this.checkEnd();
     if (this.ended) { this.endT -= dt; if (this.endT <= 0 && !this.endSent) { this.endSent = true; this.cb.onEnd?.(this.summary()); } }
