@@ -1,6 +1,21 @@
 // Oyun listesi. Yeni oyun eklemek: klasörünü src/games/ altına koy, buraya bir satır ekle.
 export const GAMES = [
   {
+    id: 'samanyolu',
+    title: 'Samanyolu: Kayıp Işık',
+    tag: 'Hikaye · Uzay · Keşif',
+    cats: ['Macera', 'Uzay'],
+    length: 'Hikaye · ~15-20 dk · tek kişi',
+    updated: '2026-11-07',
+    news: 'Yeni oyun: Samanyolu, sinematik uzay hikayesi',
+    keywords: 'samanyolu uzay hikaye keşif gemi kokpit asteroit gezegen uzaylı veda aile macera tek kişi sinematik',
+    blurb: 'Ailene veda et, Pırıl gemisiyle uzaya çık. Kokpitten asteroitleri kır, dört gezegende uzaylılarla tanış, yıldız parçalarını topla ve Samanyolu\'nun ışığını geri getir.',
+    color: '#3a4fc0',
+    icon: '/icons-samanyolu/icon-512.png',
+    fonts: 'https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap',
+    load: () => import('./games/samanyolu/App.jsx'),
+  },
+  {
     id: 'survivor',
     title: 'Survivor',
     tag: 'Online · Mini oyunlar · 4 kişi',
