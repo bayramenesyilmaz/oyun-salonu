@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-export const TOP_Y = 300;
+export const TOP_Y = 360;
 const TAU = Math.PI * 2;
 export function rng(seed) {
   let a = seed >>> 0;
@@ -33,18 +33,18 @@ export function generate(seed = 1) {
     const rad = radiusAt(endY);
     let kind = 'walk';
     const r = R();
-    if (sinceRope >= 4 && R() < 0.3 && endY < TOP_Y - 40) kind = 'rope';
-    else if (r < 0.4) kind = 'walk';
-    else if (r < 0.62) kind = 'step';
+    if (sinceRope >= 2 && R() < 0.55 && endY < TOP_Y - 50) kind = 'rope';
+    else if (r < 0.12) kind = 'walk';
+    else if (r < 0.58) kind = 'step';
     else kind = 'gap';
     const camp = N % 11 === 0;
-    const len = camp ? 20 : rr(10, 18);
-    const wid = camp ? 12 : Math.max(5.6, rr(7, 10) - 2.2 * prog);
+    const len = camp ? 20 : rr(7, 14);
+    const wid = camp ? 12 : Math.max(3.4, rr(5.5, 8.5) - 3.2 * prog);
     let gap = 0, rise = 0, H = 0;
-    if (kind === 'step') rise = rr(0.7, 1.1);
-    else if (kind === 'gap') { gap = rr(2.0, 3.3); rise = rr(0, 0.5); }
-    else if (kind === 'rope') { gap = 1.6; H = rr(10, 26); rise = H; }
-    const slope = camp ? 0 : kind === 'rope' ? 0.04 : rr(0.05, 0.14);
+    if (kind === 'step') rise = rr(1.1, 1.5);
+    else if (kind === 'gap') { gap = rr(2.0 + prog, 2.9 + prog * 0.3); rise = rr(0.3, 1.0); }
+    else if (kind === 'rope') { gap = 1.6; H = rr(14, 30 + 8 * prog); rise = H; }
+    const slope = camp ? 0 : kind === 'rope' ? 0.03 : rr(0.0, 0.08);
     const startTheta = endTheta + gap / rad;
     const startY = endY + rise;
     const thc = startTheta + len / 2 / rad;

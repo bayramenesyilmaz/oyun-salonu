@@ -61,7 +61,10 @@ export class Party {
         this.players.push(p);
         if (u === online.uid) this.me = p;
       });
-    } else { this.me = mk(nick, COLORS[colorIdx % 4], -1, 'me', false, 0); this.players.push(this.me); }
+    } else {
+      this.me = mk(nick, COLORS[colorIdx % 4], -1, 'me', false, 0); this.players.push(this.me);
+      ['Deniz', 'Kaan', 'Mert'].forEach((nm, i) => { const b = mk(nm, COLORS[(colorIdx + 1 + i) % 4], -1, 'bot' + i, true, i + 1); b.bot = true; b.skill = 0.55 + i * 0.15; b.nextT = 2 + i; this.players.push(b); });
+    }
     this.host = !online || online.host;
     this.round = -1; this.totals = {}; this.phase = 'wait'; this.rd = null; this.ended = false; this.res = null; this.finalRes = null;
     S.unlock();
@@ -179,6 +182,7 @@ export class Party {
     const ph = this.phase;
     if (ph === 'menu' || !this.me) return;
     for (const p of this.players) if (p.remote && p.net && !p.gone) this.stepRemote(p, dt);
+    if (ph === 'play' || ph === 'ending') for (const p of this.players) if (p.bot) this.botStep(p, dt);
     if (ph === 'wait' && this.host) { this.hostT -= dt; if (this.hostT <= 0) this.bcast({ t: 'rd', r: 0 }); }
     else if (ph === 'intro') { this.phaseT -= dt; this.rd.update(dt); if (this.phaseT <= 0) { this.phase = 'count'; this.phaseT = COUNT; this.lastBeep = 4; } }
     else if (ph === 'count') { this.phaseT -= dt; this.rd.update(dt); const n = Math.ceil(this.phaseT - 0.4); if (n !== this.lastBeep && n >= 1) { this.lastBeep = n; S.beep(false); } if (this.phaseT <= 0.4) { this.phase = 'play'; this.t = 0; this.pt = 0; S.beep(true); } }
@@ -209,6 +213,55 @@ export class Party {
     p.yaw += angDiff(p.yaw, n.yaw) * k;
     p.anim += dt * n.sp * 1.2;
     if (this.rd?.remoteView) this.rd.remoteView(p);
+  }
+  botStep(b, dt) {
+    const id = this.rd?.id, play = this.phase === 'play';
+    if (id === 'sumo') {
+      if (!b.alive) return;
+      const R = this.rd.radius();
+      if (b.dashCd > 0) b.dashCd -= dt;
+      if (b.dashT > 0) b.dashT -= dt;
+      if (b.hitCd > 0) b.hitCd -= dt;
+      const out = Math.hypot(b.x, b.z) > R + 0.2;
+      let tx = 0, tz = 0, best = 1e9;
+      if (play) for (const o of this.players) { if (o === b || !o.alive || o.gone || (this.teamMode && o.team === b.team)) continue; const d = Math.hypot(o.x - b.x, o.z - b.z); if (d < best) { best = d; tx = o.x; tz = o.z; } }
+      const edge = Math.hypot(b.x, b.z);
+      let dx = 0, dz = 0;
+      if (best < 1e8 && edge < R - 1.5 * (1.6 - b.skill)) { dx = tx - b.x; dz = tz - b.z; } else { dx = -b.x; dz = -b.z; }
+      const m = Math.hypot(dx, dz) || 1; dx /= m; dz /= m;
+      if (play && !out && b.dashT <= 0 && b.dashCd <= 0 && best < 3.2 && Math.random() < b.skill * dt * 2.2 && edge < R - 2) { b.dashCd = 1.8; b.dashT = 0.28; b.vx = dx * 15; b.vz = dz * 15; }
+      if (b.dashT <= 0 && !out) { const sp = play ? 5.2 * (0.7 + b.skill * 0.4) : 0; b.vx += (dx * sp - b.vx) * Math.min(1, dt * 5); b.vz += (dz * sp - b.vz) * Math.min(1, dt * 5); }
+      for (const o of this.players) {
+        if (o === b || !o.alive || o.gone) continue;
+        if (this.teamMode && o.team === b.team) continue;
+        const ex = b.x - o.x, ez = b.z - o.z, d = Math.hypot(ex, ez);
+        if (d < 1.3 && d > 0.01) {
+          const nx = ex / d, nz = ez / d;
+          b.x += nx * (1.3 - d) * 0.5; b.z += nz * (1.3 - d) * 0.5;
+          if (b.hitCd <= 0) { const push = 4.5 + (o.dashing ? 9 : 0) + (o.sp || 0) * 0.5; b.vx += nx * push; b.vz += nz * push; b.dashT = 0; b.hitCd = 0.25; }
+        }
+      }
+      b.x += b.vx * dt; b.z += b.vz * dt;
+      if (Math.hypot(b.x, b.z) > R + 0.2) { b.vy -= 24 * dt; b.y += b.vy * dt; } else { b.y = 0; b.vy = 0; }
+      if (Math.hypot(b.vx, b.vz) > 1) b.yaw += angDiff(b.yaw, Math.atan2(b.vx, b.vz)) * Math.min(1, dt * 12);
+      if (b.y < -3.2) { b.alive = false; b.dieT = this.t; this.splash(b.x, b.z); }
+      b.sp = Math.hypot(b.vx, b.vz); b.dashing = b.dashT > 0; b.anim += dt * b.sp * 1.2;
+    } else if (id === 'obstacle') {
+      if (b.finished || !play) return;
+      const sp = 3.3 + b.skill * 1.5;
+      b.z -= sp * dt; b.x = Math.sin(b.z * 0.09 + b.idx) * 2.2;
+      b.y = 0.15 + Math.abs(Math.sin(b.z * 0.5)) * 0.15; b.yaw = Math.PI; b.sp = sp; b.anim += dt * 8; b.ground = true;
+      if (b.z < -142) { b.finished = true; b.finT = this.t; b.sp = 0; }
+    } else if (play) {
+      b.nextT -= dt;
+      if (b.nextT <= 0) {
+        b.nextT = 2.6 + Math.random() * 1.6; b.throwT = 0.3;
+        const r = Math.random();
+        if (id === 'targets') b.score += Math.round(r * 4 * b.skill) + (r > 0.9 ? 3 : 0);
+        else if (id === 'rings') b.score += r < 0.35 * b.skill + 0.2 ? 0 : 1 + Math.floor(Math.random() * 5 * b.skill);
+        else b.score += r < 0.6 ? 1 + Math.floor(Math.random() * 3) : 0;
+      }
+    }
   }
   splash(x, z) {
     for (let i = 0; i < 14; i++) {

@@ -70,6 +70,7 @@ export function sumo(P) {
       if (p.y < -3.2) { p.alive = false; p.dieT = P.t; P.splash(p.x, p.z); P.toast('SUYA DÜŞTÜN', 1.4); }
       p.sp = Math.hypot(p.vx, p.vz); p.dashing = p.dashT > 0;
     },
+    radius: () => R,
     flick() {},
     over() {
       if (P.t > this.dur) return true;
