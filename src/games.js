@@ -1,6 +1,21 @@
 // Oyun listesi. Yeni oyun eklemek: klasörünü src/games/ altına koy, buraya bir satır ekle.
 export const GAMES = [
   {
+    id: 'corba',
+    title: 'Çorba Savaşı',
+    tag: 'Hızlı · Botlara karşı · 2B',
+    cats: ['Aksiyon', 'Parti'],
+    length: '3 dk maç · tek kişi + 9 bot',
+    updated: '2026-11-07',
+    news: 'Yeni oyun: Çorba Savaşı, yut ve büyü',
+    keywords: 'çorba savaşı yut büyü io mantı blob bot hızlı tek kişi biber',
+    blurb: 'Çorbada mantı ol: malzeme ye, büyü, küçükleri yut, büyüklerden kaç, acı biberlerden uzak dur. 9 akıllı botla 3 dakikalık çorba kavgası.',
+    color: '#d2551a',
+    icon: '/icons-corba/icon-512.png',
+    fonts: 'https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap',
+    load: () => import('./games/corba/App.jsx'),
+  },
+  {
     id: 'boyabaskin',
     title: 'Boya Baskını',
     tag: 'Online · 3B · Takım',
