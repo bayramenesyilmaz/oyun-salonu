@@ -24,14 +24,19 @@ export class World {
     this.torch = new THREE.PointLight(0xffe8b0, 0, 16, 1.6); this.cam.add(this.torch);
     this.solids = []; this.objs = []; this.cre = []; this.cars = []; this.deb = []; this.fx = []; this.nades = []; this.pick = []; this.timers = [];
     this.in = { mx: 0, mz: 0, fire: false, jump: false, use: false, reload: false, nade: false };
-    this.p = { x: 0, y: 0, z: 30, vy: 0, yaw: 0, pitch: 0, hp: 100, ammo: 30, res: 90, nades: 3, cd: 0, rl: 0, dead: false, car: null, kick: 0, shake: 0, dmgT: 0, hitT: 0, onGround: true };
+    this.p = { x: 0, y: 0, z: 30, vy: 0, yaw: 0, pitch: 0, hp: 100, ammo: 30, res: 90, nades: 3, cd: 0, rl: 0, dead: false, car: null, kick: 0, shake: 0, dmgT: 0, hitT: 0, onGround: true, w: 1, cr: 0 };
     this.kills = 0; this.rep = 0; this.msg = ''; this.msgT = 0; this.noise = { x: 0, z: 0, t: -9, r: 0 }; this.time = 0; this.cave = 0; this.hudT = 0;
     this.build();
-    this.vm = S.softRifle(); this.vm.scale.setScalar(0.55); this.vm.position.set(0.2, -0.17, -0.3); this.vm.rotation.y = 0.05; this.cam.add(this.vm);
-    this.flash = part(this.vm, 0.12, 0.12, 0.05, emit(0xffd060), 0, 0.05, -1.0); this.flash.visible = false;
+    this.W = [
+      { id: 'pistol', name: 'Susturuculu tabanca', mk: S.sPistol, sc: 1.5, pos: [0.17, -0.19, -0.32], mz: [0, 0.03, -0.24], dmg: 24, cd: 0.28, mag: 12, noise: 9, spr: 0.004, auto: false },
+      { id: 'rifle', name: 'Tüfek', mk: S.softRifle, sc: 0.55, pos: [0.2, -0.17, -0.3], mz: [0, 0.05, -1.08], dmg: 14, cd: 0.11, mag: 30, noise: 55, spr: 0.012, auto: true }];
+    this.vm = new THREE.Group(); this.cam.add(this.vm); this.vms = this.W.map((w) => { const m = w.mk(); m.scale.setScalar(w.sc); m.position.set(...w.pos); m.visible = false; this.vm.add(m); return m; });
+    this.flash = part(this.cam, 0.1, 0.1, 0.05, emit(0xffd060), 0, 0, -1); this.flash.visible = false; this.wp = [{ ammo: 12, res: 48 }, { ammo: 30, res: 90 }]; this.setWeapon(1, true);
     this.resize(); this.last = performance.now(); this.acc = 0; this.loop = this.loop.bind(this); this.raf = requestAnimationFrame(this.loop);
     MD.preloadSfx && MD.preloadSfx(['shoot', 'hit', 'hurt', 'kill', 'big_kill', 'impact', 'coin', 'downed', 'confirm']).catch(() => {});
   }
+  setWeapon(i, force) { const p = this.p; if (!force) { this.wp[p.w] = { ammo: p.ammo, res: p.res }; } p.w = i; const q = this.wp[i]; p.ammo = q.ammo; p.res = q.res; p.rl = 0; this.vms.forEach((m, k) => (m.visible = k === i)); this.say(this.W[i].name, 1.2); }
+  muzzle() { const w = this.W[this.p.w], m = this.vms[this.p.w]; this.cam.updateMatrixWorld(true); const v = new THREE.Vector3(...w.mz).multiplyScalar(w.sc).add(new THREE.Vector3(...w.pos)); return this.cam.localToWorld(v); }
   resize() { const w = this.canvas.clientWidth || innerWidth, h = this.canvas.clientHeight || innerHeight; this.r.setSize(w, h, false); this.cam.aspect = w / h; this.cam.updateProjectionMatrix(); }
   destroy() { cancelAnimationFrame(this.raf); this.r.dispose(); }
   say(t, s = 2.5) { this.msg = t; this.msgT = s; }
@@ -139,7 +144,7 @@ export class World {
   }
 
   // ---------- fizik yardımcıları ----------
-  groundAt(x, z, y, r = 0) { let g = 0; for (const s of this.solids) if (s.y1 <= y + 0.46 && s.y1 > g && x + r > s.x0 && x - r < s.x1 && z + r > s.z0 && z - r < s.z1) g = s.y1; return g; }
+  groundAt(x, z, y, r = 0) { let g = this.floorY ?? 0; for (const s of this.solids) if (s.y1 <= y + 0.46 && s.y1 > g && x + r > s.x0 && x - r < s.x1 && z + r > s.z0 && z - r < s.z1) g = s.y1; return g; }
   moveXZ(o, dx, dz, r, h) {
     const hit = (s) => s.y1 > o.y + 0.46 && s.y0 < o.y + h && o.x + r > s.x0 && o.x - r < s.x1 && o.z + r > s.z0 && o.z - r < s.z1;
     o.x += dx; for (const s of this.solids) if (hit(s)) { o.x = dx > 0 ? s.x0 - r : s.x1 + r; o.blocked = true; }
@@ -155,7 +160,7 @@ export class World {
     return best;
   }
   los(a, b) { const d = new THREE.Vector3(b.x - a.x, b.y - a.y, b.z - a.z), L = d.length(); if (L < 0.01) return true; d.divideScalar(L); for (const s of this.solids) { if (s.owner && s.owner.type === 'glass') continue; const t = this.rayBox(a, d, s, L); if (t >= 0 && t < L - 0.2) return false; } return true; }
-  eye() { const p = this.p; return { x: p.x, y: p.y + 1.6, z: p.z }; }
+  eye() { const p = this.p; return { x: p.x, y: p.y + 1.6 - p.cr * 0.5, z: p.z }; }
 
   // ---------- efektler ----------
   debris(x, y, z, color, n = 8, spd = 5, sz = 0.14) { for (let i = 0; i < n && this.deb.length < 260; i++) { const m = new THREE.Mesh(BOXG, mat(color)); const s = sz * rr(0.5, 1.4); m.scale.set(s, s, s); m.position.set(x, y, z); this.sc.add(m); this.deb.push({ m, vx: rr(-1, 1) * spd, vy: rr(0.3, 1.2) * spd, vz: rr(-1, 1) * spd, life: rr(1.6, 3.5), rx: rr(-8, 8), rz: rr(-8, 8) }); } }
@@ -197,19 +202,20 @@ export class World {
   fire() {
     const p = this.p; if (p.cd > 0 || p.rl > 0 || p.dead || p.car) return;
     if (p.ammo <= 0) { this.reload(); return; }
-    p.ammo--; p.cd = 0.11; p.kick = 1; this.flash.visible = true; this.flashT = 0.04; snd('shoot', 0.5, rr(0.95, 1.1)); this.noise = { x: p.x, z: p.z, t: this.time, r: 55 };
-    const o = this.eye(), spread = 0.012, d = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(p.pitch + rr(-spread, spread), p.yaw + rr(-spread, spread), 0, 'YXZ'));
-    this.shot(o, d, 14, p);
+    const w = this.W[p.w]; if (!w.auto && this._held) return; this._held = true;
+    p.ammo--; p.cd = w.cd; p.kick = 1; this.flash.visible = true; this.flashT = 0.04; this.flash.position.copy(this.cam.worldToLocal(this.muzzle())); snd('shoot', w.id === 'pistol' ? 0.2 : 0.5, w.id === 'pistol' ? 1.6 : rr(0.95, 1.1)); this.noise = { x: p.x, z: p.z, t: this.time, r: w.noise };
+    const o = this.eye(), spread = w.spr, d = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(p.pitch + rr(-spread, spread), p.yaw + rr(-spread, spread), 0, 'YXZ'));
+    this.shot(o, d, w.dmg, p, this.muzzle());
   }
-  shot(o, d, dmg, from) {
+  shot(o, d, dmg, from, tr) {
     const hit = this.cast(o, d, 140, from.cre ? from : null), L = hit.t, end = { x: o.x + d.x * L, y: o.y + d.y * L, z: o.z + d.z * L };
-    this.tracer(o, end);
+    this.tracer(tr || o, end);
     if (hit.kind === 'cre') { const c = hit.c, head = end.y > c.y + c.h * 0.82 && (c.kind === 'robber' || c.kind === 'civilian'); this.hurtCre(c, dmg * (head ? 2.5 : 1) * (from === this.p ? 1 : 1), 'gun', head); if (from === this.p) { this.p.hitT = 0.2; this.p.hitHead = head; } }
     else if (hit.kind === 'car') { this.hurtCar(hit.c, dmg * 2); this.debris(end.x, end.y, end.z, 0xffcc40, 3, 3, 0.05); snd('impact', 0.4, 1.4); }
     else if (hit.kind === 'solid') { const ow = hit.s.owner; this.debris(end.x, end.y, end.z, ow ? ow.color ?? 0xaaaaaa : 0x8a8a7a, 3, 2.5, 0.06); if (ow) this.damageObj(ow, dmg, false); if (from === this.p) snd('impact', 0.25, 1.6); }
   }
   tracer(a, b) { if (this.fx.length > 80) return; const m = new THREE.Mesh(BOXG, new THREE.MeshBasicMaterial({ color: 0xffe9a0, transparent: true, opacity: 0.8 })); const L = Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z); const s = a === this.p ? 1 : 1; m.scale.set(0.025, 0.025, L); m.position.set((a.x + b.x) / 2, (a.y + b.y) / 2 - 0.05, (a.z + b.z) / 2); m.lookAt(b.x, b.y - 0.05, b.z); this.sc.add(m); this.fx.push({ m, life: 0.07, t: 0, kind: 'tracer' }); }
-  reload() { const p = this.p; if (p.rl > 0 || p.ammo >= 30 || p.res <= 0) return; p.rl = 1.5; snd('confirm', 0.4, 1.4); }
+  reload() { const p = this.p; if (p.rl > 0 || p.ammo >= this.W[p.w].mag || p.res <= 0) return; p.rl = 1.5; snd('confirm', 0.4, 1.4); }
   throwNade() { const p = this.p; if (p.nades <= 0 || p.dead || p.car || p.ng > 0) return; p.nades--; p.ng = 0.6; const g = S.sGrenade(); g.scale.setScalar(2.4); const e = this.eye(); g.position.set(e.x, e.y - 0.2, e.z); this.sc.add(g); const dir = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(p.pitch + 0.15, p.yaw, 0, 'YXZ')); this.nades.push({ m: g, x: e.x, y: e.y - 0.2, z: e.z, vx: dir.x * 17, vy: dir.y * 17 + 2, vz: dir.z * 17, t: 2.3 }); snd('dash', 0.5, 0.8); }
   enterCar(c) { const p = this.p; p.car = c; c.driver = true; this.say('Araçtasın: W/S gaz-fren, A/D direksiyon, E in', 3); }
   exitCar(force) { const p = this.p, c = p.car; if (!c) return; c.driver = false; p.car = null; p.x = c.x + Math.cos(c.yaw) * 2.3; p.z = c.z - Math.sin(c.yaw) * 2.3; p.y = this.groundAt(p.x, p.z, 5); p.vy = 0; c.v = 0; }
@@ -218,7 +224,7 @@ export class World {
     let best = null, bd = 3.6; for (const c of this.cars) if (!c.dead) { const d = Math.hypot(c.x - p.x, c.z - p.z); if (d < bd) { bd = d; best = c; } }
     if (best) this.enterCar(best);
   }
-  respawn() { const p = this.p; Object.assign(p, { x: 0, y: 0, z: 30, vy: 0, hp: 100, dead: false, car: null, yaw: 0, pitch: 0, ammo: 30, res: Math.max(p.res, 60), nades: Math.max(p.nades, 2) }); }
+  respawn() { const p = this.p; Object.assign(p, { x: this.spawn ? this.spawn[0] : 0, y: 0, z: this.spawn ? this.spawn[1] : 30, vy: 0, hp: 100, dead: false, car: null, yaw: this.spawnYaw || 0, pitch: 0, ammo: this.W[p.w].mag, res: Math.max(p.res, 60), nades: Math.max(p.nades, 2) }); }
 
   // ---------- AI ----------
   steerTo(c, tx, tz, sp, dt) { const dx = tx - c.x, dz = tz - c.z, L = Math.hypot(dx, dz) || 1; c.yaw = Math.atan2(-dx, -dz); c.blocked = false; this.moveXZ(c, dx / L * sp * dt, dz / L * sp * dt, c.r, c.h); if (c.blocked) { c.tx = c.x + rr(-6, 6); c.tz = c.z + rr(-6, 6); } c.mk.userData.anim && c.mk.userData.anim(dt, sp > 5 ? 4.5 : sp > 0.5 ? 1 : 0); }
@@ -265,24 +271,24 @@ export class World {
     if (!p.dead) {
       if (p.car) { const c = p.car; p.x = c.x; p.z = c.z; p.y = 0; this.updCar(c, dt); if (wantUse) this.exitCar(); }
       else {
-        const sp = 6.4, f = -i.mz, s = i.mx, sn = Math.sin(p.yaw), cs = Math.cos(p.yaw);
+        const crch = i.crouch ? 1 : 0; p.cr += (crch - p.cr) * Math.min(1, dt * 10); const sp = 6.4 * (1 - p.cr * 0.55), f = -i.mz, s = i.mx, sn = Math.sin(p.yaw), cs = Math.cos(p.yaw);
         const dx = (-sn * f + cs * s) * sp * dt, dz = (-cs * f - sn * s) * sp * dt;
-        this.moveXZ(p, dx, dz, 0.38, 1.75);
+        this.moveXZ(p, dx, dz, 0.38, 1.75 - p.cr * 0.6); if ((dx || dz) && !i.crouch) { p.stepT = (p.stepT || 0) - dt; if (p.stepT <= 0) { p.stepT = 0.5; if (this.noise.t < this.time - 0.3) this.noise = { x: p.x, z: p.z, t: this.time, r: 9 }; } }
         const g = this.groundAt(p.x, p.z, p.y, 0.3);
         if (i.jump && p.onGround) { p.vy = 6.2; p.onGround = false; }
         p.vy -= 20 * dt; p.y += p.vy * dt;
         for (const s of this.solids) if (p.vy > 0 && s.y0 >= p.y + 1.2 && p.y + 1.75 > s.y0 - 0.05 && p.x > s.x0 && p.x < s.x1 && p.z > s.z0 && p.z < s.z1) { p.vy = 0; break; }
         if (p.y <= g) { if (p.vy < -13) this.hurtPlayer((-p.vy - 13) * 6); p.y = g; p.vy = 0; p.onGround = true; } else p.onGround = p.y - g < 0.05;
-        if (i.fire) this.fire(); if (i.reload) this.reload(); if (i.nade) { this.throwNade(); i.nade = false; }
+        if (!i.fire) this._held = false; if (i.fire) this.fire(); if (i.swap) { i.swap = false; this.setWeapon(1 - p.w); } if (i.reload) this.reload(); if (i.nade) { this.throwNade(); i.nade = false; }
       }
       if (wantUse && !p.car && !wasCar) this.use();
     }
     for (const c of this.cars) if (!(p.car === c)) this.updCar(c, dt);
     p.cd -= dt; p.ng = (p.ng || 0) - dt; p.dmgT = Math.max(0, p.dmgT - dt); p.hitT = Math.max(0, p.hitT - dt); p.shake = Math.max(0, p.shake - dt * 1.5); p.kick = Math.max(0, p.kick - dt * 9);
-    if (p.rl > 0) { p.rl -= dt; if (p.rl <= 0) { const n = Math.min(30 - p.ammo, p.res); p.ammo += n; p.res -= n; } }
+    if (p.rl > 0) { p.rl -= dt; if (p.rl <= 0) { const n = Math.min(this.W[p.w].mag - p.ammo, p.res); p.ammo += n; p.res -= n; } }
     if (this.flashT > 0) { this.flashT -= dt; if (this.flashT <= 0) this.flash.visible = false; }
     for (const c of this.cre) this.updCre(c, dt); this.cre = this.cre.filter((c) => !c.gone);
-    for (let k = this.pick.length - 1; k >= 0; k--) { const q = this.pick[k]; q.m.rotation.y += dt * 2; q.m.position.y = q.y + 0.35 + Math.sin(this.time * 3 + k) * 0.08; if (!p.dead && Math.hypot(q.x - p.x, q.z - p.z) < 1.4 && Math.abs(q.y - p.y) < 2) { if (q.kind === 'ammo') { p.res += 30; p.nades = Math.min(6, p.nades + 1); this.say('+30 mermi, +1 bomba', 1.5); } else { if (p.hp >= 100) continue; p.hp = Math.min(100, p.hp + 40); this.say('+40 can', 1.5); } snd('coin', 0.5); this.sc.remove(q.m); this.pick.splice(k, 1); } }
+    for (let k = this.pick.length - 1; k >= 0; k--) { const q = this.pick[k]; q.m.rotation.y += dt * 2; q.m.position.y = q.y + 0.35 + Math.sin(this.time * 3 + k) * 0.08; if (!p.dead && Math.hypot(q.x - p.x, q.z - p.z) < 1.4 && Math.abs(q.y - p.y) < 2) { if (q.kind === 'ammo') { p.res += 30; this.wp.forEach((w, k) => { if (k !== p.w) w.res += 20; }); p.nades = Math.min(6, p.nades + 1); this.say('+30 mermi, +1 bomba', 1.5); } else { if (p.hp >= 100) continue; p.hp = Math.min(100, p.hp + 40); this.say('+40 can', 1.5); } snd('coin', 0.5); this.sc.remove(q.m); this.pick.splice(k, 1); } }
     for (let k = this.nades.length - 1; k >= 0; k--) { const n = this.nades[k]; n.t -= dt; n.vy -= 20 * dt; const o = { x: n.x, y: n.y, z: n.z, blocked: false }; this.moveXZ(o, n.vx * dt, n.vz * dt, 0.1, 0.1); if (o.blocked) { n.vx *= -0.35; n.vz *= -0.35; } n.x = o.x; n.z = o.z; n.y += n.vy * dt; const g = this.groundAt(n.x, n.z, n.y + 0.3, 0.05); if (n.y < g + 0.08) { n.y = g + 0.08; n.vy = Math.abs(n.vy) * 0.35; n.vx *= 0.7; n.vz *= 0.7; } n.m.position.set(n.x, n.y, n.z); n.m.rotation.x += dt * 8; if (n.t <= 0) { this.sc.remove(n.m); this.nades.splice(k, 1); this.explode(n.x, n.y + 0.3, n.z, 8, 150); } }
     for (let k = this.timers.length - 1; k >= 0; k--) { const t = this.timers[k]; t.t -= dt; if (t.t <= 0) { this.timers.splice(k, 1); t.fn(); } }
     for (let k = this.deb.length - 1; k >= 0; k--) { const d = this.deb[k]; d.life -= dt; d.vy -= 18 * dt; d.m.position.x += d.vx * dt; d.m.position.y += d.vy * dt; d.m.position.z += d.vz * dt; d.m.rotation.x += d.rx * dt; d.m.rotation.z += d.rz * dt; const g = this.groundAt(d.m.position.x, d.m.position.z, d.m.position.y + 0.3); if (d.m.position.y < g + 0.05) { d.m.position.y = g + 0.05; d.vy = Math.abs(d.vy) * 0.3; d.vx *= 0.6; d.vz *= 0.6; } if (d.life <= 0) { this.sc.remove(d.m); this.deb.splice(k, 1); } }
@@ -296,13 +302,13 @@ export class World {
   frame() {
     const p = this.p, cam = this.cam, c = p.car;
     if (c) { const bx = c.x + Math.sin(c.yaw) * 8.5, bz = c.z + Math.cos(c.yaw) * 8.5; cam.position.set(bx, 4.2, bz); cam.rotation.set(-0.22, c.yaw, 0, 'YXZ'); this.vm.visible = false; }
-    else { const sh = p.shake; cam.position.set(p.x + rr(-sh, sh) * 0.08, p.y + 1.62 + rr(-sh, sh) * 0.08, p.z); cam.rotation.set(p.pitch - p.kick * 0.012 + (p.dead ? -0.8 : 0), p.yaw, p.dead ? 0.6 : 0, 'YXZ'); this.vm.visible = !p.dead; this.vm.position.z = -0.3 + p.kick * 0.04; }
+    else { const sh = p.shake; cam.position.set(p.x + rr(-sh, sh) * 0.08, p.y + 1.62 - p.cr * 0.5 + rr(-sh, sh) * 0.08, p.z); cam.rotation.set(p.pitch - p.kick * 0.012 + (p.dead ? -0.8 : 0), p.yaw, p.dead ? 0.6 : 0, 'YXZ'); this.vm.visible = !p.dead; this.vm.position.z = p.kick * 0.04; }
     this.r.render(this.sc, cam);
   }
   hud() {
     const p = this.p; let hint = '';
     if (!p.car && !p.dead) { for (const c of this.cars) if (!c.dead && Math.hypot(c.x - p.x, c.z - p.z) < 3.6) hint = 'E: araca bin'; }
-    return { hp: Math.ceil(p.hp), ammo: p.ammo, res: p.res, nades: p.nades, rl: p.rl > 0, msg: this.msgT > 0 ? this.msg : '', kills: this.kills, rep: this.rep, car: p.car ? Math.max(0, Math.ceil(p.car.hp / 2.2)) : null, speed: p.car ? Math.abs(Math.round(p.car.v * 3.6)) : 0, hint, dmg: p.dmgT > 0, hit: p.hitT > 0, head: !!p.hitHead && p.hitT > 0, dead: p.dead, cave: this.cave2 > 0.5 };
+    return { wname: this.W[p.w].name, hp: Math.ceil(p.hp), ammo: p.ammo, res: p.res, nades: p.nades, rl: p.rl > 0, msg: this.msgT > 0 ? this.msg : '', kills: this.kills, rep: this.rep, car: p.car ? Math.max(0, Math.ceil(p.car.hp / 2.2)) : null, speed: p.car ? Math.abs(Math.round(p.car.v * 3.6)) : 0, hint, dmg: p.dmgT > 0, hit: p.hitT > 0, head: !!p.hitHead && p.hitT > 0, dead: p.dead, cave: this.cave2 > 0.5 };
   }
   loop(now) { const dt = Math.min(0.1, (now - this.last) / 1000); this.last = now; this.acc += dt; let n = 0; while (this.acc >= 1 / 60 && n++ < 5) { this.update(1 / 60); this.acc -= 1 / 60; } this.frame(); this.hudT += dt; if (this.hudT > 0.1) { this.hudT = 0; this.cb.onHud && this.cb.onHud(this.hud()); } this.raf = requestAnimationFrame(this.loop); }
   advance(n, dt = 1 / 60) { for (let k = 0; k < n; k++) this.update(dt); this.frame(); }

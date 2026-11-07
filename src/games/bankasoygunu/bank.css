@@ -1,0 +1,4 @@
+.bk-obj{position:absolute;left:12px;top:44px;font-size:12px;line-height:1.5;text-shadow:0 1px 3px #000;max-width:62%}.bk-obj .d{opacity:.5;text-decoration:line-through}
+.bk-eye{position:absolute;left:50%;transform:translateX(-50%);top:36px;width:150px;height:14px;background:#0008;border-radius:7px;overflow:hidden}.bk-eye i{display:block;height:100%;background:#ffb020}.bk-eye.red i{background:#e02020}.bk-eye b{position:absolute;inset:0;text-align:center;font-size:10px;line-height:14px;text-shadow:0 1px 2px #000}
+.bk-alarm{position:absolute;inset:0;pointer-events:none;animation:bkal 1s infinite;box-shadow:inset 0 0 120px 10px #e00}@keyframes bkal{0%,100%{opacity:0}50%{opacity:.5}}
+.bk .ta-obj{display:none}

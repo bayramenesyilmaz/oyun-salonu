@@ -1,6 +1,20 @@
 // Oyun listesi. Yeni oyun eklemek: klasörünü src/games/ altına koy, buraya bir satır ekle.
 export const GAMES = [
   {
+    id: 'banka',
+    title: 'Banka Baskını',
+    tag: '3B · Gizlilik · Aksiyon',
+    cats: ['Aksiyon', 'Gizlilik'],
+    length: '8-12 dk görev · tek kişi',
+    updated: '2026-11-08',
+    news: 'Yeni oyun: Banka Baskını, gizlilik ağırlıklı rehine kurtarma',
+    keywords: 'banka baskını soygun rehine gizlilik fps polis kasa gece',
+    blurb: 'Gece vakti soyguncuların bastığı bankaya gizlice gir. Sessizce etkisiz hale getir, rehineleri kurtar, kasa kartını bul, bodrumdaki kasayı soy ve kaçış arabasına ulaş. Alarm çalarsa rehineler tehlikede.',
+    color: '#1f3f8a',
+    icon: '/icons-banka/icon-512.png',
+    load: () => import('./games/bankasoygunu/App.jsx'),
+  },
+  {
     id: 'testalani',
     hidden: true,
     title: 'Test Alanı',
