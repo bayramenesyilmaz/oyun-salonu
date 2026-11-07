@@ -3,7 +3,7 @@ import { part, mat, finish } from './core.js';
 import * as W from './weapons.js';
 // Parametrik blok insan. Ön −Z, boy ~1.8 m. anim(dt, speed, state) yürüme/koşma, state: 'idle'|'walk'|'run'|'sit'|'dead'
 const SK = [0xf1c9a5, 0xe0ac86, 0xc68a62, 0x8d5a3a, 0x5a3a26];
-const OUT = {
+export const OUT = {
   sivil: { shirt: 0x4a78b8, pants: 0x3a3f4a, shoe: 0x2a2420, hair: 0x2a1c12 },
   asker: { shirt: 0x56653a, pants: 0x4a5636, shoe: 0x1c1c18, hair: 0x2a1c12, helmet: 0x4a5636, vest: 0x3a4630, weapon: 'rifle' },
   polis: { shirt: 0x1f3f8a, pants: 0x1c2a52, shoe: 0x15151a, hair: 0x2a1c12, cap: 0x15244a, weapon: 'pistol' },

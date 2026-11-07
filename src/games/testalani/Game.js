@@ -4,9 +4,8 @@ import { part, tpart, mat, glass, emit } from '../../kit/core.js';
 import { K, tmat } from '../../kit/tex.js';
 import { tree, rock, water } from '../../kit/nature.js';
 import { barrel, crate, bed, table, sofa, wardrobe } from '../../kit/props.js';
+import * as S from '../../kit/soft.js';
 import * as A from '../../kit/animals.js';
-import * as H from '../../kit/characters.js';
-import * as V from '../../kit/vehicles.js';
 import * as W from '../../kit/weapons.js';
 import * as MD from '../../engine/models.js';
 
@@ -28,7 +27,7 @@ export class World {
     this.p = { x: 0, y: 0, z: 30, vy: 0, yaw: 0, pitch: 0, hp: 100, ammo: 30, res: 90, nades: 3, cd: 0, rl: 0, dead: false, car: null, kick: 0, shake: 0, dmgT: 0, hitT: 0, onGround: true };
     this.kills = 0; this.rep = 0; this.msg = ''; this.msgT = 0; this.noise = { x: 0, z: 0, t: -9, r: 0 }; this.time = 0; this.cave = 0; this.hudT = 0;
     this.build();
-    this.vm = W.rifle(); this.vm.scale.setScalar(0.55); this.vm.position.set(0.2, -0.17, -0.3); this.vm.rotation.y = 0.05; this.cam.add(this.vm);
+    this.vm = S.softRifle(); this.vm.scale.setScalar(0.55); this.vm.position.set(0.2, -0.17, -0.3); this.vm.rotation.y = 0.05; this.cam.add(this.vm);
     this.flash = part(this.vm, 0.12, 0.12, 0.05, emit(0xffd060), 0, 0.05, -1.0); this.flash.visible = false;
     this.resize(); this.last = performance.now(); this.acc = 0; this.loop = this.loop.bind(this); this.raf = requestAnimationFrame(this.loop);
     MD.preloadSfx && MD.preloadSfx(['shoot', 'hit', 'hurt', 'kill', 'big_kill', 'impact', 'coin', 'downed', 'confirm']).catch(() => {});
@@ -98,8 +97,8 @@ export class World {
     for (let i = 0; i < 6; i++) this.crateAt(-14 + (i % 3) * 1.05, 16 + ((i / 3) | 0) * 1.05, 0, 1);
     for (let i = 0; i < 18; i++) { const x = rr(-110, 110), z = rr(-60, 110); if (Math.hypot(x, z - 30) < 14 || Math.hypot(x, z + 15) < 16) continue; const m = rock({ seed: i + 3, size: rr(1.4, 3.2) }); m.position.set(x, 0, z); this.sc.add(m); this.addSolid(x, 1, z, 1.6, 2, 1.6); }
     // ----- orman -----
-    for (let i = 0; i < 40; i++) { const x = -60 + rr(-28, 28), z = 30 + rr(-28, 28); const m = tree({ type: ['meşe', 'çam'][(R() * 2) | 0], seed: i + 1 }); m.position.set(x, 0, z); this.sc.add(m); this.addSolid(x, 2, z, 0.7, 4, 0.7); }
-    for (let i = 0; i < 14; i++) { const a = rr(0, 6.28), d = rr(18, 40), x = Math.cos(a) * d, z = -50 + Math.sin(a) * d * 0.5 + 60; const m = tree({ type: 'çam', seed: i + 50 }); m.position.set(x + 20, 0, z - 40); this.sc.add(m); this.addSolid(x + 20, 2, z - 40, 0.7, 4, 0.7); }
+    for (let i = 0; i < 40; i++) { const x = -60 + rr(-28, 28), z = 30 + rr(-28, 28); const m = S.softTree({ h: rr(5, 8) }); m.position.set(x, 0, z); this.sc.add(m); this.addSolid(x, 2, z, 0.7, 4, 0.7); }
+    for (let i = 0; i < 14; i++) { const a = rr(0, 6.28), d = rr(18, 40), x = Math.cos(a) * d, z = -50 + Math.sin(a) * d * 0.5 + 60; const m = S.softTree({ h: rr(6, 9) }); m.position.set(x + 20, 0, z - 40); this.sc.add(m); this.addSolid(x + 20, 2, z - 40, 0.7, 4, 0.7); }
     const lake = water({ w: 36, d: 24 }); lake.position.set(52, 0, 44); this.sc.add(lake); this.lake = lake;
     // ----- dağ + mağara -----
     this.buildMountain(80, -80);
@@ -130,9 +129,9 @@ export class World {
   }
   inCave(x, z) { const c = this.cave; if (!c) return false; const i = Math.floor((x - c.ox) / c.C), j = Math.floor((z - c.oz) / c.C); return i >= 0 && j >= 0 && i < 30 && j < 30 && c.open[j][i]; }
   addPickup(kind, x, z, y = 0.2) { const m = new THREE.Group(); part(m, 0.45, 0.3, 0.3, kind === 'ammo' ? 0xd0a020 : 0xf0f0f0, 0, 0, 0); if (kind === 'health') { part(m, 0.12, 0.32, 0.32, 0xd02020, 0, 0, 0); part(m, 0.32, 0.32, 0.12, 0xd02020, 0, 0, 0); } m.position.set(x, y + 0.3, z); this.sc.add(m); this.pick.push({ m, kind, x, y, z }); }
-  addCar(type, x, z, yaw) { const m = V.car({ type }); m.position.set(x, 0, z); m.rotation.y = yaw; this.sc.add(m); const c = { m, x, z, yaw, v: 0, hp: 220, y: 0, r: 1.5, driver: false, dead: false, steer: 0 }; this.cars.push(c); return c; }
+  addCar(type, x, z, yaw) { const m = S.sCar({ type }); m.position.set(x, 0, z); m.rotation.y = yaw; this.sc.add(m); const c = { m, x, z, yaw, v: 0, hp: 220, y: 0, r: 1.5, driver: false, dead: false, steer: 0 }; this.cars.push(c); return c; }
   addCre(kind, x, z, y = 0, o = {}) {
-    const mk = { wolf: () => A.wolf(), bear: () => A.bear(), boar: () => A.boar(), deer: () => A.deer(), robber: () => H.robber({ skin: (R() * 4) | 0 }), civilian: () => H.civilian({ skin: o.skin ?? 1, shirt: [0x4a78b8, 0xc0392b, 0x3a8a5a][(R() * 3) | 0] }) }[kind]();
+    const mk = { wolf: () => S.softWolf(), bear: () => S.sBear(), boar: () => S.sBoar(), deer: () => S.sDeer(), robber: () => S.sHuman({ outfit: 'soyguncu', skin: (R() * 4) | 0 }), civilian: () => S.sHuman({ outfit: 'sivil', weapon: null, skin: o.skin ?? 1, shirt: [0x4a78b8, 0xc0392b, 0x3a8a5a][(R() * 3) | 0] }) }[kind]();
     const cfg = { wolf: { hp: 45, sp: 6.4, r: 0.5, h: 1.2, dmg: 9, cd: 0.9 }, bear: { hp: 170, sp: 5.4, r: 0.9, h: 2, dmg: 26, cd: 1.4 }, boar: { hp: 70, sp: 7, r: 0.5, h: 1, dmg: 14, cd: 1.1 }, deer: { hp: 30, sp: 9, r: 0.45, h: 1.8, dmg: 0, cd: 1 }, robber: { hp: 70, sp: 3.2, r: 0.4, h: 1.8, dmg: 7, cd: 0.5 }, civilian: { hp: 40, sp: 4.2, r: 0.4, h: 1.8, dmg: 0, cd: 1 } }[kind];
     const root = new THREE.Group(); root.add(mk); root.position.set(x, y, z); this.sc.add(root);
     const c = { kind, root, mk, x, y, z, yaw: rr(0, 6.28), ...cfg, mhp: cfg.hp, dead: false, dt: 0, st: 'idle', tx: x, tz: z, wt: rr(0, 3), atk: 0, pack: o.pack || 0, losT: 0, see: false, vx: 0, vz: 0, home: [x, z] };
@@ -211,7 +210,7 @@ export class World {
   }
   tracer(a, b) { if (this.fx.length > 80) return; const m = new THREE.Mesh(BOXG, new THREE.MeshBasicMaterial({ color: 0xffe9a0, transparent: true, opacity: 0.8 })); const L = Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z); const s = a === this.p ? 1 : 1; m.scale.set(0.025, 0.025, L); m.position.set((a.x + b.x) / 2, (a.y + b.y) / 2 - 0.05, (a.z + b.z) / 2); m.lookAt(b.x, b.y - 0.05, b.z); this.sc.add(m); this.fx.push({ m, life: 0.07, t: 0, kind: 'tracer' }); }
   reload() { const p = this.p; if (p.rl > 0 || p.ammo >= 30 || p.res <= 0) return; p.rl = 1.5; snd('confirm', 0.4, 1.4); }
-  throwNade() { const p = this.p; if (p.nades <= 0 || p.dead || p.car || p.ng > 0) return; p.nades--; p.ng = 0.6; const g = W.grenade(); g.scale.setScalar(2.4); const e = this.eye(); g.position.set(e.x, e.y - 0.2, e.z); this.sc.add(g); const dir = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(p.pitch + 0.15, p.yaw, 0, 'YXZ')); this.nades.push({ m: g, x: e.x, y: e.y - 0.2, z: e.z, vx: dir.x * 17, vy: dir.y * 17 + 2, vz: dir.z * 17, t: 2.3 }); snd('dash', 0.5, 0.8); }
+  throwNade() { const p = this.p; if (p.nades <= 0 || p.dead || p.car || p.ng > 0) return; p.nades--; p.ng = 0.6; const g = S.sGrenade(); g.scale.setScalar(2.4); const e = this.eye(); g.position.set(e.x, e.y - 0.2, e.z); this.sc.add(g); const dir = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(p.pitch + 0.15, p.yaw, 0, 'YXZ')); this.nades.push({ m: g, x: e.x, y: e.y - 0.2, z: e.z, vx: dir.x * 17, vy: dir.y * 17 + 2, vz: dir.z * 17, t: 2.3 }); snd('dash', 0.5, 0.8); }
   enterCar(c) { const p = this.p; p.car = c; c.driver = true; this.say('Araçtasın: W/S gaz-fren, A/D direksiyon, E in', 3); }
   exitCar(force) { const p = this.p, c = p.car; if (!c) return; c.driver = false; p.car = null; p.x = c.x + Math.cos(c.yaw) * 2.3; p.z = c.z - Math.sin(c.yaw) * 2.3; p.y = this.groundAt(p.x, p.z, 5); p.vy = 0; c.v = 0; }
   use() {
