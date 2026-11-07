@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import * as S from '../../bulutyaris/game/sfx.js';
 import { makeFigure } from '../../samanyolu/game/world.js';
 import { nameTag } from '../../zirve/game/Climb.js';
+import * as MD from '../../../engine/models.js';
 import { HX, HZ, BASE_Z, BASE_R, CAGE, TEAM, PK, buildMapData, buildMapMesh, makeDuck, groundAt, resolveXZ, inBox, los } from './map.js';
 
 const TAU = Math.PI * 2;
@@ -38,6 +39,7 @@ export class Arena {
     this.flashM = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 5), new THREE.MeshBasicMaterial({ color: 0xffffff })); this.flashM.position.z = -0.62; this.flashM.visible = false; this.gun.add(this.flashM);
     this.gun.scale.setScalar(0.6); this.gun.position.set(0.24, -0.24, -0.5); this.cam.add(this.gun);
     this.splats = []; this.projs = []; this.fx = []; this.players = [];
+    this.assetP = loadAssets().then((ok) => { this.assets = ok; if (ok) this.decorate(); });
     this.input = { mx: 0, my: 0, fire: false, jump: false };
     this.t = 0; this.acc = 0; this.last = performance.now(); this.hudT = 0; this.netT = 0;
     this.phase = 'menu'; this.camShake = 0; this.flashHit = 0; this.feed = []; this.msg = ''; this.msgT = 0; this.bigText = '';
@@ -50,8 +52,32 @@ export class Arena {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.touch ? 1.5 : 2));
     this.renderer.setSize(w, h, false); this.cam.aspect = w / h; this.cam.fov = w / h < 1 ? 85 : 72; this.cam.updateProjectionMatrix();
   }
+  decorate() {
+    // sahanın dışına ağaç, kaya ve çadırlar (CC0 Kenney/Quaternius modelleri)
+    let seed = 7; const R = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const g = new THREE.Group(); const names = ['tree_pine', 'tree_pine_tall', 'tree_oak', 'tree_pine', 'rock_large', 'rock_tall', 'bush'];
+    for (let i = 0; i < 90; i++) {
+      let x = (R() - 0.5) * (HX * 2 + 130), z = (R() - 0.5) * (HZ * 2 + 130);
+      if (Math.abs(x) < HX + 5 && Math.abs(z) < HZ + 5) { if (R() < 0.5) x = (x < 0 ? -1 : 1) * (HX + 6 + R() * 50); else z = (z < 0 ? -1 : 1) * (HZ + 6 + R() * 50); }
+      const n = names[(R() * names.length) | 0], m = MD.cloneModel(n, n.startsWith('tree') ? 7 + R() * 7 : n === 'bush' ? 1.6 : 3 + R() * 3); if (!m) continue;
+      m.position.set(x, 0, z); m.rotation.y = R() * 6.28; g.add(m);
+    }
+    for (const [x, z, r] of [[-HX - 8, 20, 1], [HX + 8, -20, 3], [-HX - 8, -40, 2]]) { const m = MD.cloneModel('tent', 5); if (m) { m.position.set(x, 0, z); m.rotation.y = r; g.add(m); } }
+    this.scene.add(g); this.deco = g;
+  }
   say(t, s = 1.8) { this.msg = t; this.msgT = s; }
 
+  mkModel(team, idx) {
+    const names = ['mini_male_a', 'mini_female_a', 'mini_male_b', 'mini_female_b', 'mini_male_c', 'mini_female_c'];
+    const g = MD.cloneModel(names[(idx * 2 + team) % names.length], 1.8); if (!g) return null;
+    g.traverse((n) => { if (n.material) n.material = n.material.clone(); });
+    const col = TEAM[team].color, mat = new THREE.MeshLambertMaterial({ color: col });
+    const hat = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.5, 10), mat); hat.position.set(0, 2.05, 0); g.add(hat);
+    const vest = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.42, 14, 1, true), new THREE.MeshLambertMaterial({ color: col, side: THREE.DoubleSide })); vest.position.set(0, 1.12, 0); g.add(vest);
+    const gun = MD.cloneModel('blaster_a', 0.55); if (gun) { gun.position.set(0.28, 0.95, 0.35); gun.rotation.y = 0; g.add(gun); }
+    g.userData.mix = MD.mixerFor(g); g.userData.mix.play('idle', 0);
+    return g;
+  }
   // ---------- başlat ----------
   start({ nick = 'Sen', diff = 'normal', online = null, auto = false }) {
     for (const p of this.players) this.scene.remove(p.g);
@@ -60,8 +86,8 @@ export class Arena {
     this.splats = []; this.projs = []; this.players = []; this.feed = []; this.diff = DIFF[diff] || DIFF.normal;
     this.online = online; this.host = !online || online.host; this.auto = auto;
     const mk = (name, team, uid, remote, bot, idx) => {
-      const g = makeFigure({ body: TEAM[team].color, hair: TEAM[team].color, pants: 0x2a3050, skin: 0xf0c8a0 });
-      const gun = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.7), new THREE.MeshLambertMaterial({ color: 0x2a2f3a })); gun.position.set(0, -0.5, 0.3); g.userData.armR.add(gun);
+      let g = this.assets ? this.mkModel(team, idx) : null;
+      if (!g) { g = makeFigure({ body: TEAM[team].color, hair: TEAM[team].color, pants: 0x2a3050, skin: 0xf0c8a0 }); const gun = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.7), new THREE.MeshLambertMaterial({ color: 0x2a2f3a })); gun.position.set(0, -0.5, 0.3); g.userData.armR.add(gun); }
       const tag = nameTag(name, TEAM[team].color); tag.position.y = 2.6; tag.scale.set(3, 0.75, 1); g.add(tag); this.scene.add(g);
       return { uid, name, team, idx, remote, bot, g, tag, x: 0, y: 0, z: 0, vx: 0, vz: 0, vy: 0, yaw: 0, pitch: 0, hp: 3, dead: false, respT: 0, inv: 0, shield: 0, speedT: 0, tripleT: 0, kills: 0, deaths: 0, rescues: 0, anim: 0, net: null, cd: 0, firing: 0, flash: 0, grounded: true, carry: false, aiT: 0, strafe: 1, strafeT: 0, stuckT: 0, lastX: 0, lastZ: 0, detour: 0, detourDir: 1, sp: 0, gone: false };
     };
@@ -128,11 +154,11 @@ export class Arena {
       v.deaths++; if (k && k !== v) k.kills++;
       if (own || true) { v.dead = true; v.respT = 3.5; }
       this.feedAdd(`${k ? k.name : '?'} ▸ ${v.name}`, k ? TEAM[k.team].color : 0xffffff);
-      if (v === this.me) { this.camShake = 0.5; S.fall(); }
+      if (v === this.me) { this.camShake = 0.5; if (!MD.play('downed', 0.7)) S.fall(); } else MD.play('kill', 0.4);
       if (this.host && this.hos.st === 1 && this.hos.by === v.uid) this.dropHostage(v);
     } else if (e.t === 'rs') { const p = byU(e.u); if (p && p.remote) { this.spawn(p); } }
-    else if (e.t === 'sc') { const p = byU(e.u); if (p) p.rescues++; this.score = e.s; this.say(`${TEAM[e.tm].name} takım Ördek Bey’i kurtardı!`, 2.6); S.done(); this.bigText = `${e.s[0]} - ${e.s[1]}`; setTimeout(() => { this.bigText = ''; }, 1600); this.cb.onScore?.(); }
-    else if (e.t === 'fr') { this.say(`${e.n} Ördek Bey’i serbest bıraktı!`, 2.2); S.pick(); }
+    else if (e.t === 'sc') { const p = byU(e.u); if (p) p.rescues++; this.score = e.s; this.say(`${TEAM[e.tm].name} takım Ördek Bey’i kurtardı!`, 2.6); (MD.play('level_up', 0.7) || S.done()); this.bigText = `${e.s[0]} - ${e.s[1]}`; setTimeout(() => { this.bigText = ''; }, 1600); this.cb.onScore?.(); }
+    else if (e.t === 'fr') { this.say(`${e.n} Ördek Bey’i serbest bıraktı!`, 2.2); MD.play('confirm', 0.6) || S.pick(); }
     else if (e.t === 'pk') { this.taken[e.i] = 18; const p = byU(e.u); if (p && p !== this.me) this.applyBuff(p, this.M.pk[e.i].type); }
     else if (e.t === 'end') { this.endMatch(e.w, e.sc); }
   }
@@ -148,7 +174,7 @@ export class Arena {
   }
   endMatch(w, sc) {
     if (this.phase === 'end') return;
-    this.winner = w; if (sc) this.score = sc; this.phase = 'end'; this.endT = 0; this.over = true; S.done(); this.confetti = true;
+    this.winner = w; if (sc) this.score = sc; this.phase = 'end'; this.endT = 0; this.over = true; (MD.play('level_up', 0.8) || S.done()); this.confetti = true;
     this.cb.onEnd?.(this.summary());
   }
   summary() {
@@ -186,7 +212,7 @@ export class Arena {
       this.spawnBall(x, y, z, dx, dy, dz, p.team, p.uid);
       if (!p.bot) this.bcastRemote({ t: 'sh', x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100, z: Math.round(z * 100) / 100, dx: Math.round(dx * 1000) / 1000, dy: Math.round(dy * 1000) / 1000, dz: Math.round(dz * 1000) / 1000, tm: p.team, u: p.uid });
     }
-    S.fire();
+    if (!MD.play('shoot', p === this.me ? 0.5 : 0.22, 1.1)) S.fire();
     if (p === this.me) { this.gun.position.z = -0.4; this.flashM.visible = true; setTimeout(() => (this.flashM.visible = false), 50); }
   }
   spawnBall(x, y, z, dx, dy, dz, team, owner) {
@@ -197,7 +223,7 @@ export class Arena {
     if (p.dead || p.inv > 0 || this.phase !== 'play') return;
     if (p.shield > 0) { p.shield--; this.puff(p.x, p.y + 1.1, p.z, 0x5ad0ff, 10); if (p === this.me) this.say('Kalkan engelledi!', 1); return; }
     p.hp--; p.flash = 0.3; this.puff(p.x, p.y + 1.1, p.z, TEAM[team].color, 8);
-    if (p === this.me) { this.flashHit = 1; this.camShake = 0.35; S.bump(); }
+    if (p === this.me) { this.flashHit = 1; this.camShake = 0.35; if (!MD.play('hurt', 0.7)) S.bump(); }
     if (!p.remote || p.bot) this.bcastRemote({ t: 'hit', v: p.uid, hp: p.hp, tm: team });
     if (p.hp <= 0) { p.vx = p.vz = 0; this.bcast({ t: 'kill', v: p.uid, by: byUid }); if (p.carry) p.carry = false; }
   }
@@ -388,7 +414,7 @@ export class Arena {
       // yürüme animasyonu
       p.anim += dt * p.sp * 1.3;
       // güç artışı topla
-      if (!p.remote || p.bot) for (const k of this.M.pk) { if (this.taken[k.i] > 0) continue; if (Math.hypot(p.x - k.x, p.z - k.z) < 1.6) { this.taken[k.i] = 18; this.applyBuff(p, k.type); if (!p.bot) this.bcastRemote({ t: 'pk', i: k.i, u: p.uid }); if (p === this.me) { S.pick(); this.say(PK[k.type].t + '!', 1.4); } } }
+      if (!p.remote || p.bot) for (const k of this.M.pk) { if (this.taken[k.i] > 0) continue; if (Math.hypot(p.x - k.x, p.z - k.z) < 1.6) { this.taken[k.i] = 18; this.applyBuff(p, k.type); if (!p.bot) this.bcastRemote({ t: 'pk', i: k.i, u: p.uid }); if (p === this.me) { MD.play('coin', 0.7) || S.pick(); this.say(PK[k.type].t + '!', 1.4); } } }
       // üs önünde dururken hostage yakın uyarı
     }
     for (let i = 0; i < this.taken.length; i++) if (this.taken[i] > 0) this.taken[i] -= dt;
@@ -413,8 +439,9 @@ export class Arena {
       if (p === this.me && this.phase !== 'end') p.g.visible = false;
       if (p.dead) { p.g.visible = p !== this.me ? false : false; }
       p.g.position.set(p.x, p.y, p.z); p.g.rotation.y = p.yaw;
-      const sw = Math.sin(p.anim) * Math.min(1, (p.sp || 0) / 5) * 0.8;
-      u.legL.rotation.x = sw; u.legR.rotation.x = -sw; u.armL.rotation.x = -sw * 0.6; u.armR.rotation.x = -1.35 + p.pitch * 0.5;
+      if (u.mix) { u.mix.play(!p.grounded ? 'jump' : (p.sp || 0) > 4.5 ? 'sprint' : (p.sp || 0) > 0.6 ? 'walk' : 'idle'); u.mix.m.update(this.sdt || 1 / 60); }
+      else { const sw = Math.sin(p.anim) * Math.min(1, (p.sp || 0) / 5) * 0.8;
+      u.legL.rotation.x = sw; u.legR.rotation.x = -sw; u.armL.rotation.x = -sw * 0.6; u.armR.rotation.x = -1.35 + p.pitch * 0.5; }
       const e = p.flash > 0 ? 0xff3030 : p.inv > 0 && Math.floor(this.t * 14) % 2 ? 0x555555 : p.shield > 0 ? 0x1a5a88 : 0x000000;
       p.g.traverse((n) => { if (n.material?.emissive) n.material.emissive.setHex(e); });
       p.tag.visible = p !== this.me;
@@ -462,7 +489,7 @@ export class Arena {
   loop() {
     const now = performance.now(), dt = Math.min(0.1, (now - this.last) / 1000); this.last = now; this.acc += dt;
     let n = 0; while (this.acc >= 1 / 60 && n < 6) { this.step(1 / 60); this.acc -= 1 / 60; n++; } if (n === 6) this.acc = 0;
-    this.confettiStep(dt); this.updateCam(dt); this.syncMeshes(); this.renderer.render(this.scene, this.cam);
+    this.sdt = dt; this.confettiStep(dt); this.updateCam(dt); this.syncMeshes(); this.renderer.render(this.scene, this.cam);
     this.hudT += dt; if (this.hudT > 0.07 && this.me && this.phase !== 'menu') { this.hudT = 0; this.cb.onHud?.(this.hud(), this.mini()); }
     this.raf = requestAnimationFrame(() => this.loop());
   }
@@ -471,3 +498,6 @@ export class Arena {
   look(dx, dy) { const m = this.me; if (!m || m.dead) return; m.yaw -= dx * 0.0062; m.pitch = clamp(m.pitch - dy * 0.0055, -1.2, 1.2); }
   jump() { this.input.jump = true; }
 }
+
+const MODELS = ['mini_male_a', 'mini_female_a', 'mini_male_b', 'mini_female_b', 'mini_male_c', 'mini_female_c', 'tree_pine', 'tree_pine_tall', 'tree_oak', 'rock_large', 'rock_tall', 'bush', 'tent', 'blaster_a'];
+async function loadAssets() { try { const [ok] = await Promise.all([MD.preloadAll(MODELS), MD.preloadSfx(['shoot', 'hurt', 'downed', 'kill', 'level_up', 'confirm', 'coin'])]); return ok; } catch { return false; } }

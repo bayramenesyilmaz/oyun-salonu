@@ -4,6 +4,7 @@ import { HX, HZ, TEAM } from './game/map.js';
 import RoomLobby from '../../engine/RoomLobby.jsx';
 import { MemHub, createRoom, joinRoom } from '../../engine/oproom.js';
 import * as S from '../bulutyaris/game/sfx.js';
+import { setSamples } from '../../engine/models.js';
 import './boyabaskin.css';
 
 const QS = new URLSearchParams(location.search);
@@ -27,7 +28,7 @@ export default function App() {
   const stick = useRef({ id: null, ox: 0, oy: 0 }); const [knob, setKnob] = useState(null);
   const lk = useRef(null);
 
-  useEffect(() => { try { localStorage.setItem('bb-prefs', JSON.stringify({ nick, diff, sound })); } catch { /* yok say */ } S.setSound(sound); }, [nick, diff, sound]);
+  useEffect(() => { try { localStorage.setItem('bb-prefs', JSON.stringify({ nick, diff, sound })); } catch { /* yok say */ } S.setSound(sound); setSamples(sound); }, [nick, diff, sound]);
   useEffect(() => {
     const g = new Arena(cv.current, { touch: IS_TOUCH, onHud: (x, mini) => { setH(x); drawMini(mm.current, mini, x); }, onBrief: setBrief, onEnd: (s) => { setEnd(s); setTimeout(() => setScreen('end'), 4200); }, onNetClosed: () => { g.toMenu(); setMsg('Kurucu odadan ayrıldı.'); setScreen('menu'); } });
     game.current = g;
@@ -35,8 +36,9 @@ export default function App() {
     return () => g.dispose();
   }, []);
 
-  const solo = () => { setEnd(null); setH(null); setMsg(''); game.current.start({ nick: nick.trim() || 'Sen', diff, auto: QS.has('auto') }); setScreen('play'); };
-  const beginOnline = (room, host, meta) => { const g = game.current; setEnd(null); setH(null); setMsg(''); const on = g.attachOnline(room, meta); g.start({ online: on }); setScreen('play'); };
+  const ready = () => Promise.race([game.current.assetP, new Promise((r) => setTimeout(r, 5000))]);
+  const solo = async () => { await ready(); setEnd(null); setH(null); setMsg(''); game.current.start({ nick: nick.trim() || 'Sen', diff, auto: QS.has('auto') }); setScreen('play'); };
+  const beginOnline = async (room, host, meta) => { await ready(); const g = game.current; setEnd(null); setH(null); setMsg(''); const on = g.attachOnline(room, meta); g.start({ online: on }); setScreen('play'); };
   useEffect(() => { if (QS.has('quick')) setTimeout(solo, 300); /* eslint-disable-next-line */ }, []);
 
   useEffect(() => {
