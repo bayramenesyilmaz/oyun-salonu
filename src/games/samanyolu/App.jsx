@@ -22,6 +22,7 @@ export default function App() {
   const stick = useRef({ id: null, ox: 0, oy: 0 });
   const [knob, setKnob] = useState(null);
   const drag = useRef(null);
+  const lk = useRef(null);
 
   useEffect(() => { try { localStorage.setItem('sy-prefs', JSON.stringify({ nick, sound })); } catch { /* yok say */ } S.setSound(sound); }, [nick, sound]);
   useEffect(() => {
@@ -40,6 +41,7 @@ export default function App() {
       const g = game.current; if (!g) return; const c = e.key.toLowerCase();
       if (c === 'arrowleft' || c === 'a') k.l = down ? 1 : 0; else if (c === 'arrowright' || c === 'd') k.r = down ? 1 : 0;
       else if (c === 'arrowup' || c === 'w') k.u = down ? 1 : 0; else if (c === 'arrowdown' || c === 's') k.d = down ? 1 : 0;
+      else if (c === 'q') g.look(-6); else if (c === 'e') g.look(6);
       else if (c === ' ') { g.keyFire = down; if (down) { g.tap(); g.act(); } e.preventDefault(); } else if (c === 'enter' && down) { g.tap(); g.act(); }
       upd();
     };
@@ -54,6 +56,9 @@ export default function App() {
   const dd = (e) => { e.currentTarget.setPointerCapture?.(e.pointerId); drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY }; };
   const dm = (e) => { const d = drag.current; if (!d || d.id !== e.pointerId) return; game.current?.steer(e.clientX - d.x, e.clientY - d.y); d.x = e.clientX; d.y = e.clientY; };
   const du = (e) => { if (drag.current?.id === e.pointerId) drag.current = null; };
+  const ld = (e) => { e.currentTarget.setPointerCapture?.(e.pointerId); lk.current = { id: e.pointerId, x: e.clientX }; };
+  const lm = (e) => { const d = lk.current; if (!d || d.id !== e.pointerId) return; game.current?.look(e.clientX - d.x); d.x = e.clientX; };
+  const lu = (e) => { if (lk.current?.id === e.pointerId) lk.current = null; };
   const fire = (v) => (e) => { e.preventDefault(); if (game.current) game.current.input.fire = v; };
 
   const cock = h?.mode === 'cockpit', walk = h?.mode === 'walk';
@@ -84,6 +89,7 @@ export default function App() {
           {walk && !h.locked && (
             <>
               <div className="ky-zone stick" onPointerDown={sd} onPointerMove={sm} onPointerUp={su} onPointerCancel={su} />
+              <div className="ky-zone look" onPointerDown={ld} onPointerMove={lm} onPointerUp={lu} onPointerCancel={lu} />
               {knob && <div className="ky-knob" style={{ left: knob.x - 52, top: knob.y - 52 }}><i style={{ transform: `translate(${knob.dx}px,${knob.dy}px)` }} /></div>}
               {h.near && <button className="ky-use" onPointerDown={(e) => { e.preventDefault(); game.current?.act(); }}>{h.near}</button>}
             </>
@@ -115,7 +121,7 @@ export default function App() {
         <div className="ky-modal" onClick={() => setHow(false)}><div className="ky-card" onClick={(e) => e.stopPropagation()}>
           <h3>Nasıl oynanır</h3>
           <ul>
-            <li>Yürürken sol başparmakla hareket et. Beliren düğmeyle konuş, oku, gemiye bin.</li>
+            <li>Yürürken sol başparmakla hareket et, sağ yarıyı sürükleyerek kamerayı çevir (klavyede Q/E). Beliren düğmeyle konuş, oku, gemiye bin.</li>
             <li>Kokpitte ekranı sürükleyerek gemiyi yönlendir, ATEŞ ile kayaları kır. Kalkan biterse gemi kendini onarır.</li>
             <li>Parlayan kristalleri topla, uzaylılarla konuş, yazıtları oku, yıldız tozlarını bul.</li>
             <li>İlerlemen her gezegende otomatik kaydedilir. Telefonu yatay tut.</li>

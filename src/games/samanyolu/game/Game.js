@@ -111,7 +111,7 @@ export class Voyage {
   enterWalk(p) {
     this.mode = 'walk';
     this.me = W.makeFigure({ astro: !!p.astro, scale: 1 }); this.me.position.set(p.x, 0, p.z); this.root.add(this.me);
-    this.R = p.R; this.camOff = p.cam || [0, 8, 10]; this.yaw = 0; this.walkT = 0;
+    this.R = p.R; this.camOff = p.cam || [0, 8, 10]; this.camYaw = 0; this.lookV = 0; this.walkT = 0;
     this.upd = (dt) => this.walkStep(dt);
     this.cam.position.set(p.x + this.camOff[0], this.camOff[1], p.z + this.camOff[2]);
   }
@@ -120,9 +120,12 @@ export class Voyage {
     let mx = this.input.mx, mz = -this.input.my;
     if (this.locked) { mx = mz = 0; }
     const mag = Math.min(1, Math.hypot(mx, mz));
+    this.camYaw += this.lookV * dt; this.lookV = 0;
+    const cy = Math.cos(this.camYaw), sy = Math.sin(this.camYaw);
     if (mag > 0.08) {
-      const sp = 7.2 * mag; me.position.x += (mx / Math.hypot(mx, mz)) * sp * dt; me.position.z += (mz / Math.hypot(mx, mz)) * sp * dt;
-      const ty = Math.atan2(mx, mz); let d = ((ty - me.rotation.y + Math.PI) % TAU + TAU) % TAU - Math.PI; me.rotation.y += d * Math.min(1, dt * 12);
+      const wx = mx * cy + mz * sy, wz = -mx * sy + mz * cy, hh = Math.hypot(wx, wz);
+      const sp = 7.2 * mag; me.position.x += (wx / hh) * sp * dt; me.position.z += (wz / hh) * sp * dt;
+      const ty = Math.atan2(wx, wz); let d = ((ty - me.rotation.y + Math.PI) % TAU + TAU) % TAU - Math.PI; me.rotation.y += d * Math.min(1, dt * 12);
     }
     for (const c of this.cols) { const dx = me.position.x - c.x, dz = me.position.z - c.z, d = Math.hypot(dx, dz), m = c.r + 0.5; if (d < m && d > 0.001) { me.position.x = c.x + (dx / d) * m; me.position.z = c.z + (dz / d) * m; } }
     const rr = Math.hypot(me.position.x, me.position.z); if (rr > this.R) { me.position.x *= this.R / rr; me.position.z *= this.R / rr; }
@@ -139,8 +142,8 @@ export class Voyage {
     this.near = near;
     this.root.traverse((n) => { n.userData.tick?.(this.walkT); });
     // kamera
-    const tx = me.position.x + this.camOff[0], ty = this.camOff[1], tz = me.position.z + this.camOff[2];
-    const k = Math.min(1, dt * 4);
+    const tx = me.position.x + this.camOff[0] * cy + this.camOff[2] * sy, ty = this.camOff[1], tz = me.position.z - this.camOff[0] * sy + this.camOff[2] * cy;
+    const k = Math.min(1, dt * 6);
     this.cam.position.x += (tx - this.cam.position.x) * k; this.cam.position.y += (ty - this.cam.position.y) * k; this.cam.position.z += (tz - this.cam.position.z) * k;
     this.cam.lookAt(me.position.x, 1.4, me.position.z);
   }
@@ -277,7 +280,7 @@ export class Voyage {
     sh.x += (sh.tx - sh.x) * Math.min(1, dt * 5); sh.y += (sh.ty - sh.y) * Math.min(1, dt * 5);
     const vx = (sh.x - px) / Math.max(dt, 0.001), vy = (sh.y - py) / Math.max(dt, 0.001);
     cam.position.set(sh.x, sh.y, 0);
-    cam.rotation.set(-vy * 0.012, -vx * 0.01, -vx * 0.02);
+    cam.rotation.set(-vy * 0.012 + sh.ty * 0.02, -vx * 0.01 - sh.tx * 0.028, -vx * 0.02 - sh.tx * 0.012);
     L.cp.userData.star.rotation.z = Math.sin(this.t * 2.2) * 0.12 - vx * 0.03;
     L.cp.userData.screens.forEach((s, i) => { s.material.opacity = 1; s.scale.y = 0.7 + 0.3 * Math.abs(Math.sin(this.t * (1 + i * 0.4))); });
     // hız çizgileri
@@ -513,5 +516,6 @@ export class Voyage {
   }
   advance(n, dt = 1 / 60) { for (let i = 0; i < n; i++) this.step(dt); }
   setMove(x, y) { this.input.mx = clamp(x, -1, 1); this.input.my = clamp(y, -1, 1); }
+  look(dx) { this.camYaw -= dx * 0.008; }
   steer(dx, dy) { this.input.sx += dx; this.input.sy -= dy; }
 }
