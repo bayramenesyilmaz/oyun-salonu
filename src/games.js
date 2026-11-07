@@ -1,6 +1,21 @@
 // Oyun listesi. Yeni oyun eklemek: klasörünü src/games/ altına koy, buraya bir satır ekle.
 export const GAMES = [
   {
+    id: 'testalani',
+    hidden: true,
+    title: 'Test Alanı',
+    tag: 'Kit demosu',
+    cats: [],
+    length: '',
+    updated: '2026-11-08',
+    news: '',
+    keywords: 'test alanı kit demo',
+    blurb: 'Kit demosu.',
+    color: '#e8a020',
+    icon: '/icons-corba/icon-512.png',
+    load: () => import('./games/testalani/App.jsx'),
+  },
+  {
     id: 'kit',
     hidden: true,
     title: 'Oyun Kiti',

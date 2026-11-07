@@ -1,0 +1,16 @@
+.ta{position:fixed;inset:0;background:#000;touch-action:none;user-select:none;-webkit-user-select:none;font-family:system-ui,sans-serif;color:#fff}
+.ta canvas{width:100%;height:100%;display:block}
+.ta-top{position:absolute;left:0;right:0;top:0;display:flex;gap:12px;align-items:center;padding:8px 12px;font-size:13px;text-shadow:0 1px 3px #000}.ta-top a{color:#fff;text-decoration:none;font-size:20px}
+.ta-hp{position:absolute;left:12px;bottom:14px;width:120px;height:16px;background:#0008;border-radius:8px;overflow:hidden}.ta-hp i{display:block;height:100%;background:#d83a3a}.ta-hp b{position:absolute;inset:0;text-align:center;font-size:12px;line-height:16px}
+.ta-ammo{position:absolute;right:12px;top:40px;font-size:15px;font-weight:700;text-shadow:0 1px 3px #000}
+.ta-cross{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px #000}.ta-cross.hit{background:#ffd23a;width:14px;height:14px;margin:-7px}.ta-cross.head{background:#ff3030;width:18px;height:18px;margin:-9px}
+.ta-dmg{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 90px 20px #d00;opacity:0;transition:opacity .25s}.ta-dmg.on{opacity:.8}
+.ta-msg{position:absolute;left:0;right:0;top:22%;text-align:center;font-weight:700;text-shadow:0 1px 4px #000;padding:0 20px}
+.ta-hint{position:absolute;left:0;right:0;bottom:30%;text-align:center;font-weight:700;text-shadow:0 1px 4px #000}
+.ta-cave{position:absolute;left:50%;transform:translateX(-50%);top:34px;font-size:12px;opacity:.7}
+.ta-dead,.ta-intro{position:absolute;inset:0;background:#000b;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;text-align:center;padding:24px}
+.ta-dead b,.ta-intro b{font-size:34px}.ta-dead button,.ta-intro u{background:#e8a020;color:#111;border:0;border-radius:12px;padding:12px 26px;font-weight:700;font-size:16px;text-decoration:none}
+.ta-btns{position:absolute;right:10px;bottom:10px;display:grid;grid-template-columns:repeat(2,64px);gap:8px;justify-items:end}
+.ta-btns button{width:64px;height:48px;border-radius:14px;border:0;background:#fff3;color:#fff;font-size:11px;font-weight:700;backdrop-filter:blur(4px)}
+.ta-btns button.fire{grid-column:1/3;width:136px;height:68px;background:#d83a3a99;font-size:16px;order:-1}
+.ta-knob{position:absolute;width:100px;height:100px;border-radius:50%;background:#fff2;pointer-events:none}.ta-knob i{position:absolute;left:30px;top:30px;width:40px;height:40px;border-radius:50%;background:#fff6}
