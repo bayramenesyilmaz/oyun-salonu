@@ -78,7 +78,7 @@ export default function App() {
     let stick = null, aimId = null, aimStart = null;
     const pd = (e) => {
       const q = px(e);
-      if (e.pointerType === 'mouse') { I.ax = q.x; I.ay = q.y; if (e.button === 0) I.fire = true; else if (e.button === 2) I.focus = true; return; }
+      if (e.pointerType === 'mouse') { E.mouseAim = true; I.ax = q.x; I.ay = q.y; if (e.button === 0) I.fire = true; else if (e.button === 2) I.focus = true; return; }
       try { canvas.setPointerCapture(e.pointerId); } catch (er) {}
       if (q.rx < q.w * 0.4 && stick == null) { stick = { id: e.pointerId, x: q.rx }; }
       else if (aimId == null) { aimId = e.pointerId; aimStart = { x: q.rx, y: q.ry }; I.focus = true; E.touchAim = true; setAim(q, e); }
@@ -86,7 +86,7 @@ export default function App() {
     const setAim = (q, e) => { const dx = q.rx - aimStart.x, dy = q.ry - aimStart.y, L = Math.hypot(dx, dy) || 1, s = E.view(), pxp = E.W / 2 + (E.p.x - E.cx) * s, pyp = E.H / 2 + ((E.p.y - 34) - (E.cy0 || 360)) * s; const k = L < 14 ? 0 : 1; if (k) { I.ax = pxp + dx / L * 400; I.ay = pyp + dy / L * 400; } else { I.ax = pxp + E.p.face * 400; I.ay = pyp; } };
     const pm = (e) => {
       const q = px(e);
-      if (e.pointerType === 'mouse') { I.ax = q.x; I.ay = q.y; return; }
+      if (e.pointerType === 'mouse') { E.mouseAim = true; I.ax = q.x; I.ay = q.y; return; }
       if (stick && e.pointerId === stick.id) { const dx = q.rx - stick.x; I.l = dx < -14 ? 1 : 0; I.r = dx > 14 ? 1 : 0; }
       else if (e.pointerId === aimId) setAim(q, e);
     };

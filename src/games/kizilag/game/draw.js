@@ -23,18 +23,22 @@ export function drawSymbol(c, x, y, r, t = 0, o = {}) {
 
 // ---- arka planlar ----
 function sky(c, W, H, stops) { const g = c.createLinearGradient(0, 0, 0, H); stops.forEach(([p, col]) => g.addColorStop(p, col)); c.fillStyle = g; c.fillRect(0, 0, W, H); }
-function skyline(c, W, H, camX, par, base, col, lit, seed, hMin, hMax) {
-  const off = -(camX * par) % 2400;
-  c.fillStyle = col;
-  for (let k = -1; k < 3; k++) {
-    let x = off + k * 2400;
-    for (let i = 0; i < 18; i++) {
-      const s = seed + i + k * 31, w = 90 + rnd(s) * 120, h = hMin + rnd(s + 7) * (hMax - hMin);
-      c.fillStyle = col; c.fillRect(x, base - h, w, h + 400);
-      if (lit) { c.fillStyle = lit; for (let yy = base - h + 14; yy < base - 10; yy += 22) for (let xx = x + 10; xx < x + w - 14; xx += 20) if (rnd(s * 3 + xx * 0.13 + yy * 0.07) > 0.62) c.fillRect(xx, yy, 8, 11); }
-      x += w + 6 + rnd(s + 3) * 30;
+const SKY = {};
+function skyline(c, W, H, camX, par, baseF, col, lit, seed, hMin, hMax) {
+  const key = [baseF, col, lit, seed, hMin, hMax].join('|');
+  let cv = SKY[key];
+  if (!cv) {
+    cv = SKY[key] = document.createElement('canvas'); cv.width = 2400; cv.height = 720;
+    const g = cv.getContext('2d'), base = 720 * baseF; let x = 0;
+    for (let i = 0; x < 2400; i++) {
+      const sd = seed + i, w = 90 + rnd(sd) * 120, h = hMin + rnd(sd + 7) * (hMax - hMin);
+      g.fillStyle = col; g.fillRect(x, base - h, w, h + 400);
+      if (lit) { g.fillStyle = lit; let iy = 0; for (let yy = base - h + 14; yy < base - 10; yy += 22, iy++) { let ix = 0; for (let xx = x + 10; xx < x + w - 14; xx += 20, ix++) if (rnd(sd * 7 + ix * 3.1 + iy * 1.7) > 0.62) g.fillRect(xx, yy, 8, 11); } }
+      x += w + 6 + rnd(sd + 3) * 30;
     }
   }
+  const k = H / 720, tw = 2400 * k; let off = -((camX * par * k) % tw); if (off > 0) off -= tw;
+  for (let x = off; x < W; x += tw) c.drawImage(cv, Math.round(x), 0, Math.ceil(tw), H);
 }
 const THEMES = {
   roof(c, W, H, cam, t) {
@@ -42,8 +46,8 @@ const THEMES = {
     c.fillStyle = '#e8ecff'; c.beginPath(); c.arc(W * 0.78, 110, 42, 0, TAU); c.fill();
     c.fillStyle = 'rgba(160,180,255,.12)'; c.beginPath(); c.arc(W * 0.78, 110, 90, 0, TAU); c.fill();
     c.fillStyle = '#fff'; for (let i = 0; i < 60; i++) { c.globalAlpha = 0.3 + rnd(i) * 0.6; c.fillRect(rnd(i + 1) * W, rnd(i + 2) * H * 0.5, 2, 2); } c.globalAlpha = 1;
-    skyline(c, W, H, cam.x, 0.12, H * 0.78, '#141a3d', null, 11, 120, 300);
-    skyline(c, W, H, cam.x, 0.3, H * 0.9, '#0d1230', '#ffd98a', 5, 150, 380);
+    skyline(c, W, H, cam.x, 0.12, 0.78, '#141a3d', null, 11, 120, 300);
+    skyline(c, W, H, cam.x, 0.3, 0.9, '#0d1230', '#ffd98a', 5, 150, 380);
   },
   depo(c, W, H) {
     sky(c, W, H, [[0, '#1b2030'], [1, '#2d3447']]);
@@ -52,7 +56,7 @@ const THEMES = {
   liman(c, W, H, cam, t) {
     sky(c, W, H, [[0, '#231a45'], [0.5, '#8a3d6a'], [0.75, '#f08a5a'], [1, '#f4c27a']]);
     c.fillStyle = '#ffe0a8'; c.beginPath(); c.arc(W * 0.3, H * 0.62, 56, 0, TAU); c.fill();
-    skyline(c, W, H, cam.x, 0.1, H * 0.74, '#3a2a56', null, 21, 60, 160);
+    skyline(c, W, H, cam.x, 0.1, 0.74, '#3a2a56', null, 21, 60, 160);
     const g = c.createLinearGradient(0, H * 0.74, 0, H); g.addColorStop(0, '#6a4a7a'); g.addColorStop(1, '#1a1634'); c.fillStyle = g; c.fillRect(0, H * 0.74, W, H);
     c.strokeStyle = 'rgba(255,230,180,.25)'; c.lineWidth = 2;
     for (let i = 0; i < 10; i++) { const y = H * 0.76 + i * 22, off = (t * 20 + cam.x * 0.2 + i * 40) % 80; c.beginPath(); for (let x = -80; x < W + 80; x += 80) { c.moveTo(x - off, y); c.lineTo(x - off + 40, y); } c.stroke(); }
@@ -61,7 +65,7 @@ const THEMES = {
   },
   ofis(c, W, H, cam) {
     sky(c, W, H, [[0, '#26324a'], [1, '#3a4a68']]);
-    skyline(c, W, H, cam.x, 0.18, H * 0.85, '#10162d', '#9fd0ff', 31, 160, 360);
+    skyline(c, W, H, cam.x, 0.18, 0.85, '#10162d', '#9fd0ff', 31, 160, 360);
     c.fillStyle = 'rgba(20,28,50,.55)'; c.fillRect(0, 0, W, H);
     c.fillStyle = 'rgba(255,255,255,.05)'; for (let x = -((cam.x * 0.5) % 260); x < W; x += 260) c.fillRect(x, 0, 10, H);
   },
