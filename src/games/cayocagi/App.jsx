@@ -22,20 +22,19 @@ const UPS = [
   { id: 'altin', n: 'Altın bardak', d: 'Kazanç %25 artar', c: 30 },
   { id: 'nane', n: 'Nane şekeri', d: 'Abi daha geç sinirlenir', c: 25 },
 ];
-const GOOD = ['Hah, işte bu! ...Dur, sevinme daha.', 'Bu sefer doğru yaptın *evladım*.', 'Çay güzel olmuş, iltifat bekleme.', 'Aferin. Yürü, sıradaki bekliyor!'];
-const BAD = ['BU NE?! Ben sana *bunu* mu öğrettim?!', 'Çayı mı yaktın, suyu mu kirlettin?! *Yeniden!*', 'Müşterinin istediği başka, sen başka!', 'Oğlum gözün nerede senin?! SİPARİŞE BAK!', 'Bu çay değil, *şeker şerbeti!*'];
-const LATE = ['Müşteri bekletilir mi lan?! *ÇABUK OL!*', 'Gitti müşteri! Kasamı sen mi dolduracaksın?!', 'Bekleyen var! Elini çabuk tut *çırak!*'];
+const TXT = {"intro0": "ÇIRAK! Semaver dolu, bardaklar temiz, *kafan boş!* Hadi başla, ilk gün seni yıkmam.", "intro1": "Bugün *Muhtar Şükrü* uğrayacak. Sabrı yok, bahşişi var. Sakın bekletme!", "intro2": "Nuri Amca siparişini hep değiştirir. *Dinle, not al, şaşırma!*", "intro3": "MAÇ VAR! Herkes çay isteyecek. *Tavşan kanı* da çıktı. Elin hızlı olsun!", "intro4": "Belediyeden *müfettiş* geliyor. Hata yaparsan ben değil, o seni yer. HATASIZ!", "good0": "Hah, işte bu! ...Dur, sevinme daha.", "good1": "Bu sefer doğru yaptın *evladım*.", "good2": "Çay güzel olmuş, iltifat bekleme.", "good3": "Aferin. Yürü, sıradaki bekliyor!", "bad0": "BU NE?! Ben sana *bunu* mu öğrettim?!", "bad1": "Çayı mı yaktın, suyu mu kirlettin?! *Yeniden!*", "bad2": "Müşterinin istediği başka, sen başka!", "bad3": "Oğlum gözün nerede senin?! SİPARİŞE BAK!", "bad4": "Bu çay değil, *şeker şerbeti!*", "late0": "Müşteri bekletilir mi lan?! *ÇABUK OL!*", "late1": "Gitti müşteri! Kasamı sen mi dolduracaksın?!", "late2": "Bekleyen var! Elini çabuk tut *çırak!*", "noglass": "Önce çayı doldur çırak, elinde ne var?!", "boom": "YETER! *ÇAYI BIRAKIYORUM!* Çık dükkanımdan!", "win": "Hmm... hedef tamam. *Fena değil* çırak.", "short": "Kasa eksik! *Bu ay maaş yok!*", "nuri_acik": "Dur evladım, fikrimi değiştirdim! *Açık* olsun!", "nuri_normal": "Dur evladım, fikrimi değiştirdim! *Normal* olsun!", "nuri_koyu": "Dur evladım, fikrimi değiştirdim! *Koyu* olsun!", "nuri_tavsan": "Dur evladım, fikrimi değiştirdim! *Tavşan kanı* olsun!", "muh": "Çabuk olsun delikanlı, belediyede toplantım var!"};
+const GOOD = ['good0','good1','good2','good3'], BAD = ['bad0','bad1','bad2','bad3','bad4'], LATE = ['late0','late1','late2'];
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const KEY = 'cayocagi-v1';
 const load = () => { try { return { day: 0, coins: 0, up: {}, best: {}, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch (e) { return { day: 0, coins: 0, up: {}, best: {} }; } };
 
-function speak(text, on) {
-  const ss = window.speechSynthesis; if (!on || !ss) return; ss.cancel();
-  const v = ss.getVoices().find((x) => /^tr/i.test(x.lang));
-  for (const part of text.split(/(\*[^*]+\*)/).filter(Boolean)) {
-    const em = part.startsWith('*'); const u = new SpeechSynthesisUtterance(part.replace(/\*/g, '')); u.lang = 'tr-TR'; if (v) u.voice = v;
-    u.pitch = em ? 0.75 : 0.55; u.rate = em ? 0.95 : 1.15; u.volume = 1; ss.speak(u);
-  }
+let curAudio = null;
+function speak(key, on, done) {
+  try { if (curAudio) { curAudio.pause(); curAudio.onended = null; } } catch (e) {}
+  if (!on) { if (done) setTimeout(done, 1200); return; }
+  const a = new Audio(`/audio/cayocagi/${key}.mp3`); curAudio = a; a.volume = 1;
+  a.onended = () => done && done(); a.onerror = () => done && done();
+  a.play().catch(() => done && done());
 }
 const clean = (t) => t.replace(/\*/g, '');
 const orderText = (o) => `${TEAS[o.tea].n}, ${o.sugar ? o.sugar + ' şekerli' : 'şekersiz'}${o.lemon ? ', limonlu' : ''}${o.simit ? ', yanında simit' : ''}`;
@@ -51,10 +50,10 @@ function Glass({ tea, sugar, lemon, size = 44 }) {
     </svg>
   );
 }
-function Abi({ anger, talk }) {
+function Abi({ anger, talk, talking }) {
   const a = Math.min(1, anger / 100); const col = `rgb(${Math.round(224 + 20 * a)},${Math.round(176 - 100 * a)},${Math.round(136 - 90 * a)})`;
   return (
-    <div className="co-abi">
+    <div className={'co-abi' + (talking ? ' talk' : '') + (anger > 60 ? ' rage' : '')}>
       <svg viewBox="0 0 120 110" width="96" height="88" aria-label="Çaycı Abi">
         <rect x="30" y="76" width="60" height="34" rx="6" fill="#6a3a2a" />
         <circle cx="60" cy="48" r="30" fill={col} stroke="#3a2418" strokeWidth="3" />
@@ -62,7 +61,7 @@ function Abi({ anger, talk }) {
         <path d={`M40 ${40 - a * 6} L54 ${44 + a * 6}`} stroke="#222" strokeWidth="4" strokeLinecap="round" /><path d={`M80 ${40 - a * 6} L66 ${44 + a * 6}`} stroke="#222" strokeWidth="4" strokeLinecap="round" />
         <circle cx="47" cy="50" r="3.5" fill="#222" /><circle cx="73" cy="50" r="3.5" fill="#222" />
         <path d="M42 64 Q60 56 78 64 Q60 70 42 64Z" fill="#222" />
-        <ellipse cx="60" cy="76" rx={8 + a * 4} ry={2 + a * 6} fill="#5a1a1a" />
+        <ellipse className="co-mouth" cx="60" cy="76" rx={8 + a * 4} ry={2 + a * 6} fill="#5a1a1a" />{a > 0.4 && <g fill="#fff" opacity=".7"><circle className="co-steam" cx="26" cy="40" r="5" /><circle className="co-steam s2" cx="94" cy="40" r="5" /></g>}
         {a > 0.55 && <g stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity=".8"><path d="M26 22 Q20 14 26 8" fill="none" /><path d="M94 22 Q100 14 94 8" fill="none" /></g>}
       </svg>
       <div className="co-bubble">{clean(talk)}</div>
@@ -92,12 +91,12 @@ export default function App() {
   const G = useRef(null); const svr = useRef(sv); svr.current = sv; const vr = useRef(voice); vr.current = voice;
   const save = (fn) => setSv((o) => { const n = fn(JSON.parse(JSON.stringify(o))); try { localStorage.setItem(KEY, JSON.stringify(n)); } catch (e) {} return n; });
   useEffect(() => { document.title = 'Çay Ocağı'; window.speechSynthesis && window.speechSynthesis.getVoices(); }, []);
-  const talk = (t) => { G.current.line = t; speak(t, vr.current); };
+  const talk = (k) => { const g = G.current; g.line = TXT[k]; g.talking = true; speak(k, vr.current, () => { g.talking = false; }); };
 
   const startDay = (i) => {
     const d = DAYS[i], up = svr.current.up;
-    G.current = { i, d, t: d.time, money: 0, anger: 0, cust: [], glass: null, simit: false, pour: 0, next: 1.5, serv: 0, bad: 0, lost: 0, id: 0, line: clean(d.intro), up, over: null, tips: 0 };
-    setScr('play'); speak(d.intro, vr.current);
+    G.current = { i, d, t: d.time, money: 0, anger: 0, cust: [], glass: null, simit: false, pour: 0, next: 1.5, serv: 0, bad: 0, lost: 0, id: 0, line: TXT['intro' + i], talking: true, up, over: null, tips: 0 };
+    setScr('play'); speak('intro' + i, vr.current, () => { G.current && (G.current.talking = false); });
   };
   useEffect(() => {
     if (scr !== 'play') return;
@@ -113,12 +112,12 @@ export default function App() {
       }
       for (const c of g.cust) {
         c.pat -= dt;
-        if (TYPES[c.t].change && !c.changed && c.pat < c.max * 0.55) { c.changed = true; c.o = { ...c.o, sugar: (c.o.sugar + 2) % 4, tea: c.o.tea === 'koyu' ? 'acik' : 'koyu' }; talk('Nuri Amca: DUR EVLADIM, fikrimi değiştirdim! *' + TEAS[c.o.tea].n + '* olsun!'); }
+        if (TYPES[c.t].change && !c.changed && c.pat < c.max * 0.55) { c.changed = true; c.o = { ...c.o, sugar: (c.o.sugar + 2) % 4, tea: c.o.tea === 'koyu' ? 'acik' : 'koyu' }; talk('nuri_' + c.o.tea); }
       }
       const gone = g.cust.filter((c) => c.pat <= 0);
       if (gone.length) { g.cust = g.cust.filter((c) => c.pat > 0); g.lost += gone.length; g.anger += 12 * gone.length * aMul; talk(pick(LATE)); }
-      if (g.anger >= 100) { g.over = 'boom'; speak('YETER! *ÇAYI BIRAKIYORUM!* Çık dükkanımdan!', vr.current); }
-      else if (g.t <= 0) { g.over = g.money >= g.d.goal ? 'win' : 'short'; if (g.over === 'win') speak('Hmm... hedef tamam. *Fena değil* çırak.', vr.current); else speak('Kasa eksik! *Bu aybaşı maaş yok!*', vr.current); }
+      if (g.anger >= 100) { g.over = 'boom'; talk('boom'); }
+      else if (g.t <= 0) { g.over = g.money >= g.d.goal ? 'win' : 'short'; talk(g.over === 'win' ? 'win' : 'short'); }
       if (g.over === 'win') save((o) => { o.day = Math.max(o.day, g.i + 1); o.coins += Math.round(g.money); o.best[g.i] = Math.max(o.best[g.i] || 0, Math.round(g.money)); return o; });
       force((x) => x + 1);
     }, 100);
@@ -132,7 +131,7 @@ export default function App() {
   const simit = () => { if (!g || g.over) return; g.simit = !g.simit; force((x) => x + 1); };
   const trash = () => { if (!g || g.over) return; g.glass = null; g.simit = false; force((x) => x + 1); };
   const serve = (c) => {
-    if (!g || g.over) return; if (!g.glass) { talk('Önce çayı doldur çırak, elinde ne var?!'); return; } if (g.pour > 0) return;
+    if (!g || g.over) return; if (!g.glass) { talk('noglass'); return; } if (g.pour > 0) return;
     let diff = 0; if (g.glass.tea !== c.o.tea) diff++; if (g.glass.sugar !== c.o.sugar) diff++; if (g.glass.lemon !== c.o.lemon) diff++; if (g.simit !== c.o.simit) diff++;
     const aMul = (g.up.nane ? 0.75 : 1) * (g.d.types.includes(5) ? 1.4 : 1);
     if (diff === 0) { const pay = (4 + (c.o.sugar ? 0.5 : 0) + (c.o.lemon ? 1 : 0) + (c.o.simit ? 2 : 0)) * TYPES[c.t].pay * (g.up.altin ? 1.25 : 1) * (0.8 + 0.4 * (c.pat / c.max)); g.money += pay; g.serv++; g.anger = Math.max(0, g.anger - 6); talk(pick(GOOD)); }
@@ -148,7 +147,7 @@ export default function App() {
       <button className="pri" onClick={() => setScr('days')}>{sv.day ? 'Devam' : 'Başla'}</button>
       <button onClick={toggleVoice}>Abi'nin sesi: {voice ? 'Açık' : 'Kapalı'}</button>
       {sv.day > 0 && <button onClick={reset}>Baştan başla</button>}
-      <p className="co-how">Çay seç, şeker ve limon ekle, gerekirse simit al; sonra müşteriye dokun. Sipariş farklıysa Abi sinirlenir. Bekleyen müşteri gidince de. Sesi cihazın Türkçe sesiyle verir.</p></div>
+      <p className="co-how">Çay seç, şeker ve limon ekle, gerekirse simit al; sonra müşteriye dokun. Sipariş farklıysa Abi sinirlenir. Bekleyen müşteri gidince de. Abi'nin sesi oyunun içinde hazır kayıtlardır (internet gerekmez).</p></div>
   );
   if (scr === 'days') return (
     <div className="co co-menu"><h1>Günler</h1><p className="co-sub">Kasa: {sv.coins} TL</p>
@@ -162,7 +161,7 @@ export default function App() {
     <div className="co">
       <div className="co-top"><span>{g.d.title}</span><b>{Math.round(g.money)} / {g.d.goal} TL</b><span>{Math.max(0, Math.ceil(g.t))} sn</span></div>
       <div className="co-anger"><div style={{ width: Math.min(100, g.anger) + '%' }} /><em>Abi'nin siniri</em></div>
-      <Abi anger={g.anger} talk={g.line} />
+      <Abi anger={g.anger} talk={g.line} talking={g.talking} />
       <div className="co-row">{g.cust.map((c) => <Person key={c.id} c={c} onClick={() => serve(c)} />)}{!g.cust.length && <span className="co-wait">Müşteri bekleniyor…</span>}</div>
       <div className="co-station">
         <div className="co-glass">{g.glass ? <Glass tea={g.pour > 0 ? null : g.glass.tea} sugar={g.glass.sugar} lemon={g.glass.lemon} size={50} /> : <span>Bardak yok</span>}{g.simit && <i className="co-simit big" />}{g.pour > 0 && <small>doluyor…</small>}</div>

@@ -16,3 +16,9 @@
 .co-btns{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.co-btns button{padding:10px 2px!important;font-size:14px!important}
 .co-ov{position:absolute;inset:0;background:rgba(20,10,6,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:16px}.co-ov h2{margin:0;font-size:38px}.co-ov p{margin:0;max-width:360px}.co-ov button{min-width:240px}
 @keyframes co-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}75%{transform:translateX(2px)}}
+
+.co-abi svg{transform-origin:50% 90%}.co-abi.talk .co-mouth{animation:co-mouth .16s infinite alternate}.co-abi.talk svg{animation:co-bob .3s infinite}
+.co-abi.rage svg{animation:co-rage .12s infinite}.co-abi.rage .co-bubble{background:#ffd2c0;font-size:18px}.co-steam{animation:co-steam 1s infinite}.co-steam.s2{animation-delay:.5s}
+@keyframes co-mouth{from{transform:scaleY(.4)}to{transform:scaleY(1.5)}}@keyframes co-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px) rotate(-2deg)}}
+@keyframes co-rage{0%,100%{transform:translate(0,0) scale(1.08)}25%{transform:translate(-3px,1px) scale(1.1)}75%{transform:translate(3px,-1px) scale(1.1)}}
+@keyframes co-steam{0%{transform:translateY(0);opacity:.8}100%{transform:translateY(-22px);opacity:0}}
