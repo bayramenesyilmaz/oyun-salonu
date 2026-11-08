@@ -140,7 +140,8 @@ function Fight({ onWin, onLose }) {
   );
 }
 
-export default function App() {
+export default function App(props) {
+  const { embedded, onDone, onExit } = props || {};
   const [s, setS] = useState(load);
   const [scr, setScr] = useState('menu');
   const [talk, setTalk] = useState(null);
@@ -240,6 +241,7 @@ export default function App() {
       <h1>MİMAR DOSYASI</h1><p className="mm-sub">Kızıl Ağ sonrası. Delil topla, birleştir, gizli odayı bul.</p>
       <button className="pri" onClick={start}>{s.started ? 'Devam' : 'Başla'}</button>
       <button onClick={toggleVoice}>Seslendirme: {voice ? 'Açık' : 'Kapalı'}</button>
+      {embedded && <button onClick={onExit}>Kızıl Ağ'a dön</button>}
       {s.started && <button onClick={reset}>Baştan başla</button>}
       <p className="mm-how">Nesnelere dokun: ara, topla. Envanterde iki eşyaya sırayla dokunarak birleştir. Delil panosunda iki ipucunu birleştir. Seslendirme cihazının Türkçe sesini kullanır; ses yoksa yazı yeterli.</p>
     </div>
@@ -247,7 +249,7 @@ export default function App() {
   if (scr === 'end') return (
     <div className="mm mm-menu"><h1>Dosya kapandı</h1><p className="mm-sub">{s.flags.seal ? 'Mimar\'ın mührünü de buldun: tam başarı!' : 'Kasadaki mührü bulursan tam başarı olur.'}</p>
       <p className="mm-how">Toplanan ipucu: {s.clues.length}/{Object.keys(CLUES).length}</p>
-      <button className="pri" onClick={() => { save((o) => { o.scene = 'secret'; return o; }); setScr('play'); }}>Odaya dön</button><button onClick={() => { reset(); setScr('menu'); }}>Baştan oyna</button></div>
+      {embedded && <button className="pri" onClick={() => onDone({ seal: !!s.flags.seal })}>Kızıl Ağ'a dön</button>}<button onClick={() => { save((o) => { o.scene = 'secret'; return o; }); setScr('play'); }}>Odaya dön</button><button onClick={() => { reset(); setScr('menu'); }}>Baştan oyna</button></div>
   );
 
   return (

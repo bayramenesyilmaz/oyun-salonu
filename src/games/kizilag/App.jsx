@@ -4,6 +4,7 @@ import { Engine, UPGRADES, stats } from './game/engine.js';
 import { LEVELS } from './game/levels.js';
 import { PROLOGUE, WHO } from './game/story.js';
 import { drawSymbol, drawPerson } from './game/draw.js';
+import Mimar from '../mimar/App.jsx';
 
 const KEY = 'kizilag-v1';
 const fresh = () => ({ best: {}, up: {}, intel: [], seen: false, sfx: true });
@@ -119,9 +120,11 @@ export default function App() {
   const buy = (u) => upd((s) => { const l = s.up[u.id] || 0; if (l < u.costs.length && totalStars(s) - spent(s) >= u.costs[l]) s.up[u.id] = l + 1; return s; });
   const goMenu = () => { setScr('menu'); setRes(null); setPaused(false); };
   const afterWin = () => {
-    const d = LEVELS[lv]; const next = () => (lv + 1 < LEVELS.length ? setScr('base') : goMenu());
+    const d = LEVELS[lv]; const next = () => (lv + 1 < LEVELS.length ? setScr('base') : setScr('levels'));
     if (d.outro) say(d.outro, next); else next();
   };
+
+  if (scr === 'invest') return <Mimar embedded onExit={() => setScr('levels')} onDone={(r) => { upd((s) => { s.best[7] = r.seal ? 3 : 2; if (!s.intel.includes('mimar')) s.intel.push('mimar'); return s; }); setScr('levels'); }} />;
 
   if (scr === 'talk' && talk) {
     const [who, text] = talk.lines[talk.i], w = WHO[who] || WHO.narr;
@@ -198,7 +201,8 @@ export default function App() {
     return (
       <div className="ka ka-menu"><h1>Bölümler</h1>
         <div className="ka-list">{LEVELS.map((d, i) => (
-          <button key={d.id} className="ka-lv" disabled={i >= u} onClick={() => playLevel(i)}><b>{d.id}. {d.name}</b><small>{i >= u ? 'Kilitli' : d.place}</small><span>{[1, 2, 3].map((n) => <i key={n} className={n <= (save.best[d.id] || 0) ? 'on' : ''}>★</i>)}</span></button>))}</div>
+          <button key={d.id} className="ka-lv" disabled={i >= u} onClick={() => playLevel(i)}><b>{d.id}. {d.name}</b><small>{i >= u ? 'Kilitli' : d.place}</small><span>{[1, 2, 3].map((n) => <i key={n} className={n <= (save.best[d.id] || 0) ? 'on' : ''}>★</i>)}</span></button>))}
+          <button className="ka-lv" disabled={!save.best[6]} onClick={() => setScr('invest')}><b>7. Mimar Dosyası</b><small>{save.best[6] ? 'Soruşturma · Atölye' : 'Kilitli'}</small><span>{[1, 2, 3].map((n) => <i key={n} className={n <= (save.best[7] || 0) ? 'on' : ''}>★</i>)}</span></button></div>
         <button onClick={goMenu}>Geri</button></div>
     );
   }

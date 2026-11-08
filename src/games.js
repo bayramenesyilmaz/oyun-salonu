@@ -144,7 +144,7 @@ export const GAMES = [
     updated: '2026-11-08',
     news: 'Yeni oyun: Kızıl Ağ, hikâyeli ajan oyunu — mermiyi duvardan sektir',
     keywords: 'kızıl ağ ajan hikaye 2b platform silah mermi sekme duvar bulmaca yavaş çekim sinematik örgüt sevgili kurtar yükseltme',
-    blurb: 'Ajan Sessiz, kaçırılan sevgilisi Elif\'i bulmak için Kızıl Ağ örgütünü çözüyor. Çatılar, depo, liman, gökdelen, veri çekirdeği, çatıda final. Mermiyi duvarlardan sektirerek düşman ve anahtarları vur, yavaş çekimle nişan al, silahını geliştir.',
+    blurb: 'Ajan Sessiz, kaçırılan sevgilisi Elif\'i bulmak için Kızıl Ağ örgütünü çözüyor. Çatılar, depo, liman, gökdelen, veri çekirdeği, çatıda final; sonunda delil toplama ve envanter birleştirme soruşturması. Mermiyi duvarlardan sektirerek düşman ve anahtarları vur, yavaş çekimle nişan al, silahını geliştir.',
     color: '#e0243a',
     icon: '/icons-kizilag/icon-512.png',
     fonts: 'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&display=swap',
@@ -152,6 +152,7 @@ export const GAMES = [
   },
   {
     id: 'mimar',
+    hidden: true,
     title: 'Mimar Dosyası',
     tag: '2B · Dedektif · Envanter · Bulmaca',
     cats: ['Macera', 'Bulmaca'],
