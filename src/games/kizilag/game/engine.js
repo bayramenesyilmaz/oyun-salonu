@@ -194,13 +194,14 @@ export class Engine {
     if (I.fire) { I.fire = false; this.shoot(); }
   }
   shoot() {
-    const p = this.p; if (p.rel > 0 || p.dead) return;
+    const p = this.p; if (p.rel > 0 || p.dead || this.t < (p.nextShot || 0)) return;
+    p.nextShot = this.t + 0.3;
     if (p.ammo <= 0) { p.rel = this.st.reload; return; }
     p.ammo--; this.stat.shots++; p.shootT = 0.1;
-    const a = p.aim, ox = p.x + 2 * p.face + Math.cos(a) * 36, oy = p.y - 62 + Math.sin(a) * 36;
+    const a = p.aim, ox = p.x + 2 * p.face + Math.cos(a) * 46, oy = p.y - 62 + Math.sin(a) * 46;
     this.bullets.push({ x: ox, y: oy, dx: Math.cos(a), dy: Math.sin(a), v: 1900, b: this.st.bounces, rico: 0, pierce: this.st.pierce, life: 3, trail: [{ x: ox, y: oy }], metal: 0 });
-    this.snd(this.focusing ? 340 : 480, 0.06, 'square', 0.1); this.shake = Math.max(this.shake, 2);
-    this.parts.push({ x: ox, y: oy, vx: 0, vy: 0, life: 0.06, max: 1, col: '#fff3b0', g: 0, r: 9 });
+    this.snd(190, 0.05, 'sine', 0.05);
+    
     if (p.ammo <= 0) p.rel = this.st.reload;
   }
   killEnemy(e, rico, fromBullet) {
@@ -347,7 +348,7 @@ export class Engine {
     for (const e of this.enemies) if (vis(e.x - 60, 120) || e.tele > 0) this.drawEnemy(c, e, t);
     this.drawPlayer(c, t);
     // tahmin çizgisi
-    if (!p.dead && !this.over && (this.focusing || this.mouseAim || this.touchAim)) { const tr = this.trace(p.x + 2 * p.face + Math.cos(p.aim) * 36, p.y - 62 + Math.sin(p.aim) * 36, p.aim, this.st.bounces, this.focusing); c.strokeStyle = this.focusing ? 'rgba(255,230,120,.9)' : 'rgba(255,255,255,.28)'; c.lineWidth = this.focusing ? 2.5 : 1.5; c.setLineDash(this.focusing ? [] : [6, 8]); c.beginPath(); tr.pts.forEach((q, i) => (i ? c.lineTo(q.x, q.y) : c.moveTo(q.x, q.y))); c.stroke(); c.setLineDash([]); if (this.focusing && tr.hit) { c.fillStyle = '#ffe08a'; const q = tr.pts[tr.pts.length - 1]; c.beginPath(); c.arc(q.x, q.y, 5, 0, 6.283); c.fill(); } }
+    if (!p.dead && !this.over && (this.focusing || this.mouseAim || this.touchAim)) { const tr = this.trace(p.x + 2 * p.face + Math.cos(p.aim) * 46, p.y - 62 + Math.sin(p.aim) * 46, p.aim, this.st.bounces, this.focusing); c.strokeStyle = this.focusing ? 'rgba(255,230,120,.9)' : 'rgba(255,255,255,.28)'; c.lineWidth = this.focusing ? 2.5 : 1.5; c.setLineDash(this.focusing ? [] : [6, 8]); c.beginPath(); tr.pts.forEach((q, i) => (i ? c.lineTo(q.x, q.y) : c.moveTo(q.x, q.y))); c.stroke(); c.setLineDash([]); if (this.focusing && tr.hit) { c.fillStyle = '#ffe08a'; const q = tr.pts[tr.pts.length - 1]; c.beginPath(); c.arc(q.x, q.y, 5, 0, 6.283); c.fill(); } }
     for (const b of this.bullets) { c.strokeStyle = '#fff6c0'; c.lineWidth = 3; c.lineCap = 'round'; c.beginPath(); const tr = b.trail; c.moveTo(tr[Math.max(0, tr.length - 3)].x, tr[Math.max(0, tr.length - 3)].y); c.lineTo(tr[tr.length - 1].x, tr[tr.length - 1].y); c.lineTo(b.x, b.y); c.stroke(); c.fillStyle = '#fff'; c.beginPath(); c.arc(b.x, b.y, 4, 0, 6.283); c.fill(); }
     for (const b of this.eb) { c.fillStyle = '#ff4056'; c.beginPath(); c.arc(b.x, b.y, 6, 0, 6.283); c.fill(); }
     for (const q of this.parts) { c.globalAlpha = clamp(q.life * 2, 0, 1); c.fillStyle = q.col; c.beginPath(); c.arc(q.x, q.y, q.r, 0, 6.283); c.fill(); } c.globalAlpha = 1;

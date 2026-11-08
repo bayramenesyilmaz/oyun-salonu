@@ -162,9 +162,16 @@ export function drawPerson(c, f) {
   c.save(); c.translate(sx, sy); c.rotate(f.hold === 'down' ? 1.2 : a);
   limb(c, 0, 0, 16 + recoil, 0, 8, P.suit);
   if (f.gun !== false) {
+    if (kind === 'agent') {
+      c.fillStyle = '#2a2e38'; c.strokeStyle = INK; c.lineWidth = 2.5; rr(c, 12 + recoil, -5, 18, 8, 2); c.fill(); c.stroke();
+      c.fillRect(14 + recoil, 2, 6, 9); c.strokeRect(14 + recoil, 2, 6, 9);
+      c.fillStyle = '#14161c'; rr(c, 30 + recoil, -4, 17, 7, 3); c.fill(); c.stroke();
+      c.strokeStyle = '#555c6e'; c.lineWidth = 1; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(34 + i * 4 + recoil, -3.5); c.lineTo(34 + i * 4 + recoil, 2.5); c.stroke(); }
+    } else {
     const L = kind === 'sniper' ? 46 : 20;
     c.fillStyle = '#242831'; c.strokeStyle = INK; c.lineWidth = 2.5; rr(c, 12 + recoil, -5, L, 8, 2); c.fill(); c.stroke();
     if (kind !== 'sniper') { c.fillStyle = '#242831'; c.fillRect(14 + recoil, 2, 6, 9); c.strokeRect(14 + recoil, 2, 6, 9); }
+    }
   }
   c.fillStyle = P.skin; c.beginPath(); c.arc(16 + recoil, 0, 5, 0, TAU); c.fill(); c.stroke();
   c.restore();
