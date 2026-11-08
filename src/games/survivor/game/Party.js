@@ -1,14 +1,12 @@
 import * as THREE from 'three';
 import { makeClimber, nameTag } from '../../zirve/game/Climb.js';
 import { PLAN } from './rounds.js';
+import { EYE, clamp, angDiff, TAU, drive } from './phys.js';
 import * as S from '../../bulutyaris/game/sfx.js';
 
-const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const TAU = Math.PI * 2;
-const angDiff = (a, b) => ((((b - a + Math.PI) % TAU) + TAU) % TAU) - Math.PI;
 export const COLORS = [0xe5483a, 0x2f7fd8, 0x2fbf71, 0xf2c230];
 export const TEAM_COLORS = [0xe5483a, 0x2f7fd8];
-const INTRO = 4.2, COUNT = 3.4, ENDWAIT = 1.4, RESULT = 7;
+const INTRO = 5, COUNT = 3.4, ENDWAIT = 1.6, RESULT = 7;
 
 export class Party {
   constructor(canvas, cb = {}) {
@@ -16,18 +14,24 @@ export class Party {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !this.touch, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(1);
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x9bd8ff);
-    this.cam = new THREE.PerspectiveCamera(60, 1, 0.3, 700);
-    this.scene.add(new THREE.HemisphereLight(0xeaf5ff, 0x8a9a7a, 1.4));
-    const sun = new THREE.DirectionalLight(0xfff2d6, 2.0);
-    sun.position.set(40, 80, 30);
-    this.scene.add(sun);
-    this.input = { mx: 0, my: 0, dash: false, jump: false };
+    this.scene.background = new THREE.Color(0x8fd2ff);
+    this.cam = new THREE.PerspectiveCamera(72, 1, 0.1, 600);
+    this.cam.rotation.order = 'YXZ';
+    this.scene.add(this.cam);
+    this.hemi = new THREE.HemisphereLight(0xeaf5ff, 0x8a9a7a, 1.5);
+    this.sun = new THREE.DirectionalLight(0xfff2d6, 2.0);
+    this.sun.position.set(40, 80, 30);
+    this.scene.add(this.hemi, this.sun);
+    // elde taşınan top
+    this.hand = new THREE.Mesh(new THREE.SphereGeometry(0.11, 14, 10), new THREE.MeshLambertMaterial({ color: 0xff7a2a }));
+    this.hand.visible = false; this.cam.add(this.hand);
+    this.arcM = Array.from({ length: 30 }, () => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 5), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 })); m.visible = false; this.scene.add(m); return m; });
+    this.arcPts = null;
+    this.input = { mx: 0, my: 0, jump: false, act: false };
     this.players = []; this.fx = [];
     this.group = new THREE.Group(); this.scene.add(this.group);
-    this.t = 0; this.acc = 0; this.last = performance.now(); this.phase = 'menu'; this.hudT = 0; this.netT = 0;
-    this.toastText = ''; this.toastT = 0;
-    this.camPos = new THREE.Vector3(0, 20, 20);
+    this.t = 0; this.pt = 0; this.acc = 0; this.last = performance.now(); this.phase = 'menu'; this.hudT = 0; this.netT = 0;
+    this.toastText = ''; this.toastT = 0; this.spec = null;
     this.resize();
     this._onResize = () => this.resize();
     addEventListener('resize', this._onResize);
@@ -38,10 +42,31 @@ export class Party {
     const w = this.cv.clientWidth || innerWidth, h = this.cv.clientHeight || innerHeight;
     this.renderer.setSize(w, h, false);
     this.cam.aspect = w / h;
-    this.cam.fov = w / h < 1 ? 74 : 58;
+    this.cam.fov = w / h < 1 ? 84 : 72;
     this.cam.updateProjectionMatrix();
   }
   toast(t, s = 1.4) { this.toastText = t; this.toastT = s; }
+
+  // ---------- girdi ----------
+  setMove(x, y) { this.input.mx = clamp(x, -1, 1); this.input.my = clamp(y, -1, 1); }
+  look(dx, dy) { const p = this.me; if (!p || this.phase === 'menu') return; p.yaw -= dx; p.pitch = clamp(p.pitch - dy, -1.35, 1.35); }
+  jump() { this.input.jump = true; }
+  actDown() { this.input.act = true; this.input.actEdge = true; }
+  actUp() { this.input.act = false; this.input.relEdge = true; }
+  // oyuncunun dünya yönündeki hareketi
+  inputFor(p) {
+    const i = this.input, run = this.phase === 'play' || this.phase === 'count';
+    const c = Math.cos(p.yaw), s = Math.sin(p.yaw);
+    // ileri = (-sin, -cos), sağ = (cos, -sin)
+    let wx = i.mx * c - i.my * s, wz = -i.mx * s - i.my * c;
+    const m = Math.hypot(wx, wz); if (m > 1) { wx /= m; wz /= m; }
+    const r = { wx: this.phase === 'play' ? wx : 0, wz: this.phase === 'play' ? wz : 0, jump: i.jump && this.phase === 'play', act: i.act && run, actEdge: i.actEdge && this.phase === 'play', relEdge: i.relEdge && this.phase === 'play' };
+    i.jump = false; i.actEdge = false; i.relEdge = false;
+    return r;
+  }
+  forward(p) { const cp = Math.cos(p.pitch); return [-Math.sin(p.yaw) * cp, Math.sin(p.pitch), -Math.cos(p.yaw) * cp]; }
+  eye(p) { return [p.x, p.y + EYE, p.z]; }
+  emit(e) { if (this.net) this.net.room.sendEv(e); }
 
   // ---------- başlat ----------
   start({ mode = 'solo', nick = 'Sen', online = null, colorIdx = 0 }) {
@@ -51,7 +76,7 @@ export class Party {
     this.online = online; this.teamMode = mode === 'team'; this.mode = mode;
     const mk = (name, color, team, uid, remote, i) => {
       const g = makeClimber(color); const tag = nameTag(name, color); g.add(tag); this.scene.add(g);
-      return { uid, name, color, team, remote, g, tag, idx: i, x: 0, y: 0, z: 0, vx: 0, vz: 0, vy: 0, yaw: 0, alive: true, score: 0, mask: 0, dieT: 0, finT: 0, finished: false, total: 0, anim: 0, sp: 0, ground: true, gone: false, net: null };
+      return { uid, name, color, team, remote, g, tag, idx: i, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, alive: true, score: 0, aux: 0, dieT: 0, finT: 0, finished: false, total: 0, anim: 0, sp: 0, ground: true, gone: false, net: null, charge: 0, throwT: 0, stun: 0, in: { wx: 0, wz: 0, jump: false } };
     };
     if (online) {
       online.order.forEach((u, i) => {
@@ -63,7 +88,7 @@ export class Party {
       });
     } else {
       this.me = mk(nick, COLORS[colorIdx % 4], -1, 'me', false, 0); this.players.push(this.me);
-      ['Deniz', 'Kaan', 'Mert'].forEach((nm, i) => { const b = mk(nm, COLORS[(colorIdx + 1 + i) % 4], -1, 'bot' + i, true, i + 1); b.bot = true; b.skill = 0.55 + i * 0.15; b.nextT = 2 + i; this.players.push(b); });
+      ['Deniz', 'Kaan', 'Mert'].forEach((nm, i) => { const b = mk(nm, COLORS[(colorIdx + 1 + i) % 4], -1, 'bot' + i, true, i + 1); b.bot = true; b.skill = 0.5 + i * 0.18; b.nextT = 2 + i; b.brain = {}; this.players.push(b); });
     }
     this.host = !online || online.host;
     this.round = -1; this.totals = {}; this.phase = 'wait'; this.rd = null; this.ended = false; this.res = null; this.finalRes = null;
@@ -72,7 +97,7 @@ export class Party {
     this.resize();
     if (this.host) this.hostT = 1.2;
   }
-  toMenu() { this.clearRound(); this.leaveOnline(); for (const p of this.players) this.scene.remove(p.g); this.players = []; this.phase = 'menu'; this.me = null; }
+  toMenu() { this.clearRound(); this.leaveOnline(); for (const p of this.players) this.scene.remove(p.g); this.players = []; this.phase = 'menu'; this.me = null; this.hand.visible = false; }
 
   // ---------- ağ ----------
   attachOnline(room, meta) {
@@ -80,7 +105,7 @@ export class Party {
     const on = { room, uid: room.uid, order, players: { ...room.players }, host: room.isHost };
     this.net = on;
     room.on('pos', (u, p) => this.onNetPos(u, p));
-    room.on('ev', (u, e) => this.applyEv(e, false));
+    room.on('ev', (u, e) => this.applyEv(e, false, u));
     room.on('players', (pl) => { for (const p of this.players) if (p.remote && !pl[p.uid]) { p.gone = true; p.g.visible = false; } });
     room.on('closed', () => this.cb.onNetClosed?.());
     return on;
@@ -90,27 +115,27 @@ export class Party {
     const p = this.players.find((q) => q.uid === u);
     if (!p || !p.remote || !a) return;
     const v = Array.isArray(a) ? a : Object.values(a);
-    const n = { x: v[0], y: v[1], z: v[2], yaw: v[3], st: v[4], sp: v[7] || 0 };
-    if (!p.net) { p.x = n.x; p.y = n.y; p.z = n.z; }
+    const n = { x: v[0], y: v[1], z: v[2], yaw: v[3], st: v[4], sp: v[7] || 0, pitch: v[8] || 0 };
+    if (!p.net) { p.x = n.x; p.y = n.y; p.z = n.z; p.yaw = n.yaw; }
     p.net = n;
-    p.alive = !!(n.st & 1); p.dashing = !!(n.st & 2); p.finished = !!(n.st & 8); p.throwT = n.st & 16 ? 0.3 : 0; p.sp = n.sp;
-    p.score = v[5]; p.mask = v[6]; p.dieT = v[6]; p.finT = v[6];
+    p.alive = !!(n.st & 1); p.finished = !!(n.st & 8); p.carry = !!(n.st & 16); p.chg = !!(n.st & 32); p.throwT = n.st & 64 ? 0.3 : 0; p.shoveAnim = !!(n.st & 128); p.ground = !!(n.st & 4) || true;
+    p.score = v[5]; p.aux = v[6]; p.dieT = v[6]; p.finT = v[6]; p.sp = n.sp; p.pitch = n.pitch;
   }
   netSend() {
     const r = this.net?.room, p = this.me;
     if (!r || !p) return;
     const f = (x) => Math.round(x * 100) / 100;
-    const st = (p.alive ? 1 : 0) | (p.dashing ? 2 : 0) | (p.ground ? 0 : 4) | (p.finished ? 8 : 0) | (p.throwT > 0 ? 16 : 0);
-    r.sendPos([f(p.x), f(p.y), f(p.z), f(p.yaw), st, p.score || 0, this.rd ? f(this.rd.aux()) : 0, f(p.sp || 0)]);
+    const st = (p.alive ? 1 : 0) | (p.ground ? 4 : 0) | (p.finished ? 8 : 0) | (p.carry ? 16 : 0) | (p.charge > 0 ? 32 : 0) | (p.throwT > 0 ? 64 : 0) | (p.shoveT > 0 ? 128 : 0);
+    r.sendPos([f(p.x), f(p.y), f(p.z), f(p.yaw), st, p.score || 0, this.rd ? f(this.rd.aux ? this.rd.aux() : 0) : 0, f(p.sp || 0), f(p.pitch)]);
   }
   bcast(e) { if (this.net) this.net.room.sendEv(e); this.applyEv(e, true); }
-  applyEv(e, own) {
+  applyEv(e, own, from) {
     if (!e) return;
     if (e.t === 'rd') this.beginRound(e.r);
     else if (e.t === 'end') { if (this.phase === 'play') { this.phase = 'ending'; this.phaseT = ENDWAIT; } }
     else if (e.t === 'res') { this.showResult(e); }
     else if (e.t === 'fin') { this.finalRes = e; this.phase = 'final'; S.done(); this.cb.onFinal?.(this.finalSummary()); }
-    void own;
+    else if (this.rd && !own && e.r === this.round) this.rd.onEv?.(e, from);
   }
 
   // ---------- turlar ----------
@@ -120,18 +145,17 @@ export class Party {
     this.group = new THREE.Group();
     this.scene.add(this.group);
     this.rd?.dispose?.();
-    this.rd = null;
+    this.rd = null; this.arcPts = null;
   }
   beginRound(r) {
     this.clearRound();
     this.round = r;
-    for (const p of this.players) { p.alive = true; p.finished = false; p.score = 0; p.mask = 0; p.dieT = 0; p.finT = 0; p.net = null; p.dashing = false; p.g.visible = !p.gone; p.hitCd = 0; p.throwT = 0; }
+    for (const p of this.players) { Object.assign(p, { alive: true, finished: false, score: 0, aux: 0, dieT: 0, finT: 0, net: null, g: p.g, hitCd: 0, throwT: 0, charge: 0, stun: 0, vx: 0, vy: 0, vz: 0, carry: false, shoveT: 0, slow: 1 }); p.g.visible = !p.gone; p.g.rotation.set(0, 0, 0); }
+    this.scene.background = new THREE.Color(0x8fd2ff); this.scene.fog = null;
     this.rd = PLAN[r](this);
     this.rd.build();
-    this.nextSent = false; this.phase = 'intro'; this.phaseT = INTRO; this.t = 0; this.ended = false; this.res = null;
-    this.input.dash = this.input.jump = false;
-    this.camPos.set(0, 20, 20);
-    this.snapCam();
+    this.nextSent = false; this.phase = 'intro'; this.phaseT = INTRO; this.t = 0; this.pt = 0; this.ended = false; this.res = null; this.spec = null;
+    this.input.act = this.input.jump = false;
     S.beep(false);
   }
   showResult(e) {
@@ -162,10 +186,7 @@ export class Party {
     for (const p of this.players) if (p.team >= 0) t[p.team] += e.tot?.[p.uid] ?? p.total ?? 0;
     return t;
   }
-  resultSummary() {
-    const e = this.res;
-    return { round: this.round, rounds: PLAN.length, title: this.rd.title, rows: this.rowsFor(e), teams: this.teamTotals(e), last: this.round === PLAN.length - 1 };
-  }
+  resultSummary() { const e = this.res; return { round: this.round, rounds: PLAN.length, title: this.rd.title, rows: this.rowsFor(e), teams: this.teamTotals(e), last: this.round === PLAN.length - 1 }; }
   finalSummary() {
     const e = this.finalRes;
     const tot = e.tot, rows = [...this.players].filter((p) => !p.gone).map((p) => ({ name: p.name, me: p === this.me, color: p.color, team: p.team, total: tot[p.uid] || 0 })).sort((a, b) => b.total - a.total);
@@ -181,15 +202,14 @@ export class Party {
     this.t += dt;
     const ph = this.phase;
     if (ph === 'menu' || !this.me) return;
-    for (const p of this.players) if (p.remote && p.net && !p.gone) this.stepRemote(p, dt);
-    if (ph === 'play' || ph === 'ending') for (const p of this.players) if (p.bot) this.botStep(p, dt);
+    for (const p of this.players) if (p.remote && p.net && !p.gone && !p.bot) this.stepRemote(p, dt);
     if (ph === 'wait' && this.host) { this.hostT -= dt; if (this.hostT <= 0) this.bcast({ t: 'rd', r: 0 }); }
-    else if (ph === 'intro') { this.phaseT -= dt; this.rd.update(dt); if (this.phaseT <= 0) { this.phase = 'count'; this.phaseT = COUNT; this.lastBeep = 4; } }
-    else if (ph === 'count') { this.phaseT -= dt; this.rd.update(dt); const n = Math.ceil(this.phaseT - 0.4); if (n !== this.lastBeep && n >= 1) { this.lastBeep = n; S.beep(false); } if (this.phaseT <= 0.4) { this.phase = 'play'; this.t = 0; this.pt = 0; S.beep(true); } }
+    else if (ph === 'intro') { this.phaseT -= dt; this.rd.intro?.(dt); if (this.phaseT <= 0) { this.phase = 'count'; this.phaseT = COUNT; this.lastBeep = 4; this.rd.update(dt); } }
+    else if (ph === 'count') { this.phaseT -= dt; this.rd.update(dt); const n = Math.ceil(this.phaseT - 0.4); if (n !== this.lastBeep && n >= 1) { this.lastBeep = n; S.beep(false); } if (this.phaseT <= 0.4) { this.phase = 'play'; this.pt = 0; S.beep(true); this.rd.onGo?.(); } }
     else if (ph === 'play') {
-      this.pt += dt; this.t = this.pt;
+      this.pt += dt;
       this.rd.update(dt);
-      if (this.host && !this.ended && this.pt > 3 && this.rd.over()) { this.ended = true; this.bcast({ t: 'end', r: this.round }); }
+      if (this.host && !this.ended && this.pt > 2.5 && this.rd.over()) { this.ended = true; this.bcast({ t: 'end', r: this.round }); }
     } else if (ph === 'ending') {
       this.rd.update(dt);
       this.phaseT -= dt;
@@ -200,114 +220,78 @@ export class Party {
         this.nextSent = true;
         if (this.round >= PLAN.length - 1) this.bcast({ t: 'fin', tot: this.res.tot });
         else this.bcast({ t: 'rd', r: this.round + 1 });
-        
       }
     }
     if (this.toastT > 0) this.toastT -= dt;
-    for (let i = this.fx.length - 1; i >= 0; i--) { const f = this.fx[i]; f.life -= dt; f.vy -= 14 * dt; f.m.position.x += f.vx * dt; f.m.position.y += f.vy * dt; f.m.position.z += f.vz * dt; if (f.life <= 0) { this.scene.remove(f.m); this.fx.splice(i, 1); } }
-    if (this.net && ph !== 'result' && ph !== 'final') { this.netT += dt; if (this.netT >= 0.08) { this.netT = 0; this.netSend(); } }
+    for (let i = this.fx.length - 1; i >= 0; i--) { const f = this.fx[i]; f.life -= dt; if (!f.noG) f.vy -= 14 * dt; f.m.position.x += f.vx * dt; f.m.position.y += f.vy * dt; f.m.position.z += f.vz * dt; if (f.life <= 0) { this.scene.remove(f.m); this.fx.splice(i, 1); } }
+    if (this.net && ph !== 'result' && ph !== 'final') { this.netT += dt; if (this.netT >= 0.06) { this.netT = 0; this.netSend(); } }
   }
   stepRemote(p, dt) {
-    const n = p.net, k = Math.min(1, dt * 11);
+    const n = p.net, k = Math.min(1, dt * 12);
     p.x += (n.x - p.x) * k; p.y += (n.y - p.y) * k; p.z += (n.z - p.z) * k;
     p.yaw += angDiff(p.yaw, n.yaw) * k;
-    p.anim += dt * n.sp * 1.2;
-    if (this.rd?.remoteView) this.rd.remoteView(p);
+    p.anim += dt * n.sp * 1.3;
   }
-  botStep(b, dt) {
-    const id = this.rd?.id, play = this.phase === 'play';
-    if (id === 'sumo') {
-      if (!b.alive) return;
-      const R = this.rd.radius();
-      if (b.dashCd > 0) b.dashCd -= dt;
-      if (b.dashT > 0) b.dashT -= dt;
-      if (b.hitCd > 0) b.hitCd -= dt;
-      const out = Math.hypot(b.x, b.z) > R + 0.2;
-      let tx = 0, tz = 0, best = 1e9;
-      if (play) for (const o of this.players) { if (o === b || !o.alive || o.gone || (this.teamMode && o.team === b.team)) continue; const d = Math.hypot(o.x - b.x, o.z - b.z); if (d < best) { best = d; tx = o.x; tz = o.z; } }
-      const edge = Math.hypot(b.x, b.z);
-      let dx = 0, dz = 0;
-      if (best < 1e8 && edge < R - 1.5 * (1.6 - b.skill)) { dx = tx - b.x; dz = tz - b.z; } else { dx = -b.x; dz = -b.z; }
-      const m = Math.hypot(dx, dz) || 1; dx /= m; dz /= m;
-      if (play && !out && b.dashT <= 0 && b.dashCd <= 0 && best < 3.2 && Math.random() < b.skill * dt * 2.2 && edge < R - 2) { b.dashCd = 1.8; b.dashT = 0.28; b.vx = dx * 15; b.vz = dz * 15; }
-      if (b.dashT <= 0 && !out) { const sp = play ? 5.2 * (0.7 + b.skill * 0.4) : 0; b.vx += (dx * sp - b.vx) * Math.min(1, dt * 5); b.vz += (dz * sp - b.vz) * Math.min(1, dt * 5); }
-      for (const o of this.players) {
-        if (o === b || !o.alive || o.gone) continue;
-        if (this.teamMode && o.team === b.team) continue;
-        const ex = b.x - o.x, ez = b.z - o.z, d = Math.hypot(ex, ez);
-        if (d < 1.3 && d > 0.01) {
-          const nx = ex / d, nz = ez / d;
-          b.x += nx * (1.3 - d) * 0.5; b.z += nz * (1.3 - d) * 0.5;
-          if (b.hitCd <= 0) { const push = 4.5 + (o.dashing ? 9 : 0) + (o.sp || 0) * 0.5; b.vx += nx * push; b.vz += nz * push; b.dashT = 0; b.hitCd = 0.25; }
-        }
-      }
-      b.x += b.vx * dt; b.z += b.vz * dt;
-      if (Math.hypot(b.x, b.z) > R + 0.2) { b.vy -= 24 * dt; b.y += b.vy * dt; } else { b.y = 0; b.vy = 0; }
-      if (Math.hypot(b.vx, b.vz) > 1) b.yaw += angDiff(b.yaw, Math.atan2(b.vx, b.vz)) * Math.min(1, dt * 12);
-      if (b.y < -3.2) { b.alive = false; b.dieT = this.t; this.splash(b.x, b.z); }
-      b.sp = Math.hypot(b.vx, b.vz); b.dashing = b.dashT > 0; b.anim += dt * b.sp * 1.2;
-    } else if (id === 'obstacle') {
-      if (b.finished || !play) return;
-      const sp = 3.3 + b.skill * 1.5;
-      b.z -= sp * dt; b.x = Math.sin(b.z * 0.09 + b.idx) * 2.2;
-      b.y = 0.15 + Math.abs(Math.sin(b.z * 0.5)) * 0.15; b.yaw = Math.PI; b.sp = sp; b.anim += dt * 8; b.ground = true;
-      if (b.z < -142) { b.finished = true; b.finT = this.t; b.sp = 0; }
-    } else if (play) {
-      b.nextT -= dt;
-      if (b.nextT <= 0) {
-        b.nextT = 2.6 + Math.random() * 1.6; b.throwT = 0.3;
-        const r = Math.random();
-        if (id === 'targets') b.score += Math.round(r * 4 * b.skill) + (r > 0.9 ? 3 : 0);
-        else if (id === 'rings') b.score += r < 0.35 * b.skill + 0.2 ? 0 : 1 + Math.floor(Math.random() * 5 * b.skill);
-        else b.score += r < 0.6 ? 1 + Math.floor(Math.random() * 3) : 0;
-      }
-    }
-  }
-  splash(x, z) {
-    for (let i = 0; i < 14; i++) {
-      const m = new THREE.Mesh(new THREE.SphereGeometry(0.22, 6, 5), new THREE.MeshBasicMaterial({ color: 0xbfe8ff }));
-      m.position.set(x, -3, z); this.scene.add(m);
+  // yerel oyuncu / bot sürüşü (turlar çağırır)
+  stepActor(p, inp, dt, rd, o) { drive(p, inp, dt, rd, o); if (p.sp > 0.6 && p.ground) p.anim += dt * p.sp * 1.3; }
+  splash(x, y, z, col = 0xbfe8ff, n = 14) {
+    for (let i = 0; i < n; i++) {
+      const m = new THREE.Mesh(new THREE.SphereGeometry(0.16, 6, 5), new THREE.MeshBasicMaterial({ color: col }));
+      m.position.set(x, y, z); this.scene.add(m);
       const a = Math.random() * TAU, s = 2 + Math.random() * 4;
-      this.fx.push({ m, vx: Math.cos(a) * s, vz: Math.sin(a) * s, vy: 6 + Math.random() * 6, life: 1 });
+      this.fx.push({ m, vx: Math.cos(a) * s, vz: Math.sin(a) * s, vy: 5 + Math.random() * 6, life: 1 });
     }
-    S.fall();
   }
-  snapCam() { this.updateCam(1, true); }
-  updateCam(dt, snap) {
-    const c = this.rd?.cam, p = this.me;
-    if (!c || !p) { this.cam.position.set(0, 24, 22); this.cam.lookAt(0, 0, 0); return; }
-    let tx, ty, tz, lx, ly, lz;
-    if (c.lane) { tx = p.lx ?? p.x; ty = 5.4; tz = 7.5; lx = p.lx ?? p.x; ly = 2.2; lz = -12; }
-    else if (c.follow) { tx = p.x * 0.7; ty = p.y + 6.5; tz = p.z + 11; lx = p.x * 0.7; ly = p.y + 1; lz = p.z - 8; }
-    else { tx = 0; ty = c.y; tz = c.z; lx = c.look[0]; ly = c.look[1]; lz = c.look[2]; }
-    const k = snap ? 1 : Math.min(1, dt * 6);
-    this.camPos.x += (tx - this.camPos.x) * k; this.camPos.y += (ty - this.camPos.y) * k; this.camPos.z += (tz - this.camPos.z) * k;
-    this.cam.position.copy(this.camPos);
-    this.cam.lookAt(lx, ly, lz);
+  // ---------- kamera & görüntü ----------
+  updateCam(dt) {
+    const p = this.me;
+    if (!p) { this.cam.position.set(0, 24, 22); this.cam.lookAt(0, 0, 0); return; }
+    const ph = this.phase, rd = this.rd;
+    this.hand.visible = false;
+    if ((ph === 'intro' || ph === 'wait') && rd?.introCam) {
+      const c = rd.introCam(this.phaseT);
+      this.cam.position.set(...c.pos); this.cam.lookAt(...c.look); return;
+    }
+    if (!p.alive && ph !== 'count') {
+      if (!this.spec || !this.spec.alive || this.spec.gone) this.spec = this.players.find((q) => q !== p && q.alive && !q.gone) || null;
+      const q = this.spec || p;
+      const bx = q.x + Math.sin(q.yaw) * 5.5, bz = q.z + Math.cos(q.yaw) * 5.5;
+      this.cam.position.set(bx, Math.max(q.y, -2) + 3.6, bz); this.cam.lookAt(q.x, Math.max(q.y, -2) + 1.4, q.z); return;
+    }
+    this.cam.position.set(p.x, p.y + EYE, p.z);
+    this.cam.rotation.set(p.pitch, p.yaw, 0);
+    if (rd?.holding?.(p)) {
+      this.hand.visible = true;
+      const c = clamp(p.charge || 0, 0, 1);
+      this.hand.position.set(0.3 + c * 0.03, -0.26 - c * 0.07, -0.6 + c * 0.2);
+    }
   }
   syncMeshes() {
     for (const p of this.players) {
       if (p.gone) continue;
       const u = p.g.userData;
-      p.g.visible = p.alive || p.y > -3.5;
-      if (p.id === 'x') continue;
+      const mine = p === this.me;
+      p.g.visible = !mine && (p.alive || (this.rd?.showDead?.(p)) || p.y > -3.5);
+      p.tag.visible = !mine;
       p.g.position.set(p.x, p.y, p.z);
-      p.g.rotation.set(0, p.yaw, 0);
+      p.g.rotation.set(p.fallRot || 0, p.yaw + Math.PI, 0);
       const moving = (p.sp || 0) > 0.8;
       const sw = Math.sin(p.anim) * (moving ? 0.9 : 0.04);
       if (p.throwT > 0) { p.throwT -= 1 / 60; u.armL.rotation.x = u.armR.rotation.x = -2.6; u.legL.rotation.x = u.legR.rotation.x = 0; }
-      else if (p.dashing) { u.armL.rotation.x = u.armR.rotation.x = -1.4; u.legL.rotation.x = 0.9; u.legR.rotation.x = -0.9; p.g.rotation.x = 0.4; }
+      else if (p.shoveT > 0 || p.shoveAnim) { u.armL.rotation.x = u.armR.rotation.x = -1.5; u.legL.rotation.x = 0.7; u.legR.rotation.x = -0.7; }
+      else if (p.charge > 0 || p.chg) { u.armL.rotation.x = u.armR.rotation.x = -2.9; u.legL.rotation.x = u.legR.rotation.x = 0; }
       else if (!p.ground && !p.remote) { u.armL.rotation.x = u.armR.rotation.x = -1.2; u.legL.rotation.x = -0.5; u.legR.rotation.x = 0.4; }
       else { u.legL.rotation.x = sw; u.legR.rotation.x = -sw; u.armL.rotation.x = -sw * 0.8; u.armR.rotation.x = sw * 0.8; }
-      p.tag.visible = p.remote || this.players.length > 1;
-      if (!p.remote && !(this.rd?.cam?.lane)) p.anim += (p.sp || 0) * 0.02;
     }
+    // atış önizleme yayı
+    const pts = this.phase === 'play' ? this.arcPts : null;
+    this.arcM.forEach((m, i) => { const q = pts && pts[i]; m.visible = !!q; if (q) m.position.set(q[0], q[1], q[2]); });
   }
   hud() {
     const rd = this.rd, ph = this.phase;
     const timeLeft = ph === 'play' ? Math.max(0, Math.ceil((rd.dur || 0) - this.pt)) : 0;
-    const act = rd?.id === 'obstacle' ? 'ZIPLA' : rd?.id === 'sumo' ? 'ATIL' : '';
-    return { phase: ph, round: this.round, rounds: PLAN.length, title: rd?.title || '', rules: rd?.rules || '', intro: ph === 'intro', count: ph === 'count' ? Math.max(0, Math.ceil(this.phaseT - 0.4)) : -1, go: ph === 'play' && this.pt < 1, timeLeft, text: ph === 'play' || ph === 'ending' ? rd.hud() : '', lane: !!rd?.cam?.lane, act, toast: this.toastT > 0 ? this.toastText : '', ending: ph === 'ending', alive: this.me.alive, online: !!this.net, double: this.round === PLAN.length - 1 };
+    const x = rd?.hudx ? rd.hudx() : {};
+    return { phase: ph, round: this.round, rounds: PLAN.length, title: rd?.title || '', rules: rd?.rules || '', intro: ph === 'intro', count: ph === 'count' ? Math.max(0, Math.ceil(this.phaseT - 0.4)) : -1, go: ph === 'play' && this.pt < 1, timeLeft, text: ph === 'play' || ph === 'ending' ? rd.hud() : '', toast: this.toastT > 0 ? this.toastText : '', ending: ph === 'ending', alive: this.me.alive, online: !!this.net, double: this.round === PLAN.length - 1, charge: this.me.charge || 0, act: x.act || '', cross: x.cross !== false, tip: x.tip || '', ...x };
   }
   loop() {
     const now = performance.now();
@@ -320,11 +304,8 @@ export class Party {
     this.syncMeshes();
     this.renderer.render(this.scene, this.cam);
     this.hudT += dt;
-    if (this.hudT > 0.08 && this.me && this.phase !== 'menu') { this.hudT = 0; this.cb.onHud?.(this.hud()); }
+    if (this.hudT > 0.07 && this.me && this.phase !== 'menu') { this.hudT = 0; this.cb.onHud?.(this.hud()); }
     this.raf = requestAnimationFrame(() => this.loop());
   }
   advance(n, dt = 1 / 60) { for (let i = 0; i < n; i++) this.step(dt); this.updateCam(dt * n); this.syncMeshes(); }
-  setMove(x, y) { this.input.mx = clamp(x, -1, 1); this.input.my = clamp(y, -1, 1); }
-  act() { this.input.dash = true; this.input.jump = true; setTimeout(() => { this.input.dash = false; this.input.jump = false; }, 180); }
-  flick(dx, dy) { if (this.phase === 'play') this.rd?.flick(dx, dy); }
 }

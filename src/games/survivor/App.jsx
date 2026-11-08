@@ -27,8 +27,7 @@ export default function App() {
   const [msg, setMsg] = useState('');
   const stick = useRef({ id: null, ox: 0, oy: 0 });
   const [knob, setKnob] = useState(null);
-  const drag = useRef(null);
-  const [aim, setAim] = useState(null);
+  const lookRef = useRef(null);
 
   useEffect(() => {
     try { localStorage.setItem('sv-prefs', JSON.stringify({ nick, mode, sound })); } catch { /* yok say */ }
@@ -68,11 +67,15 @@ export default function App() {
       else if (c === 'arrowright' || c === 'd') { k.r = down ? 1 : 0; upd(); }
       else if (c === 'arrowup' || c === 'w') { k.u = down ? 1 : 0; upd(); }
       else if (c === 'arrowdown' || c === 's') { k.d = down ? 1 : 0; upd(); }
-      else if (c === ' ' && down) { g.act(); e.preventDefault(); }
+      else if (c === ' ') { if (down) g.jump(); e.preventDefault(); }
+      else if (c === 'e' || c === 'f' || c === 'shift') { if (down && !e.repeat) g.actDown(); else if (!down) g.actUp(); }
     };
     const d = key(true), u = key(false);
-    addEventListener('keydown', d); addEventListener('keyup', u);
-    return () => { removeEventListener('keydown', d); removeEventListener('keyup', u); };
+    const mm = (e) => { if (document.pointerLockElement === cv.current) game.current?.look(e.movementX * 0.0026, e.movementY * 0.0026); };
+    const md = (e) => { if (e.target !== cv.current) return; if (!IS_TOUCH && document.pointerLockElement !== cv.current) { cv.current.requestPointerLock?.(); return; } if (e.button === 0) game.current?.actDown(); };
+    const mu = (e) => { if (e.button === 0) game.current?.actUp(); };
+    addEventListener('keydown', d); addEventListener('keyup', u); addEventListener('mousemove', mm); addEventListener('mousedown', md); addEventListener('mouseup', mu);
+    return () => { removeEventListener('keydown', d); removeEventListener('keyup', u); removeEventListener('mousemove', mm); removeEventListener('mousedown', md); removeEventListener('mouseup', mu); };
   }, []);
 
   const R = 52;
@@ -84,9 +87,9 @@ export default function App() {
     game.current?.setMove(dx / R, -dy / R); setKnob({ x: s.ox, y: s.oy, dx, dy });
   };
   const su = (e) => { if (stick.current.id === e.pointerId) { stick.current.id = null; game.current?.setMove(0, 0); setKnob(null); } };
-  const fd = (e) => { e.currentTarget.setPointerCapture?.(e.pointerId); drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY }; setAim({ x: e.clientX, y: e.clientY, cx: e.clientX, cy: e.clientY }); };
-  const fm = (e) => { const d = drag.current; if (d && d.id === e.pointerId) setAim({ x: d.x, y: d.y, cx: e.clientX, cy: e.clientY }); };
-  const fu = (e) => { const d = drag.current; if (d && d.id === e.pointerId) { game.current?.flick(e.clientX - d.x, e.clientY - d.y); drag.current = null; setAim(null); } };
+  const ld = (e) => { e.currentTarget.setPointerCapture?.(e.pointerId); lookRef.current = { id: e.pointerId, x: e.clientX, y: e.clientY }; };
+  const lm = (e) => { const d = lookRef.current; if (d && d.id === e.pointerId) { game.current?.look((e.clientX - d.x) * 0.0062, (e.clientY - d.y) * 0.0062); d.x = e.clientX; d.y = e.clientY; } };
+  const lu = (e) => { if (lookRef.current?.id === e.pointerId) lookRef.current = null; };
   const playing = screen === 'play';
   const myName = nick.trim() || 'Rakip';
   const NickBox = () => <label className="rl-fine">Adın <input className="rl-in small" maxLength={12} value={nick} placeholder="Rakip" onChange={(e) => setNick(e.target.value)} /></label>;
@@ -113,21 +116,19 @@ export default function App() {
           {!h.alive && h.phase === 'play' && <div className="sv-wait">Elendin, izliyorsun</div>}
         </div>
       )}
-      {playing && h && (h.phase === 'play' || h.phase === 'count' || h.phase === 'intro') && (
+      {playing && h && h.cross && h.phase !== 'intro' && h.alive && <div className="sv-cross"><i /></div>}
+      {playing && h && h.charge > 0 && <div className="sv-charge"><i style={{ width: `${Math.round(h.charge * 100)}%` }} /></div>}
+      {playing && h && h.tip && <div className="sv-tip">{h.tip}</div>}
+      {playing && h && IS_TOUCH && (h.phase === 'play' || h.phase === 'count') && (
         <>
-          {h.lane ? (
-            <div className="sv-zone flick" onPointerDown={fd} onPointerMove={fm} onPointerUp={fu} onPointerCancel={fu} />
-          ) : (
-            <>
-              <div className="sv-zone stick" onPointerDown={sd} onPointerMove={sm} onPointerUp={su} onPointerCancel={su} />
-              {knob && <div className="sv-knob" style={{ left: knob.x - 52, top: knob.y - 52 }}><i style={{ transform: `translate(${knob.dx}px,${knob.dy}px)` }} /></div>}
-              {h.act && <button className="sv-btn" onPointerDown={(e) => { e.preventDefault(); game.current?.act(); }}>{h.act}</button>}
-            </>
-          )}
-          {aim && <svg className="sv-aim"><line x1={aim.x} y1={aim.y} x2={aim.cx} y2={aim.cy} /><circle cx={aim.x} cy={aim.y} r="8" /></svg>}
-          {h.lane && !aim && <div className="sv-tip">Parmağını yukarı doğru kaydırıp bırak</div>}
+          <div className="sv-zone stick" onPointerDown={sd} onPointerMove={sm} onPointerUp={su} onPointerCancel={su} />
+          <div className="sv-zone cam" onPointerDown={ld} onPointerMove={lm} onPointerUp={lu} onPointerCancel={lu} />
+          {knob && <div className="sv-knob" style={{ left: knob.x - 52, top: knob.y - 52 }}><i style={{ transform: `translate(${knob.dx}px,${knob.dy}px)` }} /></div>}
+          <button className="sv-btn jump" onPointerDown={(e) => { e.preventDefault(); game.current?.jump(); }}>ZIPLA</button>
+          {h.act && <button className="sv-btn cut" onPointerDown={(e) => { e.preventDefault(); e.currentTarget.setPointerCapture?.(e.pointerId); game.current?.actDown(); }} onPointerUp={() => game.current?.actUp()} onPointerCancel={() => game.current?.actUp()}>{h.act}</button>}
         </>
       )}
+      {playing && h && !IS_TOUCH && h.phase === 'play' && <div className="sv-keys">WASD yürü · Boşluk zıpla · Fare bak · Sol tık / E: {h.act || 'eylem'} · Fareyi kilitlemek için tıkla</div>}
       {showRes && (
         <div className="sv-menu res">
           <div className="sv-logo"><small>TUR {res.round + 1} SONUCU</small><b>{res.title}</b></div>
@@ -140,7 +141,7 @@ export default function App() {
         <div className="sv-menu">
           <div className="sv-logo"><small>ÇILGIN YARIŞMA</small><b>SURVIVOR</b></div>
           {msg && <p className="sv-err">{msg}</p>}
-          <p className="sv-sub">5 turluk mini oyun yarışması: suya it, hedefleri devir, halka at, deliğe sok, engel parkuru. 4 kişiye kadar online, herkes tek ya da 2'ye 2.</p>
+          <p className="sv-sub">5 turluk birinci şahıs yarışma: suya it, kuleyi yık, deliğe sok, engel parkuru, yakan top. Gerçek fizik, 4 kişiye kadar online; herkes tek ya da 2'ye 2.</p>
           <NickBox />
           <button className="sv-go" onClick={() => { setMsg(''); setScreen('lobby'); }}>ARKADAŞLARLA OYNA</button>
           <div className="sv-row">
@@ -175,11 +176,12 @@ export default function App() {
           <div className="sv-card" onClick={(e) => e.stopPropagation()}>
             <h3>Nasıl oynanır</h3>
             <ul>
-              <li>5 tur var. Her turda sıralamana göre puan alırsın (1. en çok). Son tur çift puan.</li>
-              <li>Suya it ve Engel parkurunda sol başparmakla yürü, sağdaki düğmeyle atıl/zıpla.</li>
-              <li>Hedefleri devir, Halka at ve Deliğe sok turlarında ekranı yukarı doğru kaydırıp bırak: yön ve güç kaydırmandan gelir.</li>
-              <li>2'ye 2 modda takım arkadaşlarının puanı toplanır. Takım arkadaşını itmezsin.</li>
-              <li>Tek başına denersen yalnız oynarsın, puanını kendi rekorunla kıyasla.</li>
+              <li>5 tur var. Her turda sıralamana göre puan alırsın. Son tur (Yakan Top) çift puan.</li>
+              <li>Bilgisayarda WASD ile yürü, fareyle bak, Boşluk zıpla, sol tık ya da E ile eylem. Telefonda sol başparmak yürür, sağ taraf bakar.</li>
+              <li>Fırlatma turlarında eylem düğmesini basılı tut, güç dolar; bırakınca top gider. Noktalı yay topun yolunu gösterir.</li>
+              <li>Yakan Top'ta üstüne top gelirken YAKALA'ya basarsan topu tutarsın ve atan elenir.</li>
+              <li>2'ye 2 modda takım puanları toplanır; takım arkadaşını itemez, vuramazsın.</li>
+              <li>Tek başına oynarsan rakipler botlardır.</li>
             </ul>
             <button className="sv-go small" onClick={() => setHow(false)}>Tamam</button>
           </div>
