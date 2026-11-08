@@ -12,7 +12,6 @@ export const UPGRADES = [
   { id: 'dmg', name: 'Ağır Mermi', desc: 'Her vuruş daha çok hasar verir', costs: [2, 3] },
   { id: 'mag', name: 'Genişletilmiş Şarjör', desc: '+2 mermi', costs: [1, 1, 2] },
   { id: 'reload', name: 'Hızlı Dolum', desc: 'Şarjör daha çabuk dolar', costs: [1, 1, 2] },
-  { id: 'focus', name: 'Odak Kapasitesi', desc: 'Yavaş çekim daha uzun sürer', costs: [1, 2, 2] },
   { id: 'hp', name: 'Zırh Yeleği', desc: '+1 can', costs: [2, 3] },
   { id: 'pierce', name: 'Delici Uç', desc: 'Mermi bir düşmanı / camı delip geçer', costs: [3] },
 ];
@@ -122,9 +121,9 @@ export class Engine {
     rdt = Math.min(rdt, 0.05);
     const I = this.in, p = this.p;
     // odak
-    const want = I.focus && this.focus > 0.02 && !p.dead;
+    const want = I.focus && !p.dead;
     this.focusing = want;
-    if (want) this.focus = Math.max(0, this.focus - rdt * 0.45); else this.focus = Math.min(this.st.focusMax, this.focus + rdt * 0.1);
+    
     let tsT = want ? 0.22 : 1;
     if (this.kc > 0) { this.kc -= rdt; tsT = 0.12; this.zoom = lerp(this.zoom, 1.7, 0.1); } else this.zoom = lerp(this.zoom, want ? 1.12 : 1, 0.08);
     this.ts = lerp(this.ts, tsT, 0.25);

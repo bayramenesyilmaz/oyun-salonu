@@ -23,7 +23,7 @@ export const LEVELS = [
     ].filter((s) => s.w > 1),
     posters: [{ x: 330, y: 470 }, { x: 2800, y: 430 }],
     lamps: [{ x: 600, y: 360 }],
-    hints: [hint(200, 440, 'A / D: yürü · SPACE: zıpla'), hint(560, 440, 'Fare: nişan al · tık: ateş'), hint(1000, 400, 'Sağ tık / SHIFT: ODAK (yavaş çekim)'), hint(2210, 200, 'Duvara çarpan mermi seker!'), hint(3130, 470, 'Terminali vur → çıkış açılır')],
+    hints: [hint(200, 440, 'A / D: yürü · SPACE: zıpla'), hint(560, 440, 'Fare: nişan al · tık: ateş'), hint(1000, 400, 'Sağ tık / SHIFT basılı: yavaş çekim'), hint(2210, 200, 'Duvara çarpan mermi seker!'), hint(3130, 470, 'Terminali vur → çıkış açılır')],
     enemies: [guard(1560, 600, { face: -1 }), guard(2560, 560, { face: -1 }), guard(2430, 560, { face: -1 }), guard(2100, 560, { face: 1, patrol: 90 })],
     terms: [{ x: 3130, y: 600 }], lock: 'term',
     pickups: [{ k: 'intel', id: 'i1', x: 1260, y: 440 }, { k: 'heart', x: 1700, y: 600 }],

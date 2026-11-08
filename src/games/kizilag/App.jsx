@@ -147,7 +147,6 @@ export default function App() {
             <div className="ka-hp">{Array.from({ length: hud.maxHp }).map((_, i) => <span key={i} className={i < hud.hp ? 'on' : ''}>♥</span>)}</div>
             <div className="ka-lvn">{d.id}. {d.name} · {hud.kills}/{hud.total}</div>
             <div className="ka-ammo">{hud.rel ? 'DOLUYOR…' : Array.from({ length: hud.mag }).map((_, i) => <i key={i} className={i < hud.ammo ? 'on' : ''} />)}</div>
-            <div className="ka-focus"><div style={{ width: Math.min(100, hud.focus * 100) + '%' }} /><em>ODAK</em></div>
             {hud.locked && <div className="ka-lock">Çıkış kilitli: {d.lock === 'boss' ? 'Yönetici\'yi indir' : 'Terminali vur'}</div>}
           </div>
         )}
@@ -221,7 +220,7 @@ export default function App() {
       <button onClick={() => setScr('levels')}>Bölümler</button>
       <button onClick={() => setScr('base')}>Karargâh <small>★ {avail}</small></button>
       <button onClick={() => setDossier(true)}>Örgüt dosyası <small>{save.intel.length}/{LEVELS.length}</small></button>
-      <p className="ka-how">PC: A/D yürü · Space zıpla · Fare nişan, tık ateş · Sağ tık/Shift = yavaş çekim · R doldur<br />Telefon: sol yarı yürü · sağ yarıda sapan gibi geri çek = nişan+yavaş çekim, bırak = ateş<br />Mermi duvar ve metalden seker; kutuya çarpınca durur; cam kırılır; kırmızı varil patlar.</p>
+      <p className="ka-how">PC: A/D yürü · Space zıpla · Fare nişan, tık ateş · Sağ tık/Shift basılı tut = yavaş çekim · R doldur<br />Telefon: sol yarı yürü · sağ yarıda sapan gibi geri çek = nişan+yavaş çekim, bırak = ateş<br />Mermi duvar ve metalden seker; kutuya çarpınca durur; cam kırılır; kırmızı varil patlar.</p>
     </div>
   );
 }
