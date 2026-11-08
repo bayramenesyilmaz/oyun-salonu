@@ -8,6 +8,7 @@ import './op.css';
 
 const QS = new URLSearchParams(location.search);
 const TEST = QS.has('test');
+const BRAND = { banka: { h1: 'BANKA', h2: 'BASKINI', sub: 'GECE · ÇOK KATLI · POLİS ÇEVRESİ', maps: ['banka'] }, hapishane: { h1: 'CEZAEVİ', h2: 'İSYANI', sub: 'AVLU · HÜCRE BLOĞU · KULELER', maps: ['hapis'] } }[(typeof location !== 'undefined' ? location.pathname : '').replace(/^\/|\/$/g, '')] || { h1: 'OPERASYON', h2: 'KURTARMA', sub: 'BİRLİKTE DAHA GÜÇLÜ', maps: ['tesis', 'koy'] };
 const PATH_MAP = { banka: 'banka', hapishane: 'hapis' }[(typeof location !== 'undefined' ? location.pathname : '').replace(/^\/|\/$/g, '')];
 const DEBUG = QS.has('debug') || TEST;
 const IS_TOUCH = QS.has('touch') || (typeof window !== 'undefined' && ('ontouchstart' in window || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches)));
@@ -185,7 +186,7 @@ export default function App() {
   const [role, setRole] = useState(ROLE_LIST.includes(prefs.role) ? prefs.role : 'komando');
   const [weapon, setWeapon] = useState(PRIMARIES.includes(prefs.weapon) ? prefs.weapon : 'm4');
   const [nick, setNick] = useState(prefs.nick || 'Enes');
-  const [mapId, setMapId] = useState(PATH_MAP || (MAPS.some((m) => m.id === prefs.map) ? prefs.map : 'tesis'));
+  const [mapId, setMapId] = useState(BRAND.maps.includes(prefs.map) ? prefs.map : BRAND.maps[0]);
   const [sound, setSound] = useState(prefs.sound !== false);
   const [hud, setHud] = useState(null);
   const [locked, setLocked] = useState(false);
@@ -230,6 +231,8 @@ export default function App() {
       },
     });
     game.current = g;
+    g.loadMap(BRAND.maps[0]);
+    document.title = BRAND.h1 + ' ' + BRAND.h2;
     setReady(true);
     if (TEST) {
       window.__op = g;
@@ -398,13 +401,13 @@ export default function App() {
           <div className="op-logo">
             <Emblem />
             <div>
-              <h1>OPERASYON</h1>
-              <h2><i />KURTARMA<i /></h2>
-              <small>BİRLİKTE DAHA GÜÇLÜ</small>
+              <h1>{BRAND.h1}</h1>
+              <h2><i />{BRAND.h2}<i /></h2>
+              <small>{BRAND.sub}</small>
             </div>
           </div>
           <div className="op-menu-btns">
-            <button className="op-btn primary" onClick={() => { setCoop(false); setScreen('map'); }}>Göreve başla</button>
+            <button className="op-btn primary" onClick={() => { setCoop(false); setScreen(BRAND.maps.length > 1 ? 'map' : 'char'); }}>Göreve başla</button>
             <button className="op-btn" onClick={() => { setCoop(true); setScreen('char'); }}>4 kişilik online</button>
             <button className="op-btn" onClick={() => setHow(true)}>Nasıl oynanır</button>
             <button className="op-btn" onClick={() => setSound(!sound)}>Ses: {sound ? 'açık' : 'kapalı'}</button>
@@ -418,7 +421,7 @@ export default function App() {
           <button className="op-link" onClick={() => setScreen('menu')}>← Geri</button>
           <h3 className="op-ptitle">HARİTA SEÇİMİ</h3>
           <div className="op-chars op-maps">
-            {MAPS.map((m) => (
+            {MAPS.filter((m) => BRAND.maps.includes(m.id)).map((m) => (
               <button key={m.id} className={'op-char op-map' + (mapId === m.id ? ' sel' : '')} onClick={() => { setMapId(m.id); game.current?.loadMap(m.id); }}>
                 <b>{m.name}</b>
                 <small>{m.desc}</small>
@@ -431,7 +434,7 @@ export default function App() {
 
       {screen === 'char' && (
         <div className="op-page">
-          <button className="op-link" onClick={() => setScreen(coop ? 'menu' : 'map')}>← Geri</button>
+          <button className="op-link" onClick={() => setScreen(coop || BRAND.maps.length < 2 ? 'menu' : 'map')}>← Geri</button>
           <h3 className="op-ptitle">KARAKTER SEÇİMİ</h3>
           <div className="op-chars">
             {ROLE_LIST.map((r) => (
@@ -511,7 +514,7 @@ export default function App() {
               {lob.room.isHost ? (
                 <>
                   <div className="op-chars op-maps">
-                    {MAPS.map((m) => (
+                    {MAPS.filter((m) => BRAND.maps.includes(m.id)).map((m) => (
                       <button key={m.id} className={'op-char op-map' + (mapId === m.id ? ' sel' : '')} onClick={() => { setMapId(m.id); game.current?.loadMap(m.id); lob.room.setMeta({ map: m.id }); }}>
                         <b>{m.name}</b>
                         <small>{m.desc}</small>
