@@ -73,7 +73,7 @@ export const LEVELS = [
       // kalkan bulmacası: konteyner yansıtıcı
       metal(2100, 490, 40, 130),
       // vinç basamakları
-      metal(2560, 530, 130, 20), metal(2760, 450, 130, 20), metal(2960, 370, 130, 20), metal(3160, 450, 130, 20),
+      metal(2560, 500, 130, 20), metal(2760, 450, 130, 20), metal(2960, 370, 130, 20), metal(3160, 450, 130, 20),
       // baraka
       wall(3640, 400, 40, 140, '#4a3a5a'), glass(3640, 540, 40, 80), wall(3640, 340, 460, 60, '#4a3a5a'),
     ],

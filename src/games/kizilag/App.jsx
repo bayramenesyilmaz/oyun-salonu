@@ -83,7 +83,7 @@ export default function App() {
       if (q.rx < q.w * 0.4 && stick == null) { stick = { id: e.pointerId, x: q.rx }; }
       else if (aimId == null) { aimId = e.pointerId; aimStart = { x: q.rx, y: q.ry }; I.focus = true; E.touchAim = true; setAim(q, e); }
     };
-    const setAim = (q, e) => { const dx = q.rx - aimStart.x, dy = q.ry - aimStart.y, L = Math.hypot(dx, dy) || 1, s = E.view(), pxp = E.W / 2 + (E.p.x + 2 * E.p.face - E.cx) * s, pyp = E.H / 2 + ((E.p.y - 62) - (E.cy0 || 360)) * s; const k = L < 14 ? 0 : 1; if (k) { I.ax = pxp + dx / L * 400; I.ay = pyp + dy / L * 400; } else { I.ax = pxp + E.p.face * 400; I.ay = pyp; } };
+    const setAim = (q, e) => { const dx = aimStart.x - q.rx, dy = aimStart.y - q.ry, L = Math.hypot(dx, dy), s = E.view(), pxp = E.W / 2 + (E.p.x + 2 * E.p.face - E.cx) * s, pyp = E.H / 2 + ((E.p.y - 62) - (E.cy0 || 360)) * s; E.aimOk = L >= 22; if (E.aimOk) { I.ax = pxp + dx / L * 400; I.ay = pyp + dy / L * 400; } };
     const pm = (e) => {
       const q = px(e);
       if (e.pointerType === 'mouse') { E.mouseAim = true; I.ax = q.x; I.ay = q.y; return; }
@@ -93,7 +93,7 @@ export default function App() {
     const pu = (e) => {
       if (e.pointerType === 'mouse') { if (e.button === 2) I.focus = false; return; }
       if (stick && e.pointerId === stick.id) { stick = null; I.l = I.r = 0; }
-      else if (e.pointerId === aimId) { aimId = null; I.focus = false; E.touchAim = false; I.fire = true; }
+      else if (e.pointerId === aimId) { aimId = null; I.focus = false; E.touchAim = false; if (E.aimOk) I.fire = true; E.aimOk = false; }
     };
     canvas.addEventListener('pointerdown', pd); canvas.addEventListener('pointermove', pm); canvas.addEventListener('pointerup', pu); canvas.addEventListener('pointercancel', pu);
     const cm = (e) => e.preventDefault(); canvas.addEventListener('contextmenu', cm);
@@ -155,7 +155,7 @@ export default function App() {
         <button className="ka-pause" onClick={() => setPaused(true)}>❚❚</button>
         <button className="ka-jump" onPointerDown={(e) => { e.stopPropagation(); const I = eng.current.in; I.jump = true; I.jumpHeld = true; }} onPointerUp={() => { eng.current.in.jumpHeld = false; }} onPointerLeave={() => { eng.current && (eng.current.in.jumpHeld = false); }}>ZIPLA</button>
         <button className="ka-reload" onPointerDown={(e) => { e.stopPropagation(); eng.current.in.reload = true; }}>R</button>
-        <div className="ka-tip">Sol: yürü · Sağ: sürükle = nişan + yavaş çekim · bırak = ateş</div>
+        <div className="ka-tip">Sol: yürü · Sağ: sapanı geri çek = nişan + yavaş çekim · bırak = ateş</div>
         {paused && !res && (
           <div className="ka-ov"><h2>Duraklatıldı</h2>
             <button onClick={() => setPaused(false)}>Devam</button>
@@ -221,7 +221,7 @@ export default function App() {
       <button onClick={() => setScr('levels')}>Bölümler</button>
       <button onClick={() => setScr('base')}>Karargâh <small>★ {avail}</small></button>
       <button onClick={() => setDossier(true)}>Örgüt dosyası <small>{save.intel.length}/{LEVELS.length}</small></button>
-      <p className="ka-how">PC: A/D yürü · Space zıpla · Fare nişan, tık ateş · Sağ tık/Shift = yavaş çekim · R doldur<br />Telefon: sol yarı yürü · sağ yarıda sürükle = nişan+yavaş çekim, bırak = ateş<br />Mermi duvar ve metalden seker; kutuya çarpınca durur; cam kırılır; kırmızı varil patlar.</p>
+      <p className="ka-how">PC: A/D yürü · Space zıpla · Fare nişan, tık ateş · Sağ tık/Shift = yavaş çekim · R doldur<br />Telefon: sol yarı yürü · sağ yarıda sapan gibi geri çek = nişan+yavaş çekim, bırak = ateş<br />Mermi duvar ve metalden seker; kutuya çarpınca durur; cam kırılır; kırmızı varil patlar.</p>
     </div>
   );
 }
