@@ -8,6 +8,7 @@ import './op.css';
 
 const QS = new URLSearchParams(location.search);
 const TEST = QS.has('test');
+const PATH_MAP = { banka: 'banka', hapishane: 'hapis' }[(typeof location !== 'undefined' ? location.pathname : '').replace(/^\/|\/$/g, '')];
 const DEBUG = QS.has('debug') || TEST;
 const IS_TOUCH = QS.has('touch') || (typeof window !== 'undefined' && ('ontouchstart' in window || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches)));
 const ROLE_LIST = ['komando', 'ozel', 'istihbarat', 'destek'];
@@ -184,7 +185,7 @@ export default function App() {
   const [role, setRole] = useState(ROLE_LIST.includes(prefs.role) ? prefs.role : 'komando');
   const [weapon, setWeapon] = useState(PRIMARIES.includes(prefs.weapon) ? prefs.weapon : 'm4');
   const [nick, setNick] = useState(prefs.nick || 'Enes');
-  const [mapId, setMapId] = useState(MAPS.some((m) => m.id === prefs.map) ? prefs.map : 'tesis');
+  const [mapId, setMapId] = useState(PATH_MAP || (MAPS.some((m) => m.id === prefs.map) ? prefs.map : 'tesis'));
   const [sound, setSound] = useState(prefs.sound !== false);
   const [hud, setHud] = useState(null);
   const [locked, setLocked] = useState(false);
