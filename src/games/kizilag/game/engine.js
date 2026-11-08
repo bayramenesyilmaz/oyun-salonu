@@ -43,7 +43,7 @@ export class Engine {
     this.in = { l: 0, r: 0, jump: false, jumpHeld: false, fire: false, focus: false, ax: 0, ay: 0, reload: false, touchAim: false };
     this.t = 0; this.paused = false; this.sfx = true; this.L = null;
   }
-  resize() { const r = this.cv.getBoundingClientRect(), d = Math.min(2, window.devicePixelRatio || 1); this.cv.width = r.width * d; this.cv.height = r.height * d; this.W = this.cv.width; this.H = this.cv.height; }
+  resize() { const r = this.cv.getBoundingClientRect(), d = Math.min(1.5, window.devicePixelRatio || 1); this.cv.width = r.width * d; this.cv.height = r.height * d; this.W = this.cv.width; this.H = this.cv.height; this.vig = null; }
   snd(...a) { if (this.sfx) try { beep(...a); } catch (e) {} }
 
   load(def, save) {
@@ -248,11 +248,11 @@ export class Engine {
           const e = obj;
           if (e.k === 'shield' && b.dx * e.face < 0 && ((best.nx !== 0) || true) && Math.abs(best.nx) > 0.5 && best.nx * e.face > 0) { b.rico++; b.dx = -b.dx; b.x += best.nx * 1; this.addParts(b.x, b.y, 8, '#cfe9ff', 240, 0); this.snd(1400, 0.08, 'triangle', 0.1); continue; }
           if (e.k === 'boss' && e.shielded) { b.dead = true; this.addParts(b.x, b.y, 10, '#cfe9ff', 260, 0); this.snd(1500, 0.06, 'triangle', 0.1); continue; }
-          e.hp -= this.st.dmg; this.stat.hits++; this.addParts(b.x, b.y, 8, '#ff6a7a', 220); e.hit = 0.12;
+          const eb0 = this.ebox(e); if (e.k !== 'drone' && e.k !== 'turret' && b.y < eb0.y + 17) { if (e.k === 'boss') e.hp -= this.st.dmg * 2; else e.hp = 0; this.cb.toast && this.cb.toast('KAFADAN!'); } else e.hp -= this.st.dmg; this.stat.hits++; this.addParts(b.x, b.y, 8, '#ff6a7a', 220); e.hit = 0.12;
           if (e.hp <= 0) this.killEnemy(e, b.rico, true); else this.snd(300, 0.05, 'square', 0.08);
           if (b.pierce > 0 && e.k !== 'boss') { b.pierce--; b.ign = e; b.x += b.dx * 3; b.y += b.dy * 3; continue; }
           b.dead = true;
-        } else if (kind === 'player') { b.dead = true; this.hurt(1, b.x - b.dx * 40); this.cb.toast && this.cb.toast('Kendi mermin!'); }
+        } else if (kind === 'player') { b.dead = true; const hs = b.y < this.p.y - 40; if (hs) { this.p.inv = 0; this.hurt(99); this.cb.toast && this.cb.toast('Kafadan! Kendi mermin'); } else { this.hurt(1, b.x - b.dx * 40); this.cb.toast && this.cb.toast('Kendi mermin!'); } }
         else if (kind === 'barrel') { this.explode(obj); b.dead = true; }
         else if (kind === 'switch') { obj.on = true; this.trigger(obj.id); if (b.rico) this.stat.rico += 0; b.dead = true; this.cb.toast && this.cb.toast('Anahtar çalıştı'); }
         else if (kind === 'term') {
@@ -270,7 +270,7 @@ export class Engine {
       for (let i = 0; i < steps; i++) {
         b.x += b.dx * st / steps; b.y += b.dy * st / steps;
         const pb = { x: this.p.x - PW / 2, y: this.p.y - PHT, w: PW, h: PHT };
-        if (b.x > pb.x && b.x < pb.x + pb.w && b.y > pb.y && b.y < pb.y + pb.h) { b.dead = true; this.hurt(1, b.x - b.dx * 40); break; }
+        if (b.x > pb.x && b.x < pb.x + pb.w && b.y > pb.y && b.y < pb.y + pb.h) { b.dead = true; if (b.y < pb.y + 14) { this.p.inv = 0; this.hurt(99); this.cb.toast && this.cb.toast('Kafadan vuruldun'); } else this.hurt(1, b.x - b.dx * 40); break; }
         if (this.L.solids.some((s) => blocks(s) && b.x > s.x && b.x < s.x + s.w && b.y > s.y && b.y < s.y + s.h)) { b.dead = true; this.addParts(b.x, b.y, 4, '#ff9a7a', 120, 0); break; }
       }
     }
@@ -348,12 +348,12 @@ export class Engine {
     // tahmin çizgisi
     if (!p.dead && !this.over && (this.focusing || this.mouseAim)) { const tr = this.trace(p.x + 2 * p.face + Math.cos(p.aim) * 36, p.y - 62 + Math.sin(p.aim) * 36, p.aim, this.st.bounces, this.focusing); c.strokeStyle = this.focusing ? 'rgba(255,230,120,.9)' : 'rgba(255,255,255,.28)'; c.lineWidth = this.focusing ? 2.5 : 1.5; c.setLineDash(this.focusing ? [] : [6, 8]); c.beginPath(); tr.pts.forEach((q, i) => (i ? c.lineTo(q.x, q.y) : c.moveTo(q.x, q.y))); c.stroke(); c.setLineDash([]); if (this.focusing && tr.hit) { c.fillStyle = '#ffe08a'; const q = tr.pts[tr.pts.length - 1]; c.beginPath(); c.arc(q.x, q.y, 5, 0, 6.283); c.fill(); } }
     for (const b of this.bullets) { c.strokeStyle = '#fff6c0'; c.lineWidth = 3; c.lineCap = 'round'; c.beginPath(); const tr = b.trail; c.moveTo(tr[Math.max(0, tr.length - 3)].x, tr[Math.max(0, tr.length - 3)].y); c.lineTo(tr[tr.length - 1].x, tr[tr.length - 1].y); c.lineTo(b.x, b.y); c.stroke(); c.fillStyle = '#fff'; c.beginPath(); c.arc(b.x, b.y, 4, 0, 6.283); c.fill(); }
-    for (const b of this.eb) { c.fillStyle = '#ff4056'; c.shadowColor = '#ff4056'; c.shadowBlur = 10; c.beginPath(); c.arc(b.x, b.y, 5, 0, 6.283); c.fill(); c.shadowBlur = 0; }
+    for (const b of this.eb) { c.fillStyle = '#ff4056'; c.beginPath(); c.arc(b.x, b.y, 6, 0, 6.283); c.fill(); }
     for (const q of this.parts) { c.globalAlpha = clamp(q.life * 2, 0, 1); c.fillStyle = q.col; c.beginPath(); c.arc(q.x, q.y, q.r, 0, 6.283); c.fill(); } c.globalAlpha = 1;
     for (const r of this.rings) { const k = r.t / r.max; c.strokeStyle = `rgba(255,190,90,${1 - k})`; c.lineWidth = 8 * (1 - k); c.beginPath(); c.arc(r.x, r.y, r.r * k, 0, 6.283); c.stroke(); c.fillStyle = `rgba(255,220,150,${0.4 * (1 - k)})`; c.fill(); }
     c.restore();
     // ekran efektleri
-    if (this.focusing) { const g = c.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.9); g.addColorStop(0, 'rgba(20,30,80,0)'); g.addColorStop(1, 'rgba(10,20,70,.55)'); c.fillStyle = g; c.fillRect(0, 0, W, H); }
+    if (this.focusing) { if (!this.vig) { const v = this.vig = document.createElement('canvas'); v.width = Math.ceil(W / 4); v.height = Math.ceil(H / 4); const x = v.getContext('2d'), g = x.createRadialGradient(v.width / 2, v.height / 2, v.height * 0.3, v.width / 2, v.height / 2, v.height * 0.9); g.addColorStop(0, 'rgba(20,30,80,0)'); g.addColorStop(1, 'rgba(10,20,70,.55)'); x.fillStyle = g; x.fillRect(0, 0, v.width, v.height); } c.drawImage(this.vig, 0, 0, W, H); }
     if (this.kc > 0) { c.fillStyle = 'rgba(0,0,0,.85)'; const bh = H * 0.1 * Math.min(1, this.kc * 4); c.fillRect(0, 0, W, bh); c.fillRect(0, H - bh, W, bh); }
     if (this.flash > 0) { c.fillStyle = `rgba(255,40,70,${this.flash * 0.35})`; c.fillRect(0, 0, W, H); }
   }

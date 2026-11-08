@@ -99,7 +99,7 @@ export default function App() {
     const cm = (e) => e.preventDefault(); canvas.addEventListener('contextmenu', cm);
     const rs = () => E.resize(); window.addEventListener('resize', rs); rs();
     let last = performance.now(), id, hc = 0;
-    const loop = (t) => { const dt = (t - last) / 1000; last = t; E.paused = pausedRef.current; E.step(dt); if ((hc += dt) > 0.08) { hc = 0; setHud(E.hud()); } id = requestAnimationFrame(loop); };
+    const loop = (t) => { const dt = (t - last) / 1000; last = t; E.paused = pausedRef.current; E.step(dt); if ((hc += dt) > 0.08) { hc = 0; { const h = E.hud(), k = JSON.stringify(h); if (k !== E._hk) { E._hk = k; setHud(h); } } } id = requestAnimationFrame(loop); };
     id = requestAnimationFrame(loop);
     window.__ka = E;
     return () => { cancelAnimationFrame(id); window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku); window.removeEventListener('resize', rs); eng.current = null; };

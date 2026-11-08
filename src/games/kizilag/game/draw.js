@@ -210,7 +210,7 @@ export function drawTerminal(c, s, t) {
   c.fillStyle = '#242a3c'; c.strokeStyle = INK; c.lineWidth = 3; rr(c, -22, -40, 44, 40, 5); c.fill(); c.stroke();
   c.fillStyle = s.on ? '#2a6a3a' : '#0a2a38'; c.fillRect(-17, -35, 34, 24);
   c.fillStyle = s.on ? '#7bff9a' : '#7ad8ff'; c.font = '700 11px monospace'; c.textAlign = 'center'; c.fillText(s.on ? 'ERİŞİM' : '▮ KİLİTLİ', 0, -19);
-  drawSymbol(c, 0, -52, 8, t, { glow: true });
+  drawSymbol(c, 0, -52, 8, t, { glow: false });
   c.restore();
 }
 export function drawPickup(c, p, t) {
