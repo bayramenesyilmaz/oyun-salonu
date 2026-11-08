@@ -4,4 +4,4 @@ export const PROLOGUE = [
   ['agent', 'Ben "Sessiz". Elif, şifre çözme uzmanıydı. İki gün önce kaçırıldı.'],
   ['agent', 'Kızıl Ağ\'ı çökertmeden onu bulamam. Her bölüm bir iz. Her iz bir kapı.'],
 ];
-export const WHO = { agent: { n: 'SESSİZ', c: '#9fd0ff' }, elif: { n: 'ELİF', c: '#ff9ac0' }, boss: { n: 'YÖNETİCİ', c: '#ff5a6a' }, guard: { n: 'GARDİYAN', c: '#ffb066' }, narr: { n: '', c: '#e8ecff' } };
+export const WHO = { agent: { n: 'SESSİZ', c: '#9fd0ff' }, elif: { n: 'ELİF', c: '#ff9ac0' }, boss: { n: 'YÖNETİCİ', c: '#ff5a6a' }, guard: { n: 'GARDİYAN', c: '#ffb066' }, goz: { n: 'GÖZ', c: '#ff2a44' }, narr: { n: '', c: '#e8ecff' } };

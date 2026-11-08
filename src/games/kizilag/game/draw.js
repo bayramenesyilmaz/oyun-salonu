@@ -124,6 +124,7 @@ const PAL = {
   sniper: { suit: '#3b4250', dark: '#242a35', skin: '#d9a87a', hair: '#222', tie: '#e0243a' },
   shield: { suit: '#5a2a2a', dark: '#2d1414', skin: '#e0b088', hair: '#111', tie: '#e0243a' },
   boss: { suit: '#1c1c22', dark: '#0d0d12', skin: '#d6b296', hair: '#e8e8ee', tie: '#e0243a' },
+  goz: { suit: '#2a0d14', dark: '#14060a', skin: '#d6b296', hair: '#f4f4f8', tie: '#e0243a' },
   elif: { suit: '#c0486a', dark: '#7a2a44', skin: '#f2c9a0', hair: '#4a2a1a', tie: '#fff' },
 };
 function limb(c, x0, y0, x1, y1, w, col) { c.strokeStyle = INK; c.lineWidth = w + 4; c.lineCap = 'round'; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); }

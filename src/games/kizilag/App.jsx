@@ -168,7 +168,8 @@ export default function App() {
             {res.win && <div className="ka-stars">{[1, 2, 3].map((n) => <span key={n} className={n <= res.stars ? 'on' : ''}>★</span>)}</div>}
             <p className="ka-stat">{res.win ? <>Düşman {res.kills}/{res.total} · Sekme vuruşu {res.rico} · {Math.round(res.time)} sn{res.intel.length ? ' · belge ✔' : ''}</> : 'Odak ile sektir, korunmasız kalma.'}</p>
             {res.win && <p className="ka-star-hint">★ bitir · ★ en az {LEVELS[lv].needRico} sekme vuruşu · ★ hasar almadan</p>}
-            {res.win ? <button className="pri" onClick={afterWin}>{lv + 1 < LEVELS.length ? 'Devam ▸' : 'Bitir'}</button> : <button className="pri" onClick={() => startLevel(lv)}>Tekrar dene</button>}
+            {res.win ? <button className="pri" onClick={afterWin}>{lv + 1 < LEVELS.length ? 'Devam ▸' : 'Bitir'}</button> : <button className="pri" onClick={() => startLevel(lv)}>Baştan dene</button>}
+            {!res.win && res.canResume && <button onClick={() => { eng.current.respawn(); setRes(null); }}>Kontrol noktasından devam</button>}
             {!res.win && <button onClick={() => setScr('base')}>Karargâh (yükselt)</button>}
             <button onClick={goMenu}>Ana menü</button>
           </div>
@@ -219,7 +220,7 @@ export default function App() {
       <button className="pri" onClick={begin}>{save.seen ? 'Devam ▸' : 'Başla ▸'}</button>
       <button onClick={() => setScr('levels')}>Bölümler</button>
       <button onClick={() => setScr('base')}>Karargâh <small>★ {avail}</small></button>
-      <button onClick={() => setDossier(true)}>Örgüt dosyası <small>{save.intel.length}/{LEVELS.length}</small></button>
+      <button onClick={() => setDossier(true)}>Örgüt dosyası <small>{save.intel.length}/{LEVELS.flatMap((d) => d.dossier || []).length}</small></button>
       <p className="ka-how">PC: A/D yürü · Space zıpla · Fare nişan, tık ateş · Sağ tık/Shift basılı tut = yavaş çekim · R doldur<br />Telefon: sol yarı yürü · sağ yarıda sapan gibi geri çek = nişan+yavaş çekim, bırak = ateş<br />Mermi duvar ve metalden seker; kutuya çarpınca durur; cam kırılır; kırmızı varil patlar.</p>
     </div>
   );

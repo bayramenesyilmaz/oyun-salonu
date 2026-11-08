@@ -60,7 +60,7 @@ export class Engine {
     this.focus = this.st.focusMax; this.focusing = false;
     this.stat = { kills: 0, rico: 0, hits: 0, shots: 0, time: 0, intel: [] };
     this.scale = 1; this.cx = def.start.x; this.zoom = 1; this.kc = 0; this.kcTarget = null; this.ts = 1;
-    this.over = null; this.shake = 0; this.flash = 0; this.hints = def.hints || []; this.t = 0;
+    this.over = null; this.checks = (def.checks || []).map((c) => ({ ...c, on: false })); this.shake = 0; this.flash = 0; this.hints = def.hints || []; this.t = 0;
     this.openDoors();
     this.resize();
   }
@@ -142,6 +142,7 @@ export class Engine {
       if (o.k === 'heart') { p.hp = Math.min(this.st.hp, p.hp + 1); this.snd(660, 0.15, 'sine', 0.1); this.cb.toast && this.cb.toast('+1 can'); }
       else { this.stat.intel.push(o.id); this.snd(880, 0.3, 'triangle', 0.1); this.cb.toast && this.cb.toast('İstihbarat belgesi bulundu'); this.cb.intel && this.cb.intel(o.id); }
     }
+    for (const k of this.checks) if (!k.on && p.x > k.x && !p.dead) { k.on = true; this.cp = { x: k.x, y: k.y }; this.cb.toast && this.cb.toast('Kontrol noktası'); this.snd(700, 0.12, 'triangle', 0.08); }
     // çıkış
     const ex = this.L.exit;
     if (!p.dead && this.lockedOpen() && p.x > ex.x && p.x < ex.x + ex.w && p.y > ex.y - 220 && p.y - PHT < ex.y + ex.h) this.finish(true);
@@ -151,10 +152,14 @@ export class Engine {
   finish(win) {
     if (this.over) return;
     const allK = this.enemies.every((e) => e.dead);
-    const s = { win, kills: this.stat.kills, total: this.total, rico: this.stat.rico, time: this.stat.time, intel: [...this.stat.intel], dmg: this.dmgTaken || 0, stars: 0 };
+    const s = { win, canResume: !!this.cp, kills: this.stat.kills, total: this.total, rico: this.stat.rico, time: this.stat.time, intel: [...this.stat.intel], dmg: this.dmgTaken || 0, stars: 0 };
     if (win) { s.stars = 1 + (this.stat.rico >= (this.def.needRico || 2) ? 1 : 0) + (!this.dmgTaken ? 1 : 0); s.allK = allK; }
     this.over = s; this.snd(win ? 880 : 140, 0.5, win ? 'triangle' : 'sawtooth', 0.15);
     setTimeout(() => this.cb.end && this.cb.end(s), win ? 600 : 900);
+  }
+  respawn() {
+    if (!this.cp) return; const p = this.p; this.over = null; p.dead = false; p.hp = this.st.hp; p.x = this.cp.x; p.y = this.cp.y; p.vx = p.vy = 0; p.inv = 2; p.ammo = this.st.mag; p.rel = 0; this.eb = []; this.bullets = []; this.kc = 0; this.zoom = 1;
+    for (const e of this.enemies) if (!e.dead) { e.alert = 0; e.tele = 0; e.cd = 1.5; }
   }
   hurt(n = 1, fromX) {
     const p = this.p; if (p.inv > 0 || p.dead || this.over) return;
@@ -192,12 +197,17 @@ export class Engine {
     I.reload = false;
     if (I.fire) { I.fire = false; this.shoot(); }
   }
+  muzzle(p, a) {
+    const sx = p.x + 2 * p.face, sy = p.y - 62, dx = Math.cos(a) * 46, dy = Math.sin(a) * 46;
+    for (const s of this.L.solids) { if (!blocks(s)) continue; const h = rayBox(sx, sy, dx, dy, s); if (h && h.t < 1) return { x: sx, y: sy }; }
+    return { x: sx + dx, y: sy + dy };
+  }
   shoot() {
     const p = this.p; if (p.rel > 0 || p.dead || this.t < (p.nextShot || 0)) return;
     p.nextShot = this.t + 0.3;
     if (p.ammo <= 0) { p.rel = this.st.reload; return; }
     p.ammo--; this.stat.shots++; p.shootT = 0.1;
-    const a = p.aim, ox = p.x + 2 * p.face + Math.cos(a) * 46, oy = p.y - 62 + Math.sin(a) * 46;
+    const a = p.aim, m = this.muzzle(p, a), ox = m.x, oy = m.y;
     this.bullets.push({ x: ox, y: oy, dx: Math.cos(a), dy: Math.sin(a), v: 1900, b: this.st.bounces, rico: 0, pierce: this.st.pierce, life: 3, trail: [{ x: ox, y: oy }], metal: 0 });
     this.snd(190, 0.05, 'sine', 0.05);
     
@@ -306,7 +316,7 @@ export class Engine {
         if (e.tele > 0) { e.tele -= dt; if (e.tele <= 0) {
           if (e.k === 'sniper') this.fireEnemy(e, 1500, e.aim, 0.02);
           else if (e.k === 'turret') { this.fireEnemy(e, 760, e.aim, 0.1); e.burst++; if (e.burst < 3) { e.tele = 0.18; } else { e.burst = 0; e.cd = 2.2; } }
-          else if (e.k === 'boss') { for (let i = -1; i <= 1; i++) this.fireEnemy(e, 720, e.aim + i * 0.18, 0.04); e.cd = 1.5; }
+          else if (e.k === 'boss') { const n2 = e.hp < (this.def.bossHp || 12) / 2 ? 2 : 1; for (let i = -n2; i <= n2; i++) this.fireEnemy(e, 720, e.aim + i * 0.17, 0.04); e.cd = n2 > 1 ? 1.2 : 1.5; }
           else this.fireEnemy(e, e.k === 'drone' ? 620 : 700, e.aim, 0.12);
           if (e.k !== 'turret') e.cd = { guard: 1.7, sniper: 3.2, shield: 2.2, drone: 2.2, boss: 1.5 }[e.k];
         } }
@@ -340,6 +350,7 @@ export class Engine {
     for (const h of this.hints) if (vis(h.x - 200, 400)) { c.fillStyle = 'rgba(255,255,255,.75)'; c.font = '700 20px "Barlow Condensed", sans-serif'; c.fillText(h.text, h.x, h.y); }
     for (const sd of L.solids) if (vis(sd.x, sd.w)) D.drawSolid(c, sd, t);
     D.drawExit(c, L.exit, this.lockedOpen(), t);
+    for (const k of this.checks) { c.strokeStyle = '#8a96b8'; c.lineWidth = 3; c.beginPath(); c.moveTo(k.x, k.y); c.lineTo(k.x, k.y - 70); c.stroke(); c.fillStyle = k.on ? '#6bffa0' : '#e0243a'; c.beginPath(); c.moveTo(k.x, k.y - 70); c.lineTo(k.x + 28, k.y - 60); c.lineTo(k.x, k.y - 50); c.fill(); }
     for (const o of L.switches) if (vis(o.x - 20, 40)) D.drawSwitch(c, o, t);
     for (const o of L.term) if (vis(o.x - 30, 60)) D.drawTerminal(c, o, t);
     for (const o of L.barrels) if (!o.dead && vis(o.x - 20, 40)) D.drawBarrel(c, o);
@@ -347,7 +358,7 @@ export class Engine {
     for (const e of this.enemies) if (vis(e.x - 60, 120) || e.tele > 0) this.drawEnemy(c, e, t);
     this.drawPlayer(c, t);
     // tahmin çizgisi
-    if (!p.dead && !this.over && (this.focusing || this.mouseAim || this.touchAim)) { const tr = this.trace(p.x + 2 * p.face + Math.cos(p.aim) * 46, p.y - 62 + Math.sin(p.aim) * 46, p.aim, this.st.bounces, this.focusing); c.strokeStyle = this.focusing ? 'rgba(255,230,120,.9)' : 'rgba(255,255,255,.28)'; c.lineWidth = this.focusing ? 2.5 : 1.5; c.setLineDash(this.focusing ? [] : [6, 8]); c.beginPath(); tr.pts.forEach((q, i) => (i ? c.lineTo(q.x, q.y) : c.moveTo(q.x, q.y))); c.stroke(); c.setLineDash([]); if (this.focusing && tr.hit) { c.fillStyle = '#ffe08a'; const q = tr.pts[tr.pts.length - 1]; c.beginPath(); c.arc(q.x, q.y, 5, 0, 6.283); c.fill(); } }
+    if (!p.dead && !this.over && (this.focusing || this.mouseAim || this.touchAim)) { const tr = this.trace(this.muzzle(p, p.aim).x, this.muzzle(p, p.aim).y, p.aim, this.st.bounces, this.focusing); c.strokeStyle = this.focusing ? 'rgba(255,230,120,.9)' : 'rgba(255,255,255,.28)'; c.lineWidth = this.focusing ? 2.5 : 1.5; c.setLineDash(this.focusing ? [] : [6, 8]); c.beginPath(); tr.pts.forEach((q, i) => (i ? c.lineTo(q.x, q.y) : c.moveTo(q.x, q.y))); c.stroke(); c.setLineDash([]); if (this.focusing && tr.hit) { c.fillStyle = '#ffe08a'; const q = tr.pts[tr.pts.length - 1]; c.beginPath(); c.arc(q.x, q.y, 5, 0, 6.283); c.fill(); } }
     for (const b of this.bullets) { c.strokeStyle = '#fff6c0'; c.lineWidth = 3; c.lineCap = 'round'; c.beginPath(); const tr = b.trail; c.moveTo(tr[Math.max(0, tr.length - 3)].x, tr[Math.max(0, tr.length - 3)].y); c.lineTo(tr[tr.length - 1].x, tr[tr.length - 1].y); c.lineTo(b.x, b.y); c.stroke(); c.fillStyle = '#fff'; c.beginPath(); c.arc(b.x, b.y, 4, 0, 6.283); c.fill(); }
     for (const b of this.eb) { c.fillStyle = '#ff4056'; c.beginPath(); c.arc(b.x, b.y, 6, 0, 6.283); c.fill(); }
     for (const q of this.parts) { c.globalAlpha = clamp(q.life * 2, 0, 1); c.fillStyle = q.col; c.beginPath(); c.arc(q.x, q.y, q.r, 0, 6.283); c.fill(); } c.globalAlpha = 1;
