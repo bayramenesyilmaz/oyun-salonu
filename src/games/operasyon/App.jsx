@@ -53,6 +53,7 @@ function Compass({ heading }) {
 
 const MAPS = [
   { id: 'tesis', name: 'Sanayi tesisi', desc: 'Alacakaranlık · depo, ofis, kontrol noktası', title: '1. OPERASYON — SANAYİ TESİSİ', enter: 'Tesise sız', brief: 'Terk edilmiş bir sanayi bölgesinde silahlı bir grup rehine tutuyor. Tesise sız, rehineleri kurtar ve tahliye helikopterine ulaş. Silah sesi tüm tesisi uyandırır; siper al, ekibinle hareket et.' },
+  { id: 'banka', name: 'Şehir Merkez Bankası', desc: 'Gece · çok katlı banka, polis çevresi, çatı', title: '3. OPERASYON — BANKA BASKINI', enter: 'Bankaya sız', brief: 'Silahlı bir grup Şehir Merkez Bankası\'nı bastı ve 3 kişiyi rehin tuttu. Polis çevreyi sardı ama giremiyor. Ön ya da yan kapıdan gir, lobiyi ve üst katı temizle, rehineleri çıkar, arka otoparktan helikopterle ayrıl. Çatıda keskin nişancı var.' },
   { id: 'koy', name: 'Dağ köyü', desc: 'Gece · taş evler, meydan, kilise, konak', title: '2. OPERASYON — DAĞ KÖYÜ', enter: 'Köye sız', brief: 'Dağ köyünde silahlı bir grup rehine tutuyor. Yol kapanını geç, dar sokaklardan köye sız, konak ve kiliseden rehineleri çıkar, kuzeydeki alandan helikopterle ayrıl. Çatılarda keskin nişancılar var.' },
 ];
 

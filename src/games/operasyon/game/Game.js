@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { buildWorld, makeHeli } from './world.js';
 import { buildVillage } from './world_village.js';
+import { buildBank } from './world_bank.js';
 import { makeSoldier, animSoldier, makeCivilian, setSit, animCivilian, nameSprite, enemyMarker, ROLES } from './chars.js';
 import { WEAPONS, makeViewmodel } from './weapons.js';
 import * as S from './sfx.js';
@@ -142,7 +143,7 @@ export class Game {
       this.scene.remove(this.world.group);
       this.world.group.traverse((o) => o.geometry && o.geometry.dispose());
     }
-    this.world = id === 'koy' ? buildVillage(this.scene) : buildWorld(this.scene, { touch: this.touch });
+    this.world = id === 'koy' ? buildVillage(this.scene) : id === 'banka' ? buildBank(this.scene) : buildWorld(this.scene, { touch: this.touch });
     const W = this.world;
     this.colliders = W.colliders;
     this.mapRects = W.rects.map((c) => [c.x0, c.z0, c.x1, c.z1]);
@@ -363,7 +364,7 @@ export class Game {
     this.totalEnemies = this.enemies.length;
     this.hostages = this.world.hostageSpots.map((s, i) => {
       const g = makeCivilian(i);
-      g.position.set(s.x, 0, s.z);
+      g.position.set(s.x, s.y || 0, s.z);
       g.rotation.y = s.yaw;
       this.scene.add(g);
       return { g, pos: g.position, yaw: s.yaw, state: 'bound', prog: 0, vel: new THREE.Vector3(), grounded: true, speed: 0, stuck: 0 };
