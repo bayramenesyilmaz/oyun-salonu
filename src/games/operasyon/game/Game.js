@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { buildWorld, makeHeli } from './world.js';
 import { buildVillage } from './world_village.js';
 import { buildBank } from './world_bank.js';
+import { buildPrison } from './world_prison.js';
 import { makeSoldier, animSoldier, makeCivilian, setSit, animCivilian, nameSprite, enemyMarker, ROLES } from './chars.js';
 import { WEAPONS, makeViewmodel } from './weapons.js';
 import * as S from './sfx.js';
@@ -143,7 +144,7 @@ export class Game {
       this.scene.remove(this.world.group);
       this.world.group.traverse((o) => o.geometry && o.geometry.dispose());
     }
-    this.world = id === 'koy' ? buildVillage(this.scene) : id === 'banka' ? buildBank(this.scene) : buildWorld(this.scene, { touch: this.touch });
+    this.world = id === 'koy' ? buildVillage(this.scene) : id === 'banka' ? buildBank(this.scene) : id === 'hapis' ? buildPrison(this.scene) : buildWorld(this.scene, { touch: this.touch });
     const W = this.world;
     this.colliders = W.colliders;
     this.mapRects = W.rects.map((c) => [c.x0, c.z0, c.x1, c.z1]);
