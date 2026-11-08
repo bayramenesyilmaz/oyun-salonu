@@ -83,7 +83,7 @@ export default function App() {
       if (q.rx < q.w * 0.4 && stick == null) { stick = { id: e.pointerId, x: q.rx }; }
       else if (aimId == null) { aimId = e.pointerId; aimStart = { x: q.rx, y: q.ry }; I.focus = true; E.touchAim = true; setAim(q, e); }
     };
-    const setAim = (q, e) => { const dx = q.rx - aimStart.x, dy = q.ry - aimStart.y, L = Math.hypot(dx, dy) || 1, s = E.view(), pxp = E.W / 2 + (E.p.x - E.cx) * s, pyp = E.H / 2 + ((E.p.y - 34) - (E.cy0 || 360)) * s; const k = L < 14 ? 0 : 1; if (k) { I.ax = pxp + dx / L * 400; I.ay = pyp + dy / L * 400; } else { I.ax = pxp + E.p.face * 400; I.ay = pyp; } };
+    const setAim = (q, e) => { const dx = q.rx - aimStart.x, dy = q.ry - aimStart.y, L = Math.hypot(dx, dy) || 1, s = E.view(), pxp = E.W / 2 + (E.p.x + 2 * E.p.face - E.cx) * s, pyp = E.H / 2 + ((E.p.y - 62) - (E.cy0 || 360)) * s; const k = L < 14 ? 0 : 1; if (k) { I.ax = pxp + dx / L * 400; I.ay = pyp + dy / L * 400; } else { I.ax = pxp + E.p.face * 400; I.ay = pyp; } };
     const pm = (e) => {
       const q = px(e);
       if (e.pointerType === 'mouse') { E.mouseAim = true; I.ax = q.x; I.ay = q.y; return; }

@@ -186,7 +186,7 @@ export class Engine {
     if (p.y > VH + 260) { this.hurt(1); if (!p.dead) { p.x = p.safe.x - 40 * p.face; p.y = p.safe.y - 2; p.vx = p.vy = 0; } }
     // nişan / ateş
     const w = this.toWorld(I.ax, I.ay);
-    p.aim = Math.atan2(w.y - (p.y - 34), w.x - p.x);
+    p.aim = Math.atan2(w.y - (p.y - 62), w.x - (p.x + 2 * p.face));
     if (Math.cos(p.aim) !== 0) p.face = Math.cos(p.aim) >= 0 ? 1 : -1; else if (mv) p.face = mv > 0 ? 1 : -1;
     if (p.rel > 0) { p.rel -= dt; if (p.rel <= 0) { p.ammo = this.st.mag; this.snd(700, 0.08, 'square', 0.06); } }
     if (I.reload && p.rel <= 0 && p.ammo < this.st.mag) { p.rel = this.st.reload; this.snd(260, 0.1, 'square', 0.06); }
@@ -197,7 +197,7 @@ export class Engine {
     const p = this.p; if (p.rel > 0 || p.dead) return;
     if (p.ammo <= 0) { p.rel = this.st.reload; return; }
     p.ammo--; this.stat.shots++; p.shootT = 0.1;
-    const a = p.aim, ox = p.x + Math.cos(a) * 28, oy = p.y - 34 + Math.sin(a) * 28;
+    const a = p.aim, ox = p.x + 2 * p.face + Math.cos(a) * 36, oy = p.y - 62 + Math.sin(a) * 36;
     this.bullets.push({ x: ox, y: oy, dx: Math.cos(a), dy: Math.sin(a), v: 1900, b: this.st.bounces, rico: 0, pierce: this.st.pierce, life: 3, trail: [{ x: ox, y: oy }], metal: 0 });
     this.snd(this.focusing ? 340 : 480, 0.06, 'square', 0.1); this.shake = Math.max(this.shake, 2);
     this.parts.push({ x: ox, y: oy, vx: 0, vy: 0, life: 0.06, max: 1, col: '#fff3b0', g: 0, r: 9 });
@@ -229,6 +229,7 @@ export class Engine {
         const test = (box, kind, obj) => { const h = rayBox(b.x, b.y, b.dx, b.dy, box); if (h && h.t >= 0 && h.t <= rem && (!best || h.t < best.t) && !(b.ign && b.ign === obj)) { best = h; bk = { kind, obj }; } };
         for (const s of this.L.solids) if (blocks(s)) test(s, 'solid', s);
         for (const e of this.enemies) if (!e.dead) test(this.ebox(e), 'enemy', e);
+        if (b.rico > 0 && !this.p.dead) test({ x: this.p.x - 13, y: this.p.y - 54, w: 26, h: 54 }, 'player', this.p);
         for (const o of this.L.barrels) if (!o.dead) test({ x: o.x - 17, y: o.y - 46, w: 34, h: 46 }, 'barrel', o);
         for (const o of this.L.switches) if (!o.on) test({ x: o.x - 16, y: o.y - 16, w: 32, h: 32 }, 'switch', o);
         for (const o of this.L.term) if (!o.on) test({ x: o.x - 22, y: o.y - 40, w: 44, h: 40 }, 'term', o);
@@ -251,7 +252,8 @@ export class Engine {
           if (e.hp <= 0) this.killEnemy(e, b.rico, true); else this.snd(300, 0.05, 'square', 0.08);
           if (b.pierce > 0 && e.k !== 'boss') { b.pierce--; b.ign = e; b.x += b.dx * 3; b.y += b.dy * 3; continue; }
           b.dead = true;
-        } else if (kind === 'barrel') { this.explode(obj); b.dead = true; }
+        } else if (kind === 'player') { b.dead = true; this.hurt(1, b.x - b.dx * 40); this.cb.toast && this.cb.toast('Kendi mermin!'); }
+        else if (kind === 'barrel') { this.explode(obj); b.dead = true; }
         else if (kind === 'switch') { obj.on = true; this.trigger(obj.id); if (b.rico) this.stat.rico += 0; b.dead = true; this.cb.toast && this.cb.toast('Anahtar çalıştı'); }
         else if (kind === 'term') {
           obj.on = true; b.dead = true; this.snd(900, 0.25, 'triangle', 0.14); this.addParts(obj.x, obj.y - 30, 18, '#7bff9a', 300);
@@ -344,7 +346,7 @@ export class Engine {
     for (const e of this.enemies) this.drawEnemy(c, e, t);
     this.drawPlayer(c, t);
     // tahmin çizgisi
-    if (!p.dead && !this.over && (this.focusing || this.mouseAim)) { const tr = this.trace(p.x + Math.cos(p.aim) * 28, p.y - 34 + Math.sin(p.aim) * 28, p.aim, this.st.bounces, this.focusing); c.strokeStyle = this.focusing ? 'rgba(255,230,120,.9)' : 'rgba(255,255,255,.28)'; c.lineWidth = this.focusing ? 2.5 : 1.5; c.setLineDash(this.focusing ? [] : [6, 8]); c.beginPath(); tr.pts.forEach((q, i) => (i ? c.lineTo(q.x, q.y) : c.moveTo(q.x, q.y))); c.stroke(); c.setLineDash([]); if (this.focusing && tr.hit) { c.fillStyle = '#ffe08a'; const q = tr.pts[tr.pts.length - 1]; c.beginPath(); c.arc(q.x, q.y, 5, 0, 6.283); c.fill(); } }
+    if (!p.dead && !this.over && (this.focusing || this.mouseAim)) { const tr = this.trace(p.x + 2 * p.face + Math.cos(p.aim) * 36, p.y - 62 + Math.sin(p.aim) * 36, p.aim, this.st.bounces, this.focusing); c.strokeStyle = this.focusing ? 'rgba(255,230,120,.9)' : 'rgba(255,255,255,.28)'; c.lineWidth = this.focusing ? 2.5 : 1.5; c.setLineDash(this.focusing ? [] : [6, 8]); c.beginPath(); tr.pts.forEach((q, i) => (i ? c.lineTo(q.x, q.y) : c.moveTo(q.x, q.y))); c.stroke(); c.setLineDash([]); if (this.focusing && tr.hit) { c.fillStyle = '#ffe08a'; const q = tr.pts[tr.pts.length - 1]; c.beginPath(); c.arc(q.x, q.y, 5, 0, 6.283); c.fill(); } }
     for (const b of this.bullets) { c.strokeStyle = '#fff6c0'; c.lineWidth = 3; c.lineCap = 'round'; c.beginPath(); const tr = b.trail; c.moveTo(tr[Math.max(0, tr.length - 3)].x, tr[Math.max(0, tr.length - 3)].y); c.lineTo(tr[tr.length - 1].x, tr[tr.length - 1].y); c.lineTo(b.x, b.y); c.stroke(); c.fillStyle = '#fff'; c.beginPath(); c.arc(b.x, b.y, 4, 0, 6.283); c.fill(); }
     for (const b of this.eb) { c.fillStyle = '#ff4056'; c.shadowColor = '#ff4056'; c.shadowBlur = 10; c.beginPath(); c.arc(b.x, b.y, 5, 0, 6.283); c.fill(); c.shadowBlur = 0; }
     for (const q of this.parts) { c.globalAlpha = clamp(q.life * 2, 0, 1); c.fillStyle = q.col; c.beginPath(); c.arc(q.x, q.y, q.r, 0, 6.283); c.fill(); } c.globalAlpha = 1;
