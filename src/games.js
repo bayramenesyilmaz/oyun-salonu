@@ -1,6 +1,21 @@
 // Oyun listesi. Yeni oyun eklemek: klasörünü src/games/ altına koy, buraya bir satır ekle.
 export const GAMES = [
   {
+    id: 'sultan',
+    title: 'Sultanlık Yolu',
+    tag: 'Strateji · Köy kur · Klan',
+    cats: ['Strateji'],
+    length: 'Haftalarca · 30 sefer · 10 rütbe · online',
+    updated: '2026-11-10',
+    news: 'Yeni oyun: Sultanlık Yolu, çıraktan sultana',
+    keywords: 'strateji köy kur ordu asker klan yağma sefer sultan rütbe kale sur kule clash',
+    blurb: 'Komutan Alper\'in çırağı olarak başla. Köyünü kur, tarla ve maden işlet, kışlada piyade, okçu, atlı, koçbaşı yetiştir. 30 seferlik hikâyede Kara Han\'a karşı yürü, rütbe atla, sultan ol. Gerçek oyuncuları yağmala, klan kur, sohbet et.',
+    color: '#2c5282',
+    icon: '/icons-sultan/icon-512.png',
+    fonts: 'https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap',
+    load: () => import('./games/sultan/App.jsx'),
+  },
+  {
     id: 'lig',
     title: 'Lig Efsanesi',
     tag: 'Futbol menajerlik · Haxball maç · Online',

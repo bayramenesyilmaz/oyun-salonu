@@ -59,6 +59,72 @@
           }
         }
       }
+    },
+    "lig": {
+      "teams": {
+        ".read": "auth != null",
+        ".indexOn": [
+          "score"
+        ],
+        "$uid": {
+          ".write": "auth != null && $uid === auth.uid",
+          ".validate": "newData.child('name').isString() && newData.child('name').val().length <= 40 && (!newData.child('squad').exists() || newData.child('squad').val().length < 8000)"
+        }
+      },
+      "saves": {
+        "$uid": {
+          ".read": "auth != null && $uid === auth.uid",
+          ".write": "auth != null && $uid === auth.uid",
+          ".validate": "newData.isString() && newData.val().length < 200000"
+        }
+      },
+      "rooms": {
+        "$code": {
+          ".read": "auth != null && $code.matches(/^[A-Z0-9]{4}$/)",
+          ".write": "auth != null && $code.matches(/^[A-Z0-9]{4}$/)"
+        }
+      }
+    },
+    "sultan": {
+      "players": {
+        ".read": "auth != null",
+        ".indexOn": [
+          "tro"
+        ],
+        "$uid": {
+          ".write": "auth != null && $uid === auth.uid",
+          ".validate": "newData.child('lay').isString() && newData.child('lay').val().length < 20000"
+        }
+      },
+      "logs": {
+        "$uid": {
+          ".read": "auth != null && $uid === auth.uid",
+          ".write": "auth != null && $uid === auth.uid",
+          "$id": {
+            ".write": "auth != null && !data.exists()",
+            ".validate": "newData.hasChildren(['by','stars'])"
+          }
+        }
+      },
+      "clans": {
+        ".read": "auth != null",
+        ".indexOn": [
+          "score"
+        ],
+        "$cid": {
+          ".write": "auth != null",
+          ".validate": "!newData.exists() || newData.hasChildren(['n'])"
+        }
+      },
+      "chat": {
+        "$cid": {
+          ".read": "auth != null",
+          "$mid": {
+            ".write": "auth != null && !data.exists()",
+            ".validate": "newData.child('x').isString() && newData.child('x').val().length <= 160"
+          }
+        }
+      }
     }
   }
 }
