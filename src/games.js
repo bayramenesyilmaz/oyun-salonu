@@ -1,6 +1,21 @@
 // Oyun listesi. Yeni oyun eklemek: klasörünü src/games/ altına koy, buraya bir satır ekle.
 export const GAMES = [
   {
+    id: 'lig',
+    title: 'Lig Efsanesi',
+    tag: 'Futbol menajerlik · Haxball maç · Online',
+    cats: ['Spor', 'Strateji'],
+    length: 'Sezonlar boyu · 7 lig basamağı · online sıralama',
+    updated: '2026-11-10',
+    news: 'Yeni oyun: Lig Efsanesi, kulübünü kur Süper Lig\'e çık',
+    keywords: 'futbol lig menajer takım kadro transfer haxball maç kupa sezon halı saha online arkadaş sıralama strateji',
+    blurb: 'Mahalle Ligi\'nden Süper Lig\'e: kulübünü kur, kadronu ve taktiğini belirle, transfer yap, tesislerini büyüt. Maçı istersen Haxball gibi kendin oyna, istersen izle. Dünya sıralaması, dostluk maçları ve arkadaşınla canlı maç.',
+    color: '#5a3fd0',
+    icon: '/icons-lig/icon-512.png',
+    fonts: 'https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap',
+    load: () => import('./games/lig/App.jsx'),
+  },
+  {
     id: 'banka',
     title: 'Banka Baskını',
     tag: 'FPS · Rehine kurtarma · Co-op',
