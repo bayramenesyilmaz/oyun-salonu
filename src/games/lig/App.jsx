@@ -242,7 +242,13 @@ export default function App() {
   const [sound, setSound] = useState(() => { try { return localStorage.getItem('lig-snd') !== '0'; } catch { return true; } });
   SND = sound;
   useEffect(() => { document.title = 'Lig Efsanesi'; }, []);
-  useEffect(() => { if (save) { const s = clone(save); tick(s); persist(s); setSave(s); } }, []);
+  useEffect(() => {
+    if (!save) return;
+    const s = clone(save); tick(s);
+    const today = new Date().toDateString();
+    if (s.daily !== today) { const first = !s.daily; s.daily = today; if (!first) { s.coins += 200; s.gems += 2; setTimeout(() => say('Günlük sponsor ödemesi: 200 para, 2 elmas'), 600); } }
+    persist(s); setSave(s);
+  }, []);
   useEffect(() => { const id = setInterval(() => { if (S.current && scr === 'hub') { const s = clone(S.current); tick(s); persist(s); setSave(s); } }, 60000); return () => clearInterval(id); }, [scr]);
 
   const persist = (s) => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* dolu */ } };
@@ -324,7 +330,7 @@ export default function App() {
       // oyuncu durumları
       for (const r of res.ps) {
         const p = s.club.players.find((x) => x.id === r.id); if (!p) continue;
-        p.fit = Math.max(20, r.fit); p.goals += r.goals; p.ast += r.ast; p.apps++;
+        p.fit = Math.min(100, Math.max(20, r.fit) + 6); p.goals += r.goals; p.ast += r.ast; p.apps++;
         if (p.age <= 24 && ovr(p) < p.pot && Math.random() < 0.3 + (s.fac.saha || 0) * 0.05) { const k = pick(['hiz', 'sut', 'pas', 'def']); p[k] = Math.min(97, p[k] + 1); }
         if (Math.random() < 0.035 - (s.fac.saglik || 0) * 0.004) { p.inj = ri(1, 3); s.news.unshift({ t: Date.now(), x: `${p.n} sakatlandı, ${p.inj} maç yok.` }); }
       }
